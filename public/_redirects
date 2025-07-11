@@ -1,0 +1,20 @@
+# Redirect all routes to index.html for client-side routing
+/*    /index.html   200
+
+# API routes (if you have any Netlify functions)
+/api/*  /.netlify/functions/:splat  200
+
+# Handle specific file extensions that should not be redirected
+/*.js   /  404
+/*.css  /  404
+/*.png  /  404
+/*.jpg  /  404
+/*.jpeg /  404
+/*.gif  /  404
+/*.svg  /  404
+/*.ico  /  404
+/*.pdf  /  404
+/*.woff /  404
+/*.woff2 /  404
+/*.ttf  /  404
+/*.eot  /  404 

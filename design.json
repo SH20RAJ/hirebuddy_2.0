@@ -1,0 +1,340 @@
+{
+    "designSystem": {
+      "name": "HR/Recruitment Dashboard Design System",
+      "version": "1.0.0",
+      "description": "Complete visual specification extracted from recruitment dashboard interface"
+    },
+    "colorPalette": {
+      "background": {
+        "primary": "#F7F5F0",
+        "secondary": "#FFFFFF",
+        "card": "#FFFFFF"
+      },
+      "metricCards": {
+        "applicants": {
+          "background": "#F5E6A3",
+          "iconBackground": "#FFFFFF",
+          "text": "#2D2D2D"
+        },
+        "interviews": {
+          "background": "#E8A5A5",
+          "iconBackground": "#FFFFFF", 
+          "text": "#2D2D2D"
+        },
+        "profiles": {
+          "background": "#F5B563",
+          "iconBackground": "#FFFFFF",
+          "text": "#2D2D2D"
+        }
+      },
+      "charts": {
+        "donut": {
+          "segments": ["#D4A574", "#2D2D2D"],
+          "background": "#FFFFFF"
+        },
+        "area": {
+          "background": "#2D2D2D",
+          "line": "#F5E6A3",
+          "fill": "rgba(245, 230, 163, 0.3)",
+          "highlight": "#00FF00"
+        },
+        "bar": {
+          "primary": "#7DD3C0",
+          "secondary": "#D1D5DB",
+          "background": "#F9FAFB"
+        }
+      },
+      "text": {
+        "primary": "#1F2937",
+        "secondary": "#6B7280",
+        "muted": "#9CA3AF",
+        "inverse": "#FFFFFF"
+      },
+      "indicators": {
+        "positive": "#10B981",
+        "negative": "#EF4444",
+        "neutral": "#6B7280"
+      }
+    },
+    "typography": {
+      "greeting": {
+        "fontSize": "24px",
+        "fontWeight": "400",
+        "color": "#1F2937",
+        "marginBottom": "24px"
+      },
+      "metricValue": {
+        "fontSize": "48px",
+        "fontWeight": "700",
+        "lineHeight": "1.1"
+      },
+      "metricLabel": {
+        "fontSize": "14px",
+        "fontWeight": "500",
+        "textTransform": "none"
+      },
+      "percentChange": {
+        "fontSize": "14px",
+        "fontWeight": "600"
+      },
+      "cardTitle": {
+        "fontSize": "16px",
+        "fontWeight": "600",
+        "color": "#1F2937"
+      },
+      "tableHeader": {
+        "fontSize": "12px",
+        "fontWeight": "600",
+        "color": "#6B7280",
+        "textTransform": "uppercase"
+      },
+      "tableCell": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "color": "#1F2937"
+      }
+    },
+    "layout": {
+      "container": {
+        "padding": "32px",
+        "maxWidth": "1400px"
+      },
+      "grid": {
+        "metricCards": {
+          "columns": 3,
+          "gap": "24px",
+          "marginBottom": "32px"
+        },
+        "mainContent": {
+          "columns": "2fr 3fr",
+          "gap": "24px"
+        },
+        "bottomSection": {
+          "columns": "1fr 2fr",
+          "gap": "24px"
+        }
+      }
+    },
+    "components": {
+      "metricCard": {
+        "dimensions": {
+          "height": "120px",
+          "padding": "24px",
+          "borderRadius": "16px"
+        },
+        "layout": {
+          "display": "flex",
+          "justifyContent": "space-between",
+          "alignItems": "center"
+        },
+        "leftSection": {
+          "label": {
+            "marginBottom": "8px"
+          },
+          "value": {
+            "marginBottom": "4px"
+          },
+          "change": {
+            "display": "flex",
+            "alignItems": "center",
+            "gap": "4px"
+          }
+        },
+        "rightSection": {
+          "icon": {
+            "width": "48px",
+            "height": "48px",
+            "borderRadius": "50%",
+            "display": "flex",
+            "alignItems": "center",
+            "justifyContent": "center"
+          }
+        }
+      },
+      "card": {
+        "base": {
+          "backgroundColor": "#FFFFFF",
+          "borderRadius": "16px",
+          "padding": "24px",
+          "boxShadow": "0 2px 8px rgba(0, 0, 0, 0.04)"
+        },
+        "header": {
+          "display": "flex",
+          "justifyContent": "space-between",
+          "alignItems": "center",
+          "marginBottom": "20px"
+        },
+        "actionButtons": {
+          "display": "flex",
+          "gap": "8px"
+        }
+      },
+      "donutChart": {
+        "centerText": {
+          "primaryValue": {
+            "fontSize": "32px",
+            "fontWeight": "700",
+            "color": "#1F2937"
+          },
+          "label": {
+            "fontSize": "14px",
+            "color": "#6B7280"
+          }
+        },
+        "legend": {
+          "position": "bottom",
+          "gap": "16px",
+          "itemGap": "8px"
+        }
+      },
+      "table": {
+        "structure": {
+          "headerHeight": "40px",
+          "rowHeight": "56px",
+          "borderRadius": "8px"
+        },
+        "cells": {
+          "padding": "12px 16px",
+          "alignment": {
+            "number": "left",
+            "text": "left",
+            "photo": "center"
+          }
+        },
+        "avatar": {
+          "size": "32px",
+          "borderRadius": "50%"
+        },
+        "status": {
+          "padding": "4px 12px",
+          "borderRadius": "16px",
+          "fontSize": "12px",
+          "fontWeight": "500"
+        }
+      },
+      "areaChart": {
+        "container": {
+          "backgroundColor": "#2D2D2D",
+          "borderRadius": "16px",
+          "padding": "24px",
+          "height": "200px"
+        },
+        "highlight": {
+          "value": {
+            "backgroundColor": "#10B981",
+            "color": "#FFFFFF",
+            "padding": "8px 12px",
+            "borderRadius": "8px",
+            "fontSize": "14px",
+            "fontWeight": "600"
+          },
+          "changeIndicator": {
+            "fontSize": "12px",
+            "color": "#10B981"
+          }
+        }
+      },
+      "barChart": {
+        "bars": {
+          "borderRadius": "4px 4px 0 0",
+          "minHeight": "20px"
+        },
+        "legend": {
+          "position": "top-right",
+          "gap": "24px",
+          "dotSize": "8px"
+        },
+        "xAxis": {
+          "labels": {
+            "fontSize": "12px",
+            "color": "#6B7280"
+          }
+        },
+        "yAxis": {
+          "gridLines": true,
+          "color": "#E5E7EB"
+        }
+      }
+    },
+    "specificMeasurements": {
+      "greeting": {
+        "text": "Good Morning, [Name]",
+        "position": "top-left",
+        "marginBottom": "32px"
+      },
+      "metricCards": {
+        "totalApplicants": {
+          "value": "592",
+          "change": "+25%",
+          "color": "#F5E6A3"
+        },
+        "interviewSchedule": {
+          "value": "142", 
+          "change": "-10%",
+          "color": "#E8A5A5"
+        },
+        "profileVisited": {
+          "value": "483",
+          "change": "+30%", 
+          "color": "#F5B563"
+        }
+      },
+      "workingTypeChart": {
+        "wfo": "1000 Applicants",
+        "wfh": "700 Applicants",
+        "chartType": "donut"
+      },
+      "tableColumns": [
+        "No.",
+        "Photo", 
+        "Name",
+        "Role",
+        "Status",
+        "Date"
+      ],
+      "impressionsChart": {
+        "legend": {
+          "jobBooster": "1000",
+          "jobAlert": "700"
+        },
+        "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+      }
+    },
+    "visualHierarchy": {
+      "level1": "Greeting text and main metric values",
+      "level2": "Card titles and chart legends", 
+      "level3": "Table headers and secondary text",
+      "level4": "Supporting text and labels"
+    },
+    "interactionStates": {
+      "hover": {
+        "cards": "subtle elevation increase",
+        "buttons": "background opacity change",
+        "tableRows": "background color change"
+      },
+      "active": {
+        "buttons": "pressed state with darker background"
+      }
+    },
+    "spacing": {
+      "containerPadding": "32px",
+      "cardGap": "24px",
+      "cardPadding": "24px",
+      "elementGap": "16px",
+      "smallGap": "8px",
+      "microGap": "4px"
+    },
+    "borderRadius": {
+      "cards": "16px",
+      "buttons": "8px",
+      "avatars": "50%",
+      "badges": "16px"
+    },
+    "implementationNotes": {
+      "cardGradients": "Subtle gradients used for metric cards, not flat colors",
+      "iconPlacement": "Icons consistently placed in white circular backgrounds",
+      "tableDesign": "Clean rows with avatar integration and status indicators",
+      "chartIntegration": "Charts are embedded within card containers",
+      "responsiveGrid": "3-column metric cards, 2-column main content area"
+    }
+  }

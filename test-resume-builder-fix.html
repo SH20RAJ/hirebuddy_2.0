@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Builder Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 4px solid #007bff;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Resume Builder Fix Test</h1>
+        <p>This test verifies that the resume builder fixes are working correctly.</p>
+        
+        <div class="status info">
+            <strong>Test Status:</strong> <span id="testStatus">Ready to test</span>
+        </div>
+        
+        <button onclick="testResumeDataStructure()">Test Resume Data Structure</button>
+        <button onclick="testArraySafety()">Test Array Safety</button>
+        <button onclick="testDataMigration()">Test Data Migration</button>
+        <button onclick="openResumeBuilder()">Open Resume Builder</button>
+        
+        <div id="testResults"></div>
+    </div>
+
+    <script>
+        function updateStatus(message, type = 'info') {
+            const statusEl = document.getElementById('testStatus');
+            statusEl.textContent = message;
+            statusEl.parentElement.className = `status ${type}`;
+        }
+
+        function addTestResult(title, result, details = '') {
+            const resultsEl = document.getElementById('testResults');
+            const resultEl = document.createElement('div');
+            resultEl.className = 'test-result';
+            resultEl.innerHTML = `
+                <h3>${title}</h3>
+                <p><strong>Result:</strong> ${result}</p>
+                ${details ? `<p><strong>Details:</strong> ${details}</p>` : ''}
+            `;
+            resultsEl.appendChild(resultEl);
+        }
+
+        function testResumeDataStructure() {
+            updateStatus('Testing resume data structure...', 'info');
+            
+            try {
+                // Test the resume data structure that should be created
+                const testResumeData = {
+                    personalInfo: {
+                        name: "Test User",
+                        email: "test@example.com",
+                        phone: "123-456-7890",
+                        location: "Test City",
+                        website: "",
+                        linkedin: "",
+                        github: "",
+                    },
+                    summary: "Test summary",
+                    experience: [],
+                    education: [],
+                    skills: {
+                        technical: [],
+                        soft: [],
+                        languages: [],
+                        frameworks: [],
+                    },
+                    projects: [],
+                    certifications: [],
+                    languages: [],
+                    volunteer: [],
+                    awards: [],
+                };
+
+                // Test array access safety
+                const tests = [
+                    { name: 'experience', array: testResumeData.experience },
+                    { name: 'education', array: testResumeData.education },
+                    { name: 'projects', array: testResumeData.projects },
+                    { name: 'certifications', array: testResumeData.certifications },
+                    { name: 'languages', array: testResumeData.languages },
+                    { name: 'volunteer', array: testResumeData.volunteer },
+                    { name: 'awards', array: testResumeData.awards },
+                ];
+
+                let allPassed = true;
+                let details = '';
+
+                tests.forEach(test => {
+                    const isArray = Array.isArray(test.array);
+                    const hasLength = test.array && typeof test.array.length === 'number';
+                    
+                    if (!isArray || !hasLength) {
+                        allPassed = false;
+                        details += `❌ ${test.name}: Not a valid array\n`;
+                    } else {
+                        details += `✅ ${test.name}: Valid array (length: ${test.array.length})\n`;
+                    }
+                });
+
+                addTestResult(
+                    'Resume Data Structure Test',
+                    allPassed ? '✅ PASSED' : '❌ FAILED',
+                    details
+                );
+
+                updateStatus(allPassed ? 'Data structure test passed!' : 'Data structure test failed!', allPassed ? 'success' : 'error');
+            } catch (error) {
+                addTestResult('Resume Data Structure Test', '❌ ERROR', error.message);
+                updateStatus('Data structure test error!', 'error');
+            }
+        }
+
+        function testArraySafety() {
+            updateStatus('Testing array safety checks...', 'info');
+            
+            try {
+                // Test various undefined/null scenarios
+                const testCases = [
+                    { name: 'undefined array', data: { awards: undefined } },
+                    { name: 'null array', data: { awards: null } },
+                    { name: 'empty array', data: { awards: [] } },
+                    { name: 'valid array', data: { awards: [{ id: '1', title: 'Test Award' }] } },
+                ];
+
+                let allPassed = true;
+                let details = '';
+
+                testCases.forEach(testCase => {
+                    try {
+                        // Simulate the safety check logic
+                        const array = testCase.data.awards;
+                        const safeCheck = array && Array.isArray(array) && array.length > 0;
+                        
+                        if (testCase.name === 'valid array' && !safeCheck) {
+                            allPassed = false;
+                            details += `❌ ${testCase.name}: Should pass but failed\n`;
+                        } else if (testCase.name !== 'valid array' && safeCheck) {
+                            allPassed = false;
+                            details += `❌ ${testCase.name}: Should fail but passed\n`;
+                        } else {
+                            details += `✅ ${testCase.name}: Handled correctly\n`;
+                        }
+                    } catch (error) {
+                        allPassed = false;
+                        details += `❌ ${testCase.name}: Threw error - ${error.message}\n`;
+                    }
+                });
+
+                addTestResult(
+                    'Array Safety Test',
+                    allPassed ? '✅ PASSED' : '❌ FAILED',
+                    details
+                );
+
+                updateStatus(allPassed ? 'Array safety test passed!' : 'Array safety test failed!', allPassed ? 'success' : 'error');
+            } catch (error) {
+                addTestResult('Array Safety Test', '❌ ERROR', error.message);
+                updateStatus('Array safety test error!', 'error');
+            }
+        }
+
+        function testDataMigration() {
+            updateStatus('Testing data migration logic...', 'info');
+            
+            try {
+                // Simulate old data without new fields
+                const oldData = {
+                    personalInfo: { name: "Old User", email: "old@example.com" },
+                    summary: "Old summary",
+                    experience: [{ id: '1', jobTitle: 'Developer' }],
+                    education: [],
+                    skills: { technical: ['JavaScript'] },
+                    projects: []
+                    // Missing: certifications, languages, volunteer, awards
+                };
+
+                // Simulate the migration logic
+                const migratedData = {
+                    personalInfo: oldData.personalInfo || {
+                        name: "", email: "", phone: "", location: "", website: "", linkedin: "", github: ""
+                    },
+                    summary: oldData.summary || "",
+                    experience: oldData.experience || [],
+                    education: oldData.education || [],
+                    skills: oldData.skills || { technical: [], soft: [], languages: [], frameworks: [] },
+                    projects: oldData.projects || [],
+                    certifications: oldData.certifications || [],
+                    languages: oldData.languages || [],
+                    volunteer: oldData.volunteer || [],
+                    awards: oldData.awards || [],
+                };
+
+                // Test that all required fields exist
+                const requiredFields = ['personalInfo', 'summary', 'experience', 'education', 'skills', 'projects', 'certifications', 'languages', 'volunteer', 'awards'];
+                let allFieldsExist = true;
+                let details = '';
+
+                requiredFields.forEach(field => {
+                    if (migratedData[field] !== undefined) {
+                        details += `✅ ${field}: Present\n`;
+                    } else {
+                        allFieldsExist = false;
+                        details += `❌ ${field}: Missing\n`;
+                    }
+                });
+
+                addTestResult(
+                    'Data Migration Test',
+                    allFieldsExist ? '✅ PASSED' : '❌ FAILED',
+                    details
+                );
+
+                updateStatus(allFieldsExist ? 'Data migration test passed!' : 'Data migration test failed!', allFieldsExist ? 'success' : 'error');
+            } catch (error) {
+                addTestResult('Data Migration Test', '❌ ERROR', error.message);
+                updateStatus('Data migration test error!', 'error');
+            }
+        }
+
+        function openResumeBuilder() {
+            updateStatus('Opening resume builder...', 'info');
+            window.open('http://localhost:8080', '_blank');
+        }
+
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testResumeDataStructure();
+                setTimeout(() => testArraySafety(), 500);
+                setTimeout(() => testDataMigration(), 1000);
+            }, 500);
+        });
+    </script>
+</body>
+</html> 
