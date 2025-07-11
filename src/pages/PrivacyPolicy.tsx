@@ -156,7 +156,6 @@ const PrivacyPolicy = () => {
                 <p className="text-gray-700">
                   <strong>Email:</strong> sharmanishant9119@gmail.com<br />
                   <strong>Address:</strong> Tower 2, Apartment 404, M3M Merlin, Golf Course Road Extn., Sector 67, Gurugram<br />
-                  <strong>Data Protection:</strong> privacy@hirebuddy.com
                 </p>
               </div>
             </section>
