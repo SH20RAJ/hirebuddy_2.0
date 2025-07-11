@@ -24,7 +24,11 @@ const ContactUs = () => {
               
               <div>
                 <span className="font-semibold text-gray-900">Registered Address:</span>
-                <span className="text-gray-700 ml-2">Hostel 6 Birla Institute of Technology Mesra Ranchi JHARKHAND 835215</span>
+                <span className="text-gray-700 ml-2">Registered Address: Tower 2, 
+Apartment 404 
+
+M3M Merlin
+Golf Course Road Extn., Sector 67, Gurugram</span>
               </div>
               
               <div>
