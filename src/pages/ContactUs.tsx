@@ -24,7 +24,7 @@ const ContactUs = () => {
               
               <div>
                 <span className="font-semibold text-gray-900">Registered Address:</span>
-                <span className="text-gray-700 ml-2">Registered Address: Tower 2, 
+                <span className="text-gray-700 ml-2">Tower 2, 
 Apartment 404 
 
 M3M Merlin
