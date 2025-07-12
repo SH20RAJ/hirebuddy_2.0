@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { PremiumBadge } from "@/components/ui/premium-badge";
+import { usePremiumUser } from "@/hooks/usePremiumUser";
 import MobileSidebar from "./MobileSidebar";
 import MobileHeader from "./MobileHeader";
 import {
@@ -21,8 +23,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  LogOut,
-  CreditCard
+  LogOut
 } from "lucide-react";
 
 interface SidebarContextType {
@@ -98,7 +99,6 @@ const mainItems: NavItem[] = [
   { title: "Resume Builder", url: "/resume-builder", icon: FileText },
   { title: "Email Outreach", url: "/email-outreach", icon: Mail },
   { title: "Profile", url: "/profile", icon: User },
-  { title: "Pricing", url: "/pricing", icon: CreditCard },
 ];
 
 
@@ -190,6 +190,7 @@ const SidebarSection: React.FC<SidebarSectionProps> = ({ title, items, isCollaps
 const DesktopSidebar: React.FC = () => {
   const { isCollapsed, setIsCollapsed, isHovered, setIsHovered } = useSidebar();
   const { user, signOut } = useAuth();
+  const { isPremium } = usePremiumUser();
 
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "User";
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -275,7 +276,10 @@ const DesktopSidebar: React.FC = () => {
                 transition={{ duration: 0.2 }}
                 className="flex-1 min-w-0"
               >
-                <p className="text-sm font-medium truncate">{userName}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium truncate">{userName}</p>
+                  {isPremium && <PremiumBadge variant="compact" />}
+                </div>
                 <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
               </motion.div>
             )}

@@ -215,7 +215,7 @@ export const Pricing = () => {
             <div className="mt-6">
               <Button
                 onClick={handleFreeButtonClick}
-                className="w-full py-3 px-4 rounded-lg font-medium bg-gradient-to-t from-[#b24e55] to-[#e4656e] text-white hover:from-[#a04449] hover:to-[#d85a63] transition-colors duration-200"
+                className="w-full py-3 px-4 rounded-lg font-medium bg-gradient-to-t from-[#b24e55] to-[#e4656e] text-white hover:from-[#a04449] hover:to-[#d85a63] transition-colors duration-200 text-sm"
               >
                 {pricingData[0].buttonText}
               </Button>

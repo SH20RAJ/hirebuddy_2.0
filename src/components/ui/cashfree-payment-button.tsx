@@ -28,7 +28,7 @@ export const CashfreePaymentButton: React.FC<CashfreePaymentButtonProps> = ({ cl
         style={{ textDecoration: 'none' }}
         onClick={handleClick}
       >
-        <button className="w-full py-4 px-6 rounded-lg font-medium bg-gradient-to-t from-[#f9b6bc] to-[#fffcfd] text-[#8f5055] transition-colors duration-200">
+        <button className="w-full py-3 px-4 rounded-lg font-medium bg-gradient-to-t from-[#f9b6bc] to-[#fffcfd] text-[#8f5055] transition-colors duration-200 text-sm">
           <span>Subscribe to Premium</span>
         </button>
       </a>

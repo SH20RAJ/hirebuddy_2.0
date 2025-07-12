@@ -371,11 +371,11 @@ const Pricing = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button
-                className="bg-white text-[#b24e55] hover:bg-gray-100 font-medium px-8 py-4 rounded-xl text-lg"
+                className="bg-white text-[#b24e55] hover:bg-gray-100 font-medium px-8 py-3 rounded-xl text-sm"
                 onClick={handleFreeButtonClick}
               >
                 Get Started Free
-                <ArrowRight className="h-5 w-5 ml-2" />
+                <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
               
             </div>

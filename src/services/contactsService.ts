@@ -31,14 +31,14 @@ export interface ContactForDisplay {
 }
 
 class ContactsService {
-  // Get all contacts from the testdb table
+  // Get all contacts from the email_database table
   async getContacts(): Promise<ContactForDisplay[]> {
     try {
       console.log('🔍 Fetching contacts from database...');
       console.log('Supabase client initialized:', !!supabase);
       
       const { data, error } = await supabase
-        .from('testdb')
+        .from('email_database')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -81,7 +81,7 @@ class ContactsService {
     }
   }
 
-  // Add a new contact to the testdb table
+  // Add a new contact to the email_database table
   async addContact(contactData: {
     full_name?: string;
     first_name?: string;
@@ -93,7 +93,7 @@ class ContactsService {
   }): Promise<Contact> {
     try {
       const { data, error } = await supabase
-        .from('testdb')
+        .from('email_database')
         .insert([contactData])
         .select()
         .single();
@@ -110,11 +110,11 @@ class ContactsService {
     }
   }
 
-  // Update a contact in the testdb table
+  // Update a contact in the email_database table
   async updateContact(id: string, updates: Partial<Contact>): Promise<Contact> {
     try {
       const { data, error } = await supabase
-        .from('testdb')
+        .from('email_database')
         .update(updates)
         .eq('id', id)
         .select()
@@ -136,7 +136,7 @@ class ContactsService {
   async markEmailSent(contactId: string): Promise<void> {
     try {
       const { error } = await supabase
-        .from('testdb')
+        .from('email_database')
         .update({ email_sent_on: new Date().toISOString() })
         .eq('id', contactId);
 
@@ -150,11 +150,11 @@ class ContactsService {
     }
   }
 
-  // Delete a contact from the testdb table
+  // Delete a contact from the email_database table
   async deleteContact(id: string): Promise<void> {
     try {
       const { error } = await supabase
-        .from('testdb')
+        .from('email_database')
         .delete()
         .eq('id', id);
 
@@ -172,7 +172,7 @@ class ContactsService {
   async searchContacts(searchTerm: string): Promise<ContactForDisplay[]> {
     try {
       const { data, error } = await supabase
-        .from('testdb')
+        .from('email_database')
         .select('*')
         .or(`full_name.ilike.%${searchTerm}%,first_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,company_name.ilike.%${searchTerm}%`)
         .order('created_at', { ascending: false });
@@ -209,7 +209,7 @@ class ContactsService {
   async getContactsWithEmail(): Promise<ContactForDisplay[]> {
     try {
       const { data, error } = await supabase
-        .from('testdb')
+        .from('email_database')
         .select('*')
         .not('email', 'is', null)
         .neq('email', '')
@@ -421,7 +421,7 @@ class ContactsService {
       console.log('7 days ago cutoff:', sevenDaysAgo.toISOString());
 
       const { data, error } = await supabase
-        .from('testdb')
+        .from('email_database')
         .select('*')
         .not('email', 'is', null)
         .neq('email', '')
@@ -471,11 +471,11 @@ class ContactsService {
     }
   }
 
-  // Fallback method for old testdb system
-  private async getContactsWithEmailFromTestDB(): Promise<ContactForDisplay[]> {
+  // Fallback method for old email_database system
+  private async getContactsWithEmailFromemail_database(): Promise<ContactForDisplay[]> {
     try {
       const { data, error } = await supabase
-        .from('testdb')
+        .from('email_database')
         .select('*')
         .not('email', 'is', null)
         .neq('email', '')
@@ -483,7 +483,7 @@ class ContactsService {
         .order('email_sent_on', { ascending: false });
 
       if (error) {
-        console.error('Error fetching contacts with sent emails from testdb:', error);
+        console.error('Error fetching contacts with sent emails from email_database:', error);
         throw new Error(`Failed to fetch contacts with sent emails: ${error.message}`);
       }
 
@@ -505,7 +505,7 @@ class ContactsService {
 
       return transformedContacts;
     } catch (error) {
-      console.error('Error in getContactsWithEmailFromTestDB:', error);
+      console.error('Error in getContactsWithEmailFromemail_database:', error);
       throw error;
     }
   }

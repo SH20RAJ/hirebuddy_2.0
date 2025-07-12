@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { PremiumBadge } from "@/components/ui/premium-badge";
+import { usePremiumUser } from "@/hooks/usePremiumUser";
 import {
   LayoutDashboard,
   Search,
@@ -16,7 +18,6 @@ import {
   Menu,
   X,
   LogOut,
-  CreditCard,
   ChevronRight,
   Home
 } from "lucide-react";
@@ -59,12 +60,6 @@ const mobileNavItems: NavItem[] = [
     url: "/profile", 
     icon: User,
     description: "Manage your profile"
-  },
-  { 
-    title: "Pricing", 
-    url: "/pricing", 
-    icon: CreditCard,
-    description: "Upgrade your plan"
   },
 ];
 
@@ -136,6 +131,7 @@ const MobileNavLink: React.FC<MobileNavLinkProps> = ({ item, onClick }) => {
 
 const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose }) => {
   const { user, signOut } = useAuth();
+  const { isPremium } = usePremiumUser();
   const [isClosing, setIsClosing] = useState(false);
 
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "User";
@@ -257,7 +253,10 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose }) => {
                   <AvatarFallback className="font-semibold mobile-body-xs bg-white/20 text-white">{userInitials}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold mobile-body text-white truncate">{userName}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold mobile-body text-white truncate">{userName}</p>
+                    {isPremium && <PremiumBadge variant="compact" />}
+                  </div>
                   <p className="mobile-body-xs text-white/80 truncate">{user?.email}</p>
                 </div>
               </div>
