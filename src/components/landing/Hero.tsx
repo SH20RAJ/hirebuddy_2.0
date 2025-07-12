@@ -3,6 +3,71 @@ import { Input } from "@/components/ui/input";
 import { ShimmerButton } from "../ui/shimmer-button";
 import { TypingAnimation } from "../ui/typing-animation";
 import { Button } from "../ui/button";
+import { useState, useRef } from "react";
+
+const AnimatedPlaceholderInput = () => {
+  const [isFocused, setIsFocused] = useState(false);
+  const [value, setValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const placeholderTexts = [
+    "Software Engineer in Delhi",
+    "Product Manager in Mumbai",
+    "Data Scientist in Bangalore",
+    "UX Designer in Hyderabad",
+    "Marketing Manager in Chennai",
+    "DevOps Engineer in Pune",
+    "Business Analyst in Kolkata",
+    "Frontend Developer in Noida",
+    "Backend Developer in Gurgaon",
+    "Full Stack Developer in Delhi"
+  ];
+
+  const handleFocus = () => {
+    setIsFocused(true);
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue(e.target.value);
+  };
+
+  const handleClick = () => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
+  return (
+    <div className="flex-1 h-14 relative bg-gray-50 rounded-lg">
+      {!isFocused && value === "" && (
+        <div className="absolute inset-0 flex items-center px-4 pointer-events-none z-10">
+          <TypingAnimation
+            texts={placeholderTexts}
+            className="text-lg text-[#b88c8e] font-medium"
+            typingSpeed={80}
+            deletingSpeed={40}
+            pauseDuration={1500}
+          />
+        </div>
+      )}
+      <input
+        ref={inputRef}
+        type="text"
+        value={value}
+        onChange={handleChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        onClick={handleClick}
+        className="w-full h-full px-4 bg-transparent border-none outline-none text-lg text-[#b88c8e] font-medium rounded-lg relative z-20"
+        placeholder=""
+      />
+    </div>
+  );
+};
 
 export const Hero = () => {
   return (
@@ -34,26 +99,7 @@ export const Hero = () => {
       {/* Job title animation and CTA section */}
       <div className="w-full max-w-xl space-y-4">
         <div className="flex flex-col sm:flex-row gap-3 bg-white p-2 rounded-xl shadow-[0_4px_60px_rgba(231,90,130,0.35)]">
-          <div className="flex-1 h-14 flex items-center justify-center px-4 bg-gray-50 rounded-lg">
-            <TypingAnimation
-              texts={[
-                "Software Engineer in Delhi",
-                "Product Manager in Mumbai",
-                "Data Scientist in Bangalore",
-                "UX Designer in Hyderabad",
-                "Marketing Manager in Chennai",
-                "DevOps Engineer in Pune",
-                "Business Analyst in Kolkata",
-                "Frontend Developer in Noida",
-                "Backend Developer in Gurgaon",
-                "Full Stack Developer in Delhi"
-              ]}
-              className="text-lg text-[#b88c8e] font-medium"
-              typingSpeed={80}
-              deletingSpeed={40}
-              pauseDuration={1500}
-            />
-          </div>
+          <AnimatedPlaceholderInput />
           <Button
             className="h-14 px-8 text-lg font-normal rounded-xl bg-gradient-to-t from-[#b24e55] to-[#E3405F] hover:opacity-90 text-white whitespace-nowrap"
             onClick={() => (window.location.href = "/signup")}
