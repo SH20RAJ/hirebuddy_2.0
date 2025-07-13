@@ -37,26 +37,53 @@ class ContactsService {
       console.log('🔍 Fetching contacts from database...');
       console.log('Supabase client initialized:', !!supabase);
       
-      const { data, error } = await supabase
-        .from('email_database')
-        .select('*')
-        .order('created_at', { ascending: false });
+      let allContacts: Contact[] = [];
+      let hasMore = true;
+      let page = 0;
+      const pageSize = 1000; // Supabase default limit
 
-      if (error) {
-        console.error('❌ Supabase error fetching contacts:', error);
-        console.error('Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
-        throw new Error(`Failed to fetch contacts: ${error.message} (Code: ${error.code})`);
+      while (hasMore) {
+        const from = page * pageSize;
+        const to = from + pageSize - 1;
+
+        console.log(`📄 Fetching page ${page + 1} (rows ${from}-${to})...`);
+
+        const { data, error } = await supabase
+          .from('email_database')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(from, to);
+
+        if (error) {
+          console.error('❌ Supabase error fetching contacts:', error);
+          console.error('Error details:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
+          throw new Error(`Failed to fetch contacts: ${error.message} (Code: ${error.code})`);
+        }
+
+        if (data && data.length > 0) {
+          allContacts = [...allContacts, ...data];
+          console.log(`✅ Fetched ${data.length} contacts from page ${page + 1}`);
+          
+          // If we got fewer contacts than the page size, we've reached the end
+          if (data.length < pageSize) {
+            hasMore = false;
+          } else {
+            page++;
+          }
+        } else {
+          hasMore = false;
+        }
       }
 
-      console.log('✅ Successfully fetched contacts:', data?.length || 0);
+      console.log('✅ Successfully fetched all contacts:', allContacts.length);
 
       // Transform the data to match the expected interface
-      const transformedContacts: ContactForDisplay[] = (data || []).map((contact: Contact) => ({
+      const transformedContacts: ContactForDisplay[] = allContacts.map((contact: Contact) => ({
         id: contact.id,
         name: contact.full_name || contact.first_name || 'Unknown',
         email: contact.email || '',
@@ -171,19 +198,48 @@ class ContactsService {
   // Search contacts by name, email, or company
   async searchContacts(searchTerm: string): Promise<ContactForDisplay[]> {
     try {
-      const { data, error } = await supabase
-        .from('email_database')
-        .select('*')
-        .or(`full_name.ilike.%${searchTerm}%,first_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,company_name.ilike.%${searchTerm}%`)
-        .order('created_at', { ascending: false });
+      let allContacts: Contact[] = [];
+      let hasMore = true;
+      let page = 0;
+      const pageSize = 1000; // Supabase default limit
 
-      if (error) {
-        console.error('Error searching contacts:', error);
-        throw new Error(`Failed to search contacts: ${error.message}`);
+      while (hasMore) {
+        const from = page * pageSize;
+        const to = from + pageSize - 1;
+
+        console.log(`📄 Searching contacts - page ${page + 1} (rows ${from}-${to})...`);
+
+        const { data, error } = await supabase
+          .from('email_database')
+          .select('*')
+          .or(`full_name.ilike.%${searchTerm}%,first_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,company_name.ilike.%${searchTerm}%`)
+          .order('created_at', { ascending: false })
+          .range(from, to);
+
+        if (error) {
+          console.error('Error searching contacts:', error);
+          throw new Error(`Failed to search contacts: ${error.message}`);
+        }
+
+        if (data && data.length > 0) {
+          allContacts = [...allContacts, ...data];
+          console.log(`✅ Found ${data.length} matching contacts from page ${page + 1}`);
+          
+          // If we got fewer contacts than the page size, we've reached the end
+          if (data.length < pageSize) {
+            hasMore = false;
+          } else {
+            page++;
+          }
+        } else {
+          hasMore = false;
+        }
       }
 
+      console.log('✅ Successfully searched all contacts:', allContacts.length);
+
       // Transform the data to match the expected interface
-      const transformedContacts: ContactForDisplay[] = (data || []).map((contact: Contact) => ({
+      const transformedContacts: ContactForDisplay[] = allContacts.map((contact: Contact) => ({
         id: contact.id,
         name: contact.full_name || contact.first_name || 'Unknown',
         email: contact.email || '',
@@ -208,20 +264,49 @@ class ContactsService {
   // Get contacts with email addresses only
   async getContactsWithEmail(): Promise<ContactForDisplay[]> {
     try {
-      const { data, error } = await supabase
-        .from('email_database')
-        .select('*')
-        .not('email', 'is', null)
-        .neq('email', '')
-        .order('created_at', { ascending: false });
+      let allContacts: Contact[] = [];
+      let hasMore = true;
+      let page = 0;
+      const pageSize = 1000; // Supabase default limit
 
-      if (error) {
-        console.error('Error fetching contacts with email:', error);
-        throw new Error(`Failed to fetch contacts with email: ${error.message}`);
+      while (hasMore) {
+        const from = page * pageSize;
+        const to = from + pageSize - 1;
+
+        console.log(`📄 Fetching contacts with email - page ${page + 1} (rows ${from}-${to})...`);
+
+        const { data, error } = await supabase
+          .from('email_database')
+          .select('*')
+          .not('email', 'is', null)
+          .neq('email', '')
+          .order('created_at', { ascending: false })
+          .range(from, to);
+
+        if (error) {
+          console.error('Error fetching contacts with email:', error);
+          throw new Error(`Failed to fetch contacts with email: ${error.message}`);
+        }
+
+        if (data && data.length > 0) {
+          allContacts = [...allContacts, ...data];
+          console.log(`✅ Fetched ${data.length} contacts with email from page ${page + 1}`);
+          
+          // If we got fewer contacts than the page size, we've reached the end
+          if (data.length < pageSize) {
+            hasMore = false;
+          } else {
+            page++;
+          }
+        } else {
+          hasMore = false;
+        }
       }
 
+      console.log('✅ Successfully fetched all contacts with email:', allContacts.length);
+
       // Transform the data to match the expected interface
-      const transformedContacts: ContactForDisplay[] = (data || []).map((contact: Contact) => ({
+      const transformedContacts: ContactForDisplay[] = allContacts.map((contact: Contact) => ({
         id: contact.id,
         name: contact.full_name || contact.first_name || 'Unknown',
         email: contact.email || '',
@@ -420,29 +505,56 @@ class ContactsService {
       
       console.log('7 days ago cutoff:', sevenDaysAgo.toISOString());
 
-      const { data, error } = await supabase
-        .from('email_database')
-        .select('*')
-        .not('email', 'is', null)
-        .neq('email', '')
-        .or(`email_sent_on.is.null,email_sent_on.lt.${sevenDaysAgo.toISOString()}`)
-        .order('created_at', { ascending: false });
+      let allContacts: Contact[] = [];
+      let hasMore = true;
+      let page = 0;
+      const pageSize = 1000; // Supabase default limit
 
-      if (error) {
-        console.error('❌ Supabase error fetching contacts available for email:', error);
-        console.error('Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
-        throw new Error(`Failed to fetch contacts available for email: ${error.message} (Code: ${error.code})`);
+      while (hasMore) {
+        const from = page * pageSize;
+        const to = from + pageSize - 1;
+
+        console.log(`📄 Fetching page ${page + 1} (rows ${from}-${to})...`);
+
+        const { data, error } = await supabase
+          .from('email_database')
+          .select('*')
+          .not('email', 'is', null)
+          .neq('email', '')
+          .or(`email_sent_on.is.null,email_sent_on.lt.${sevenDaysAgo.toISOString()}`)
+          .order('created_at', { ascending: false })
+          .range(from, to);
+
+        if (error) {
+          console.error('❌ Supabase error fetching contacts available for email:', error);
+          console.error('Error details:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
+          throw new Error(`Failed to fetch contacts available for email: ${error.message} (Code: ${error.code})`);
+        }
+
+        if (data && data.length > 0) {
+          allContacts = [...allContacts, ...data];
+          console.log(`✅ Fetched ${data.length} contacts from page ${page + 1}`);
+          
+          // If we got fewer contacts than the page size, we've reached the end
+          if (data.length < pageSize) {
+            hasMore = false;
+          } else {
+            page++;
+          }
+        } else {
+          hasMore = false;
+        }
       }
 
-      console.log('✅ Successfully fetched contacts available for email:', data?.length || 0);
+      console.log('✅ Successfully fetched all contacts available for email:', allContacts.length);
 
       // Transform the data to match the expected interface
-      const transformedContacts: ContactForDisplay[] = (data || []).map((contact: Contact) => ({
+      const transformedContacts: ContactForDisplay[] = allContacts.map((contact: Contact) => ({
         id: contact.id,
         name: contact.full_name || contact.first_name || 'Unknown',
         email: contact.email || '',
@@ -460,6 +572,7 @@ class ContactsService {
       console.log('Contacts breakdown:');
       console.log('- Never sent emails:', transformedContacts.filter(c => !c.email_sent_on).length);
       console.log('- Last email sent more than 7 days ago:', transformedContacts.filter(c => c.email_sent_on && new Date(c.email_sent_on) < sevenDaysAgo).length);
+      console.log('- Total contacts fetched:', transformedContacts.length);
 
       return transformedContacts;
     } catch (error) {
