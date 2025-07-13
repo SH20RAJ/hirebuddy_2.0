@@ -71,26 +71,21 @@ export function useRankedJobs(
 ) {
   return useQuery({
     queryKey: jobQueryKeys.rankedList(userProfile?.user_id || 'anonymous', params),
-    queryFn: async () => {
-      // If user profile is available and has enough data, use global ranking
+    queryFn: async (): Promise<{ jobs: Job[]; total: number; rankedJobs: JobMatchScore[] }> => {
+      // First fetch regular jobs
+      const jobsResult = await JobService.getJobs(params);
+      
+      // If user profile is available and has enough data, rank the jobs
       if (userProfile && JobRankingService.hasEnoughProfileData(userProfile)) {
-        const result = await JobRankingService.getRankedJobsWithPagination(
-          JobService,
-          userProfile,
-          params,
-          0, // First page
-          params.limit || 20
-        );
-        
+        const rankedJobs = JobRankingService.rankJobs(jobsResult.jobs, userProfile);
         return {
-          jobs: result.jobs,
-          total: result.total,
-          rankedJobs: result.rankedJobs
+          jobs: rankedJobs.map(rj => rj.job),
+          total: jobsResult.total,
+          rankedJobs
         };
       }
       
-      // Otherwise return regular jobs
-      const jobsResult = await JobService.getJobs(params);
+      // Otherwise return jobs as-is
       return {
         jobs: jobsResult.jobs,
         total: jobsResult.total,
@@ -140,46 +135,44 @@ export function useInfiniteRankedJobs(
   return useInfiniteQuery({
     queryKey: jobQueryKeys.infiniteRanked(userProfile?.user_id || 'anonymous', baseParams),
     queryFn: async ({ pageParam = 0 }) => {
-      // If user profile is available and has enough data, use global ranking
+      const params = {
+        ...baseParams,
+        limit: limit * 2, // Fetch more to have enough after ranking
+        offset: pageParam * limit * 2,
+      };
+      
+      // Fetch jobs from database
+      const jobsResult = await JobService.getJobs(params);
+      
+      // If user profile is available and has enough data, rank the jobs
       if (userProfile && JobRankingService.hasEnoughProfileData(userProfile)) {
-        const result = await JobRankingService.getRankedJobsWithPagination(
-          JobService,
-          userProfile,
-          baseParams,
-          pageParam,
-          limit
-        );
+        const rankedJobs = JobRankingService.rankJobs(jobsResult.jobs, userProfile);
+        
+        // Take only the requested limit after ranking
+        const limitedRankedJobs = rankedJobs.slice(0, limit);
         
         return {
-          jobs: result.jobs,
-          total: result.total,
-          rankedJobs: result.rankedJobs,
-          hasNextPage: result.hasNextPage
+          jobs: limitedRankedJobs.map(rj => rj.job),
+          total: jobsResult.total,
+          rankedJobs: limitedRankedJobs
         };
       }
       
-      // Otherwise fall back to regular pagination
-      const params = {
-        ...baseParams,
-        limit,
-        offset: pageParam * limit,
-      };
-      
-      const jobsResult = await JobService.getJobs(params);
-      
+      // Otherwise return jobs as-is with limited count
+      const limitedJobs = jobsResult.jobs.slice(0, limit);
       return {
-        jobs: jobsResult.jobs,
+        jobs: limitedJobs,
         total: jobsResult.total,
-        rankedJobs: jobsResult.jobs.map(job => ({
+        rankedJobs: limitedJobs.map(job => ({
           job,
           score: 50, // Default score
           matchReasons: []
-        })),
-        hasNextPage: (pageParam + 1) * limit < jobsResult.total
+        }))
       };
     },
     getNextPageParam: (lastPage, allPages) => {
-      return lastPage.hasNextPage ? allPages.length : undefined;
+      const currentOffset = allPages.length * limit;
+      return currentOffset < lastPage.total ? allPages.length : undefined;
     },
     initialPageParam: 0,
     enabled: !!userProfile,
