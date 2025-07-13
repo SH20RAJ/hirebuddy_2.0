@@ -259,11 +259,7 @@ const Jobs = () => {
     }
   }, [allJobs, remoteJobs, exclusiveJobs, activeTab, appliedJobs]);
 
-  // Get match score for a job (if available)
-  const getJobMatchScore = (jobId: string) => {
-    if (!shouldUseRankedJobs) return null;
-    return rankedJobsData.find(rj => rj.job.id === jobId);
-  };
+
 
   // Handle job selection
   const handleJobClick = (job: Job) => {
@@ -959,29 +955,6 @@ const Jobs = () => {
                                             <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">
                                               {job.title}
                                             </h3>
-                                            {(() => {
-                                              const matchScore = getJobMatchScore(job.id);
-                                              if (matchScore && matchScore.score > 70) {
-                                                return (
-                                                  <Tooltip>
-                                                    <TooltipTrigger>
-                                                      <Badge variant="default" className="bg-green-100 text-green-800 text-xs px-2 py-1">
-                                                        {Math.round(matchScore.score)}% match
-                                                      </Badge>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent className="max-w-xs">
-                                                      <div className="space-y-1">
-                                                        <p className="font-medium">Why this matches:</p>
-                                                        {matchScore.matchReasons.slice(0, 3).map((reason, i) => (
-                                                          <p key={i} className="text-xs">• {reason}</p>
-                                                        ))}
-                                                      </div>
-                                                    </TooltipContent>
-                                                  </Tooltip>
-                                                );
-                                              }
-                                              return null;
-                                            })()}
                                           </div>
                                           <p className="text-gray-600 font-medium">{job.company}</p>
                                           

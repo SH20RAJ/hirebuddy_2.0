@@ -135,40 +135,92 @@ export function useInfiniteRankedJobs(
   return useInfiniteQuery({
     queryKey: jobQueryKeys.infiniteRanked(userProfile?.user_id || 'anonymous', baseParams),
     queryFn: async ({ pageParam = 0 }) => {
-      const params = {
-        ...baseParams,
-        limit: limit * 2, // Fetch more to have enough after ranking
-        offset: pageParam * limit * 2,
-      };
-      
-      // Fetch jobs from database
-      const jobsResult = await JobService.getJobs(params);
-      
-      // If user profile is available and has enough data, rank the jobs
-      if (userProfile && JobRankingService.hasEnoughProfileData(userProfile)) {
-        const rankedJobs = JobRankingService.rankJobs(jobsResult.jobs, userProfile);
+      // If this is the first page, fetch ALL jobs and rank them
+      if (pageParam === 0) {
+        // Fetch ALL jobs from database (no limit for ranking)
+        const allJobsParams = {
+          ...baseParams,
+          limit: undefined, // Remove limit to get all jobs
+          offset: undefined // Remove offset to get all jobs
+        };
         
-        // Take only the requested limit after ranking
-        const limitedRankedJobs = rankedJobs.slice(0, limit);
+        const allJobsResult = await JobService.getJobs(allJobsParams);
+        
+        // If user profile is available and has enough data, rank ALL jobs
+        if (userProfile && JobRankingService.hasEnoughProfileData(userProfile)) {
+          const rankedJobs = JobRankingService.rankJobs(allJobsResult.jobs, userProfile);
+          
+          // Store ranked jobs in a way that can be accessed by subsequent pages
+          // For now, we'll return the first page of ranked jobs
+          const firstPageJobs = rankedJobs.slice(0, limit);
+          
+          return {
+            jobs: firstPageJobs.map(rj => rj.job),
+            total: allJobsResult.total,
+            rankedJobs: firstPageJobs,
+            allRankedJobs: rankedJobs // Store all ranked jobs for pagination
+          };
+        }
+        
+        // Otherwise return first page of jobs as-is
+        const firstPageJobs = allJobsResult.jobs.slice(0, limit);
+        return {
+          jobs: firstPageJobs,
+          total: allJobsResult.total,
+          rankedJobs: firstPageJobs.map(job => ({
+            job,
+            score: 50, // Default score
+            matchReasons: []
+          })),
+          allRankedJobs: allJobsResult.jobs.map(job => ({
+            job,
+            score: 50,
+            matchReasons: []
+          }))
+        };
+      } else {
+        // For subsequent pages, we need to get the ranked jobs from the first page's cache
+        // This is a limitation of the current approach - we'll use a different strategy
+        
+        // Fetch all jobs again and rank them (this could be optimized with caching)
+        const allJobsParams = {
+          ...baseParams,
+          limit: undefined,
+          offset: undefined
+        };
+        
+        const allJobsResult = await JobService.getJobs(allJobsParams);
+        
+        if (userProfile && JobRankingService.hasEnoughProfileData(userProfile)) {
+          const rankedJobs = JobRankingService.rankJobs(allJobsResult.jobs, userProfile);
+          
+          // Get the jobs for this specific page
+          const startIndex = pageParam * limit;
+          const endIndex = startIndex + limit;
+          const pageJobs = rankedJobs.slice(startIndex, endIndex);
+          
+          return {
+            jobs: pageJobs.map(rj => rj.job),
+            total: allJobsResult.total,
+            rankedJobs: pageJobs
+          };
+        }
+        
+        // For non-ranked jobs, just paginate normally
+        const startIndex = pageParam * limit;
+        const endIndex = startIndex + limit;
+        const pageJobs = allJobsResult.jobs.slice(startIndex, endIndex);
         
         return {
-          jobs: limitedRankedJobs.map(rj => rj.job),
-          total: jobsResult.total,
-          rankedJobs: limitedRankedJobs
+          jobs: pageJobs,
+          total: allJobsResult.total,
+          rankedJobs: pageJobs.map(job => ({
+            job,
+            score: 50,
+            matchReasons: []
+          }))
         };
       }
-      
-      // Otherwise return jobs as-is with limited count
-      const limitedJobs = jobsResult.jobs.slice(0, limit);
-      return {
-        jobs: limitedJobs,
-        total: jobsResult.total,
-        rankedJobs: limitedJobs.map(job => ({
-          job,
-          score: 50, // Default score
-          matchReasons: []
-        }))
-      };
     },
     getNextPageParam: (lastPage, allPages) => {
       const currentOffset = allPages.length * limit;
