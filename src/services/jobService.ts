@@ -205,6 +205,150 @@ export class JobService {
     }
   }
 
+  // Get remote jobs from both regular and exclusive job tables
+  static async getRemoteJobs(params: JobSearchParams = {}): Promise<{ jobs: Job[]; total: number }> {
+    try {
+      console.log('JobService.getRemoteJobs called with params:', params);
+      
+      // Query regular jobs that are remote
+      let regularQuery = supabase
+        .from('hirebuddy_job_board')
+        .select('*', { count: 'exact' })
+        .eq('remote_flag', true);
+
+      // Query exclusive jobs that are remote
+      let exclusiveQuery = supabase
+        .from('hirebuddy_exclusive_jobs')
+        .select('*', { count: 'exact' })
+        .eq('remote_flag', true);
+
+      // Apply text search if query provided
+      if (params.query) {
+        const searchCondition = `job_title.ilike.%${params.query}%,company_name.ilike.%${params.query}%,job_description.ilike.%${params.query}%`;
+        regularQuery = regularQuery.or(searchCondition);
+        exclusiveQuery = exclusiveQuery.or(searchCondition);
+      }
+
+      // Apply filters
+      if (params.filters) {
+        const { location, experience, company } = params.filters;
+        
+        if (location) {
+          const locationCondition = `job_location.ilike.%${location}%,city.ilike.%${location}%,state.ilike.%${location}%`;
+          regularQuery = regularQuery.or(locationCondition);
+          exclusiveQuery = exclusiveQuery.or(locationCondition);
+        }
+        
+        if (experience && experience !== 'any') {
+          regularQuery = regularQuery.ilike('experience_required', `%${experience}%`);
+          exclusiveQuery = exclusiveQuery.ilike('experience_required', `%${experience}%`);
+        }
+        
+        if (company) {
+          regularQuery = regularQuery.ilike('company_name', `%${company}%`);
+          exclusiveQuery = exclusiveQuery.ilike('company_name', `%${company}%`);
+        }
+      }
+
+      // Apply sorting
+      const sortBy = params.sortBy || 'created_at';
+      const sortOrder = params.sortOrder || 'desc';
+      regularQuery = regularQuery.order(sortBy, { ascending: sortOrder === 'asc' });
+      exclusiveQuery = exclusiveQuery.order(sortBy, { ascending: sortOrder === 'asc' });
+
+      // Execute both queries
+      const regularResult = await regularQuery;
+      let exclusiveResult;
+      try {
+        exclusiveResult = await exclusiveQuery;
+      } catch (error: any) {
+        // If exclusive jobs table doesn't exist, return empty result
+        if (error.code === 'PGRST106' || error.message.includes('does not exist')) {
+          exclusiveResult = { data: [], error: null, count: 0 };
+        } else {
+          throw error;
+        }
+      }
+
+      if (regularResult.error) {
+        console.error('Regular jobs query error:', regularResult.error);
+        throw new Error(`Regular jobs query failed: ${regularResult.error.message}`);
+      }
+
+      if (exclusiveResult.error) {
+        console.error('Exclusive jobs query error:', exclusiveResult.error);
+        throw new Error(`Exclusive jobs query failed: ${exclusiveResult.error.message}`);
+      }
+
+      // Combine and transform jobs
+      const allRemoteJobs = [
+        ...(regularResult.data || []),
+        ...(exclusiveResult.data || [])
+      ];
+
+      const totalCount = (regularResult.count || 0) + (exclusiveResult.count || 0);
+
+      // Sort combined results
+      allRemoteJobs.sort((a, b) => {
+        if (sortBy === 'created_at') {
+          const dateA = new Date(a.created_at);
+          const dateB = new Date(b.created_at);
+          return sortOrder === 'asc' ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
+        } else if (sortBy === 'job_title') {
+          const titleA = a.job_title || '';
+          const titleB = b.job_title || '';
+          return sortOrder === 'asc' ? titleA.localeCompare(titleB) : titleB.localeCompare(titleA);
+        } else if (sortBy === 'company_name') {
+          const companyA = a.company_name || '';
+          const companyB = b.company_name || '';
+          return sortOrder === 'asc' ? companyA.localeCompare(companyB) : companyB.localeCompare(companyA);
+        }
+        return 0;
+      });
+
+      // Apply pagination to combined results
+      let paginatedJobs = allRemoteJobs;
+      if (params.offset || params.limit) {
+        const offset = params.offset || 0;
+        const limit = params.limit || 50;
+        paginatedJobs = allRemoteJobs.slice(offset, offset + limit);
+      }
+
+      console.log(`JobService: Fetched ${paginatedJobs.length} remote jobs out of ${totalCount} total`);
+      
+      const jobs = paginatedJobs.map(job => {
+        try {
+          return this.transformDatabaseJob(job);
+        } catch (transformError) {
+          console.error('Error transforming remote job:', job.job_id, transformError);
+          // Return a basic job object if transformation fails
+          return {
+            id: job.job_id,
+            title: job.job_title || 'Untitled Position',
+            company: job.company_name || 'Unknown Company',
+            location: job.job_location || 'Location not specified',
+            description: job.job_description || 'No description available',
+            isRemote: job.remote_flag || false,
+            isProbablyRemote: job.probably_remote || false,
+            createdAt: job.created_at,
+            posted: 'Recently',
+            logo: 'https://images.unsplash.com/photo-1549924231-f129b911e442?w=60&h=60&fit=crop&crop=center',
+            tags: ['Remote'],
+            type: 'Full-time'
+          };
+        }
+      });
+      
+      return {
+        jobs,
+        total: totalCount
+      };
+    } catch (error) {
+      console.error('Error in JobService.getRemoteJobs:', error);
+      throw error;
+    }
+  }
+
   // Get exclusive jobs with optional search and filtering
   static async getExclusiveJobs(params: JobSearchParams = {}): Promise<{ jobs: Job[]; total: number }> {
     try {

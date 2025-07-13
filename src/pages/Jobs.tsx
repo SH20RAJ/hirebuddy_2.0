@@ -47,7 +47,12 @@ import { toast } from "sonner";
 
 // Import our types and hooks
 import { Job, JobFilters } from "@/types/job";
-import { useJobs, useExclusiveJobs, useJobStats } from "@/hooks/useJobs";
+import { 
+  useInfiniteJobs, 
+  useInfiniteRemoteJobs, 
+  useInfiniteExclusiveJobs, 
+  useJobStats 
+} from "@/hooks/useJobs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreateJobApplication, useCreateRegularApplication, useHasApplied, useUserApplications } from "@/hooks/useJobApplications";
 import { ProfileService, UserProfile, UserExperience } from "@/services/profileService";
@@ -109,13 +114,38 @@ const Jobs = () => {
       filters: hasActiveFilters ? filters : undefined,
       sortBy,
       sortOrder,
-      limit: 50
+      limit: 20 // Set page size to 20
     };
   }, [searchQuery, filters, sortBy, sortOrder]);
 
-  // Fetch jobs and stats
-  const { data: jobsData, isLoading, error, refetch } = useJobs(searchParams);
-  const { data: exclusiveJobsData, isLoading: exclusiveLoading, error: exclusiveError, refetch: refetchExclusive } = useExclusiveJobs(searchParams);
+  // Fetch jobs using infinite queries
+  const { 
+    data: allJobsData, 
+    isLoading: allJobsLoading, 
+    error: allJobsError, 
+    fetchNextPage: fetchNextAllJobs,
+    hasNextPage: hasNextAllJobs,
+    isFetchingNextPage: isFetchingNextAllJobs
+  } = useInfiniteJobs(searchParams);
+
+  const { 
+    data: remoteJobsData, 
+    isLoading: remoteJobsLoading, 
+    error: remoteJobsError, 
+    fetchNextPage: fetchNextRemoteJobs,
+    hasNextPage: hasNextRemoteJobs,
+    isFetchingNextPage: isFetchingNextRemoteJobs
+  } = useInfiniteRemoteJobs(searchParams);
+
+  const { 
+    data: exclusiveJobsData, 
+    isLoading: exclusiveJobsLoading, 
+    error: exclusiveJobsError, 
+    fetchNextPage: fetchNextExclusiveJobs,
+    hasNextPage: hasNextExclusiveJobs,
+    isFetchingNextPage: isFetchingNextExclusiveJobs
+  } = useInfiniteExclusiveJobs(searchParams);
+
   const { data: stats, isLoading: statsLoading } = useJobStats();
   
   // Job application hooks
@@ -150,10 +180,22 @@ const Jobs = () => {
     }
   });
 
-  const jobs = jobsData?.jobs || [];
-  const exclusiveJobs = exclusiveJobsData?.jobs || [];
-  const totalJobs = jobsData?.total || 0;
-  const totalExclusiveJobs = exclusiveJobsData?.total || 0;
+  // Transform infinite query data to flat arrays
+  const allJobs = useMemo(() => {
+    return allJobsData?.pages.flatMap(page => page.jobs) || [];
+  }, [allJobsData]);
+
+  const remoteJobs = useMemo(() => {
+    return remoteJobsData?.pages.flatMap(page => page.jobs) || [];
+  }, [remoteJobsData]);
+
+  const exclusiveJobs = useMemo(() => {
+    return exclusiveJobsData?.pages.flatMap(page => page.jobs) || [];
+  }, [exclusiveJobsData]);
+
+  const totalAllJobs = allJobsData?.pages[0]?.total || 0;
+  const totalRemoteJobs = remoteJobsData?.pages[0]?.total || 0;
+  const totalExclusiveJobs = exclusiveJobsData?.pages[0]?.total || 0;
 
   // Load user profile data
   useEffect(() => {
@@ -181,27 +223,23 @@ const Jobs = () => {
 
   // Filter jobs based on active tab and applied jobs
   const filteredJobs = useMemo(() => {
-    // Remove jobs the user has already applied for (except in 'applied' tab)
     if (activeTab === 'applied') {
-      // Show only jobs the user has applied for - combine both regular and exclusive jobs
-      const appliedRegularJobs = jobs.filter(job => appliedJobs.has(job.id));
-      const appliedExclusiveJobs = exclusiveJobs.filter(job => appliedJobs.has(job.id));
-      return [...appliedRegularJobs, ...appliedExclusiveJobs];
+      // Show only jobs the user has applied for - combine all job types
+      const appliedAllJobs = allJobs.filter(job => appliedJobs.has(job.id));
+      const appliedRemoteJobs = remoteJobs.filter(job => appliedJobs.has(job.id) && !allJobs.some(j => j.id === job.id));
+      const appliedExclusiveJobs = exclusiveJobs.filter(job => appliedJobs.has(job.id) && !allJobs.some(j => j.id === job.id) && !remoteJobs.some(j => j.id === job.id));
+      return [...appliedAllJobs, ...appliedRemoteJobs, ...appliedExclusiveJobs];
     } else if (activeTab === 'exclusive') {
-      // For exclusive tab, also filter out applied jobs
+      // For exclusive tab, filter out applied jobs
       return exclusiveJobs.filter(job => !appliedJobs.has(job.id));
     } else if (activeTab === 'remote') {
-      // For remote tab, show remote jobs from both regular and exclusive jobs, filter out applied
-      const remoteRegularJobs = jobs.filter(job => job.isRemote && !appliedJobs.has(job.id));
-      const remoteExclusiveJobs = exclusiveJobs.filter(job => job.isRemote && !appliedJobs.has(job.id));
-      return [...remoteRegularJobs, ...remoteExclusiveJobs];
+      // For remote tab, show remote jobs and filter out applied
+      return remoteJobs.filter(job => !appliedJobs.has(job.id));
     } else {
-      // For all/other tabs, show jobs from both regular and exclusive jobs, filter out applied
-      const availableRegularJobs = jobs.filter(job => !appliedJobs.has(job.id));
-      const availableExclusiveJobs = exclusiveJobs.filter(job => !appliedJobs.has(job.id));
-      return [...availableRegularJobs, ...availableExclusiveJobs];
+      // For all tab, show all jobs and filter out applied
+      return allJobs.filter(job => !appliedJobs.has(job.id));
     }
-  }, [jobs, exclusiveJobs, activeTab, appliedJobs]);
+  }, [allJobs, remoteJobs, exclusiveJobs, activeTab, appliedJobs]);
 
   // Handle job selection
   const handleJobClick = (job: Job) => {
@@ -277,6 +315,34 @@ const Jobs = () => {
     }
   };
 
+  // Handle load more functionality
+  const handleLoadMore = () => {
+    if (activeTab === 'all') {
+      fetchNextAllJobs();
+    } else if (activeTab === 'remote') {
+      fetchNextRemoteJobs();
+    } else if (activeTab === 'exclusive') {
+      fetchNextExclusiveJobs();
+    }
+  };
+
+  // Get loading states
+  const isLoading = activeTab === 'all' ? allJobsLoading : 
+                   activeTab === 'remote' ? remoteJobsLoading : 
+                   activeTab === 'exclusive' ? exclusiveJobsLoading : false;
+
+  const isFetchingNext = activeTab === 'all' ? isFetchingNextAllJobs : 
+                        activeTab === 'remote' ? isFetchingNextRemoteJobs : 
+                        activeTab === 'exclusive' ? isFetchingNextExclusiveJobs : false;
+
+  const hasNextPage = activeTab === 'all' ? hasNextAllJobs : 
+                     activeTab === 'remote' ? hasNextRemoteJobs : 
+                     activeTab === 'exclusive' ? hasNextExclusiveJobs : false;
+
+  const error = activeTab === 'all' ? allJobsError : 
+               activeTab === 'remote' ? remoteJobsError : 
+               activeTab === 'exclusive' ? exclusiveJobsError : null;
+
   // Clear all filters
   const clearAllFilters = () => {
     setFilters({
@@ -298,15 +364,11 @@ const Jobs = () => {
       case 'applied':
         return appliedJobs.size;
       case 'remote':
-        // Count remote jobs from both regular and exclusive jobs
-        const remoteRegularJobs = jobs.filter(job => job.isRemote).length;
-        const remoteExclusiveJobs = exclusiveJobs.filter(job => job.isRemote).length;
-        return remoteRegularJobs + remoteExclusiveJobs;
+        return totalRemoteJobs;
       case 'exclusive':
-        return exclusiveJobs.length;
+        return totalExclusiveJobs;
       default:
-        // Count all jobs from both regular and exclusive jobs
-        return jobs.length + exclusiveJobs.length;
+        return totalAllJobs;
     }
   };
 
@@ -332,7 +394,7 @@ const Jobs = () => {
           </header>
 
           {/* Error State */}
-          {(error || exclusiveError) && (
+          {error && (
             <motion.div 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -352,8 +414,14 @@ const Jobs = () => {
                   variant="outline" 
                   size="sm" 
                   onClick={() => {
-                    refetch();
-                    refetchExclusive();
+                    // Refetch based on active tab
+                    if (activeTab === 'all') {
+                      fetchNextAllJobs();
+                    } else if (activeTab === 'remote') {
+                      fetchNextRemoteJobs();
+                    } else if (activeTab === 'exclusive') {
+                      fetchNextExclusiveJobs();
+                    }
                   }}
                   className="text-red-700 border-red-300 hover:bg-red-100"
                 >
@@ -715,7 +783,7 @@ const Jobs = () => {
                 {/* Regular Jobs List */}
                 {!(activeTab === 'exclusive' && !isPremium) && (
                   <>
-                    {(isLoading || (activeTab === 'exclusive' && exclusiveLoading)) ? (
+                    {isLoading ? (
                       <div className="space-y-4">
                         {Array.from({ length: 5 }).map((_, i) => (
                           <Card key={i} className="p-6">
@@ -914,6 +982,31 @@ const Jobs = () => {
                           ))}
                             </AnimatePresence>
                           </div>
+
+                          {/* Load More Button */}
+                          {hasNextPage && (
+                            <div className="flex justify-center mt-8">
+                              <Button
+                                onClick={handleLoadMore}
+                                disabled={isFetchingNext}
+                                variant="outline"
+                                size="lg"
+                                className="px-8 py-3 text-base font-medium"
+                              >
+                                {isFetchingNext ? (
+                                  <>
+                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                    Loading more jobs...
+                                  </>
+                                ) : (
+                                  <>
+                                    <ChevronDown className="w-5 h-5 mr-2" />
+                                    Load More Jobs
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          )}
                         </>
                       )}
                     </>

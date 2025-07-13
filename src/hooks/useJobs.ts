@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { JobService } from '@/services/jobService';
 import { Job, JobSearchParams, CreateJobData, UpdateJobData } from '@/types/job';
 import { toast } from 'sonner';
@@ -15,9 +15,13 @@ export const jobQueryKeys = {
   stats: () => [...jobQueryKeys.all, 'stats'] as const,
   companies: () => [...jobQueryKeys.all, 'companies'] as const,
   locations: () => [...jobQueryKeys.all, 'locations'] as const,
+  remote: () => [...jobQueryKeys.all, 'remote'] as const,
+  remoteList: (params: JobSearchParams) => [...jobQueryKeys.remote(), params] as const,
+  infiniteJobs: (params: JobSearchParams) => [...jobQueryKeys.all, 'infinite', params] as const,
+  infiniteRemote: (params: JobSearchParams) => [...jobQueryKeys.remote(), 'infinite', params] as const,
 };
 
-// Hook to fetch jobs with search and filters
+// Hook to fetch jobs with basic pagination
 export function useJobs(params: JobSearchParams = {}) {
   return useQuery({
     queryKey: jobQueryKeys.list(params),
@@ -27,13 +31,104 @@ export function useJobs(params: JobSearchParams = {}) {
   });
 }
 
-// Hook to fetch exclusive jobs with search and filters
+// Hook to fetch exclusive jobs
 export function useExclusiveJobs(params: JobSearchParams = {}) {
   return useQuery({
     queryKey: jobQueryKeys.exclusiveList(params),
     queryFn: () => JobService.getExclusiveJobs(params),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+}
+
+// Hook to fetch remote jobs specifically
+export function useRemoteJobs(params: JobSearchParams = {}) {
+  const remoteParams = {
+    ...params,
+    filters: {
+      ...params.filters,
+      remote: 'remote' as const
+    }
+  };
+  
+  return useQuery({
+    queryKey: jobQueryKeys.remoteList(remoteParams),
+    queryFn: () => JobService.getRemoteJobs(remoteParams),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+}
+
+// Hook for infinite scrolling/load more functionality for all jobs
+export function useInfiniteJobs(baseParams: JobSearchParams = {}) {
+  const limit = baseParams.limit || 20;
+  
+  return useInfiniteQuery({
+    queryKey: jobQueryKeys.infiniteJobs(baseParams),
+    queryFn: ({ pageParam = 0 }) => {
+      const params = {
+        ...baseParams,
+        limit,
+        offset: pageParam * limit,
+      };
+      return JobService.getJobs(params);
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      const currentOffset = allPages.length * limit;
+      return currentOffset < lastPage.total ? allPages.length : undefined;
+    },
+    initialPageParam: 0,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+// Hook for infinite scrolling/load more functionality for remote jobs
+export function useInfiniteRemoteJobs(baseParams: JobSearchParams = {}) {
+  const limit = baseParams.limit || 20;
+  
+  return useInfiniteQuery({
+    queryKey: jobQueryKeys.infiniteRemote(baseParams),
+    queryFn: ({ pageParam = 0 }) => {
+      const params = {
+        ...baseParams,
+        limit,
+        offset: pageParam * limit,
+        filters: {
+          ...baseParams.filters,
+          remote: 'remote' as const
+        }
+      };
+      return JobService.getRemoteJobs(params);
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      const currentOffset = allPages.length * limit;
+      return currentOffset < lastPage.total ? allPages.length : undefined;
+    },
+    initialPageParam: 0,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+// Hook for infinite scrolling/load more functionality for exclusive jobs
+export function useInfiniteExclusiveJobs(baseParams: JobSearchParams = {}) {
+  const limit = baseParams.limit || 20;
+  
+  return useInfiniteQuery({
+    queryKey: [...jobQueryKeys.exclusive(), 'infinite', baseParams],
+    queryFn: ({ pageParam = 0 }) => {
+      const params = {
+        ...baseParams,
+        limit,
+        offset: pageParam * limit,
+      };
+      return JobService.getExclusiveJobs(params);
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      const currentOffset = allPages.length * limit;
+      return currentOffset < lastPage.total ? allPages.length : undefined;
+    },
+    initialPageParam: 0,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
