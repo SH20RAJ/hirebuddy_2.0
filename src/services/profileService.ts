@@ -22,6 +22,17 @@ export interface UserProfile {
   resume_uploaded_at?: string;
   created_at?: string;
   updated_at?: string;
+  // New onboarding fields
+  preferred_roles?: string[];
+  experience_level?: 'student' | 'entry' | 'mid' | 'senior' | 'leadership';
+  work_mode?: 'remote' | 'hybrid' | 'onsite';
+  salary_min?: number;
+  salary_max?: number;
+  salary_currency?: string;
+  career_goals?: string[];
+  onboarding_completed?: boolean;
+  onboarding_completed_at?: string;
+  job_search_urgency?: 'rush' | 'open';
 }
 
 export interface UserExperience {

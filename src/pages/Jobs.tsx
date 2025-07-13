@@ -51,6 +51,7 @@ import {
   useInfiniteJobs, 
   useInfiniteRemoteJobs, 
   useInfiniteExclusiveJobs, 
+  useInfiniteRankedJobs,
   useJobStats 
 } from "@/hooks/useJobs";
 import { useAuth } from "@/contexts/AuthContext";
@@ -66,6 +67,7 @@ import MobileCard from "@/components/mobile/MobileCard";
 import MobileButton from "@/components/mobile/MobileButton";
 import MobileSearchBar from "@/components/mobile/MobileSearchBar";
 import MobileJobCard from "@/components/mobile/MobileJobCard";
+import { JobRankingService } from "@/services/jobRankingService";
 
 const Jobs = () => {
   // Auth and user state
@@ -93,6 +95,7 @@ const Jobs = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [userExperiences, setUserExperiences] = useState<UserExperience[]>([]);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [showRankingInfo, setShowRankingInfo] = useState(false);
 
   // Fetch user's job applications from DB
   const { data: userApplications, isLoading: userApplicationsLoading } = useUserApplications(user?.id);
@@ -118,7 +121,12 @@ const Jobs = () => {
     };
   }, [searchQuery, filters, sortBy, sortOrder]);
 
-  // Fetch jobs using infinite queries
+  // Determine if we should use ranked jobs
+  const shouldUseRankedJobs = useMemo(() => {
+    return user && userProfile && JobRankingService.hasEnoughProfileData(userProfile);
+  }, [user, userProfile]);
+
+  // Fetch jobs using infinite queries - use ranked jobs for authenticated users with complete profiles
   const { 
     data: allJobsData, 
     isLoading: allJobsLoading, 
@@ -126,7 +134,9 @@ const Jobs = () => {
     fetchNextPage: fetchNextAllJobs,
     hasNextPage: hasNextAllJobs,
     isFetchingNextPage: isFetchingNextAllJobs
-  } = useInfiniteJobs(searchParams);
+  } = shouldUseRankedJobs 
+    ? useInfiniteRankedJobs(userProfile, searchParams)
+    : useInfiniteJobs(searchParams);
 
   const { 
     data: remoteJobsData, 
@@ -193,6 +203,14 @@ const Jobs = () => {
     return exclusiveJobsData?.pages.flatMap(page => page.jobs) || [];
   }, [exclusiveJobsData]);
 
+  // Get ranked job data for displaying match scores
+  const rankedJobsData = useMemo(() => {
+    if (shouldUseRankedJobs && allJobsData?.pages) {
+      return allJobsData.pages.flatMap(page => (page as any).rankedJobs || []);
+    }
+    return [];
+  }, [allJobsData, shouldUseRankedJobs]);
+
   const totalAllJobs = allJobsData?.pages[0]?.total || 0;
   const totalRemoteJobs = remoteJobsData?.pages[0]?.total || 0;
   const totalExclusiveJobs = exclusiveJobsData?.pages[0]?.total || 0;
@@ -240,6 +258,12 @@ const Jobs = () => {
       return allJobs.filter(job => !appliedJobs.has(job.id));
     }
   }, [allJobs, remoteJobs, exclusiveJobs, activeTab, appliedJobs]);
+
+  // Get match score for a job (if available)
+  const getJobMatchScore = (jobId: string) => {
+    if (!shouldUseRankedJobs) return null;
+    return rankedJobsData.find(rj => rj.job.id === jobId);
+  };
 
   // Handle job selection
   const handleJobClick = (job: Job) => {
@@ -685,6 +709,43 @@ const Jobs = () => {
                       </Badge>
                     </TabsTrigger>
                   </TabsList>
+
+                  {/* Ranking Information */}
+                  {shouldUseRankedJobs && activeTab === 'all' && (
+                    <div className="px-3 md:px-6 py-3 bg-blue-50 border-b border-blue-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Target className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-900">
+                            Jobs ranked by your profile match
+                          </span>
+                          <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
+                            Personalized
+                          </Badge>
+                        </div>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-800">
+                              <AlertCircle className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <div className="space-y-2">
+                              <p className="font-medium">How ranking works:</p>
+                              <p className="text-xs">Jobs are ranked based on:</p>
+                              <ul className="text-xs space-y-1">
+                                <li>• Skills match (35%)</li>
+                                <li>• Role preferences (25%)</li>
+                                <li>• Experience level (20%)</li>
+                                <li>• Location & work mode (15%)</li>
+                                <li>• Other factors (5%)</li>
+                              </ul>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </div>
+                  )}
                 </Tabs>
               </div>
 
@@ -894,9 +955,34 @@ const Jobs = () => {
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-start justify-between gap-4">
                                         <div className="flex-1 min-w-0">
-                                          <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">
-                                            {job.title}
-                                          </h3>
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+                                              {job.title}
+                                            </h3>
+                                            {(() => {
+                                              const matchScore = getJobMatchScore(job.id);
+                                              if (matchScore && matchScore.score > 70) {
+                                                return (
+                                                  <Tooltip>
+                                                    <TooltipTrigger>
+                                                      <Badge variant="default" className="bg-green-100 text-green-800 text-xs px-2 py-1">
+                                                        {Math.round(matchScore.score)}% match
+                                                      </Badge>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent className="max-w-xs">
+                                                      <div className="space-y-1">
+                                                        <p className="font-medium">Why this matches:</p>
+                                                        {matchScore.matchReasons.slice(0, 3).map((reason, i) => (
+                                                          <p key={i} className="text-xs">• {reason}</p>
+                                                        ))}
+                                                      </div>
+                                                    </TooltipContent>
+                                                  </Tooltip>
+                                                );
+                                              }
+                                              return null;
+                                            })()}
+                                          </div>
                                           <p className="text-gray-600 font-medium">{job.company}</p>
                                           
                                           <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">

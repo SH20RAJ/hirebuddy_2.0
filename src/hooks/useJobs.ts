@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tansta
 import { JobService } from '@/services/jobService';
 import { Job, JobSearchParams, CreateJobData, UpdateJobData } from '@/types/job';
 import { toast } from 'sonner';
+import { JobRankingService, JobMatchScore } from '@/services/jobRankingService';
+import { UserProfile } from '@/services/profileService';
 
 // Query keys
 export const jobQueryKeys = {
@@ -19,6 +21,9 @@ export const jobQueryKeys = {
   remoteList: (params: JobSearchParams) => [...jobQueryKeys.remote(), params] as const,
   infiniteJobs: (params: JobSearchParams) => [...jobQueryKeys.all, 'infinite', params] as const,
   infiniteRemote: (params: JobSearchParams) => [...jobQueryKeys.remote(), 'infinite', params] as const,
+  ranked: (userId: string) => [...jobQueryKeys.all, 'ranked', userId] as const,
+  rankedList: (userId: string, params: JobSearchParams) => [...jobQueryKeys.ranked(userId), params] as const,
+  infiniteRanked: (userId: string, params: JobSearchParams) => [...jobQueryKeys.ranked(userId), 'infinite', params] as const,
 };
 
 // Hook to fetch jobs with basic pagination
@@ -59,6 +64,44 @@ export function useRemoteJobs(params: JobSearchParams = {}) {
   });
 }
 
+// Hook to fetch ranked jobs based on user profile
+export function useRankedJobs(
+  userProfile: UserProfile | null, 
+  params: JobSearchParams = {}
+) {
+  return useQuery({
+    queryKey: jobQueryKeys.rankedList(userProfile?.user_id || 'anonymous', params),
+    queryFn: async (): Promise<{ jobs: Job[]; total: number; rankedJobs: JobMatchScore[] }> => {
+      // First fetch regular jobs
+      const jobsResult = await JobService.getJobs(params);
+      
+      // If user profile is available and has enough data, rank the jobs
+      if (userProfile && JobRankingService.hasEnoughProfileData(userProfile)) {
+        const rankedJobs = JobRankingService.rankJobs(jobsResult.jobs, userProfile);
+        return {
+          jobs: rankedJobs.map(rj => rj.job),
+          total: jobsResult.total,
+          rankedJobs
+        };
+      }
+      
+      // Otherwise return jobs as-is
+      return {
+        jobs: jobsResult.jobs,
+        total: jobsResult.total,
+        rankedJobs: jobsResult.jobs.map(job => ({
+          job,
+          score: 50, // Default score
+          matchReasons: []
+        }))
+      };
+    },
+    enabled: !!userProfile,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+}
+
 // Hook for infinite scrolling/load more functionality for all jobs
 export function useInfiniteJobs(baseParams: JobSearchParams = {}) {
   const limit = baseParams.limit || 20;
@@ -78,6 +121,61 @@ export function useInfiniteJobs(baseParams: JobSearchParams = {}) {
       return currentOffset < lastPage.total ? allPages.length : undefined;
     },
     initialPageParam: 0,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+// Hook for infinite scrolling/load more functionality for ranked jobs
+export function useInfiniteRankedJobs(
+  userProfile: UserProfile | null,
+  baseParams: JobSearchParams = {}
+) {
+  const limit = baseParams.limit || 20;
+  
+  return useInfiniteQuery({
+    queryKey: jobQueryKeys.infiniteRanked(userProfile?.user_id || 'anonymous', baseParams),
+    queryFn: async ({ pageParam = 0 }) => {
+      const params = {
+        ...baseParams,
+        limit: limit * 2, // Fetch more to have enough after ranking
+        offset: pageParam * limit * 2,
+      };
+      
+      // Fetch jobs from database
+      const jobsResult = await JobService.getJobs(params);
+      
+      // If user profile is available and has enough data, rank the jobs
+      if (userProfile && JobRankingService.hasEnoughProfileData(userProfile)) {
+        const rankedJobs = JobRankingService.rankJobs(jobsResult.jobs, userProfile);
+        
+        // Take only the requested limit after ranking
+        const limitedRankedJobs = rankedJobs.slice(0, limit);
+        
+        return {
+          jobs: limitedRankedJobs.map(rj => rj.job),
+          total: jobsResult.total,
+          rankedJobs: limitedRankedJobs
+        };
+      }
+      
+      // Otherwise return jobs as-is with limited count
+      const limitedJobs = jobsResult.jobs.slice(0, limit);
+      return {
+        jobs: limitedJobs,
+        total: jobsResult.total,
+        rankedJobs: limitedJobs.map(job => ({
+          job,
+          score: 50, // Default score
+          matchReasons: []
+        }))
+      };
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      const currentOffset = allPages.length * limit;
+      return currentOffset < lastPage.total ? allPages.length : undefined;
+    },
+    initialPageParam: 0,
+    enabled: !!userProfile,
     staleTime: 5 * 60 * 1000,
   });
 }
