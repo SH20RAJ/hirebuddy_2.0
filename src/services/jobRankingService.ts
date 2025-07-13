@@ -342,6 +342,53 @@ export class JobRankingService {
     // Need at least 2 out of 3 key factors for meaningful ranking
     return [hasSkills, hasRoles, hasExperience].filter(Boolean).length >= 2;
   }
+
+  /**
+   * Get ranked jobs with pagination - fetches all jobs, ranks them globally, then returns paginated results
+   * This ensures proper ranking across all jobs, not just within batches
+   */
+  static async getRankedJobsWithPagination(
+    jobService: any,
+    userProfile: UserProfile,
+    params: any = {},
+    page: number = 0,
+    limit: number = 20,
+    weights?: RankingFactors
+  ): Promise<{
+    jobs: Job[];
+    rankedJobs: JobMatchScore[];
+    total: number;
+    hasNextPage: boolean;
+    currentPage: number;
+  }> {
+    // For the first page, we need to fetch all jobs to rank them properly
+    // For subsequent pages, we can use cached ranking if available
+    
+    // Fetch all jobs (or a large batch for performance)
+    const allJobsParams = {
+      ...params,
+      limit: 5000, // Fetch a large batch to ensure we get most jobs
+      offset: 0,
+    };
+    
+    const allJobsResult = await jobService.getJobs(allJobsParams);
+    
+    // Rank all jobs
+    const allRankedJobs = this.rankJobs(allJobsResult.jobs, userProfile, weights);
+    
+    // Calculate pagination
+    const startIndex = page * limit;
+    const endIndex = startIndex + limit;
+    const paginatedRankedJobs = allRankedJobs.slice(startIndex, endIndex);
+    
+    return {
+      jobs: paginatedRankedJobs.map(rj => rj.job),
+      rankedJobs: paginatedRankedJobs,
+      total: allRankedJobs.length,
+      hasNextPage: endIndex < allRankedJobs.length,
+      currentPage: page,
+    };
+  }
 }
 
 export default JobRankingService; 
