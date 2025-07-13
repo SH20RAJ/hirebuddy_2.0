@@ -111,7 +111,7 @@ const ResumeChoice = () => {
                 <div className="pt-4">
                   <ShimmerButton
                     className="w-full"
-                    background="linear-gradient(110deg, #ec4899 0%, #be185d 50%, #ec4899 100%)"
+                    background="linear-gradient(110deg,rgb(123, 62, 208) 0%,rgb(110, 35, 240) 50%,rgb(77, 84, 212) 100%)"
                     onClick={handleImportResume}
                   >
                     Upload Resume
