@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CompanyLogo } from "@/components/ui/company-logo";
+import { useProgressiveLogos } from "@/hooks/useProgressiveLogos";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
@@ -258,6 +259,9 @@ const Jobs = () => {
       return allJobs.filter(job => !appliedJobs.has(job.id));
     }
   }, [allJobs, remoteJobs, exclusiveJobs, activeTab, appliedJobs]);
+
+  // Use progressive logo loading for filtered jobs
+  const { getJobLogo, isLogoLoading } = useProgressiveLogos(filteredJobs);
 
 
 
@@ -936,6 +940,8 @@ const Jobs = () => {
                                     <div className="relative">
                                       <CompanyLogo 
                                         companyName={job.company}
+                                        logoUrl={getJobLogo(job)}
+                                        isLoading={isLogoLoading(job.id)}
                                         size="md"
                                         className="border-2 border-gray-100"
                                       />
@@ -1087,6 +1093,8 @@ const Jobs = () => {
                       <div className="flex items-start gap-3">
                         <CompanyLogo 
                           companyName={selectedJob.company}
+                          logoUrl={getJobLogo(selectedJob)}
+                          isLoading={isLogoLoading(selectedJob.id)}
                           size="md"
                         />
                         <div>

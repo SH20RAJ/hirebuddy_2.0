@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CompanyLogo } from "@/components/ui/company-logo";
+import { useProgressiveLogos } from "@/hooks/useProgressiveLogos";
 import { JobRecommendationService, JobRecommendation } from "@/services/jobRecommendationService";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
@@ -30,6 +31,9 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
   const { user } = useAuth();
   const [recommendations, setRecommendations] = useState<JobRecommendation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Use progressive logo loading
+  const { getJobLogo, isLogoLoading } = useProgressiveLogos(recommendations);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -233,6 +237,8 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
               <div className="flex items-start gap-3">
                 <CompanyLogo 
                   companyName={job.company}
+                  logoUrl={getJobLogo(job)}
+                  isLoading={isLogoLoading(job.id)}
                   size="md"
                   className="border border-gray-200"
                 />

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CompanyLogo } from "@/components/ui/company-logo";
+import { useProgressiveLogos } from "@/hooks/useProgressiveLogos";
 import { 
   Sparkles, 
   TrendingUp, 
@@ -31,6 +32,9 @@ export const JobRecommendations = ({
   const [recommendations, setRecommendations] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  
+  // Use progressive logo loading
+  const { getJobLogo, isLogoLoading } = useProgressiveLogos(recommendations);
 
   // Mock recommendations data - in a real app, this would come from an AI service
   const mockRecommendations: Job[] = [
@@ -185,6 +189,8 @@ export const JobRecommendations = ({
                     {/* Company Logo */}
                     <CompanyLogo 
                       companyName={job.company}
+                      logoUrl={getJobLogo(job)}
+                      isLoading={isLogoLoading(job.id)}
                       size="sm"
                       className="border border-gray-200"
                     />

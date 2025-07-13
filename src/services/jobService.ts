@@ -4,8 +4,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { CompanyLogoService } from './companyLogoService';
 
 export class JobService {
-  // Transform database job to frontend job interface
-  private static async transformDatabaseJob(dbJob: DatabaseJob): Promise<Job> {
+  // Transform database job to frontend job interface (synchronous for fast loading)
+  private static transformDatabaseJob(dbJob: DatabaseJob): Job {
     // Handle date parsing - the database might return just a date string like "2025-06-02"
     let posted = 'Recently';
     try {
@@ -18,8 +18,8 @@ export class JobService {
       posted = 'Recently';
     }
 
-    // Get company logo using the new service
-    const logoResult = await CompanyLogoService.getCompanyLogo(dbJob.company_name || 'Unknown Company');
+    // Generate immediate fallback logo (company initials) for fast loading
+    const fallbackLogo = this.generateFallbackLogo(dbJob.company_name || 'Unknown Company');
     
     return {
       id: dbJob.job_id,
@@ -35,10 +35,73 @@ export class JobService {
       isProbablyRemote: dbJob.probably_remote || false,
       createdAt: dbJob.created_at,
       posted,
-      logo: logoResult.url,
+      logo: fallbackLogo,
       tags: this.generateTags(dbJob),
       type: this.determineJobType(dbJob.experience_required)
     };
+  }
+
+  // Generate immediate fallback logo for fast loading
+  private static generateFallbackLogo(companyName: string): string {
+    const initials = this.getCompanyInitials(companyName);
+    const colors = this.getConsistentColors(companyName);
+    
+    // Create a data URL for SVG logo
+    const svg = `
+      <svg width="60" height="60" xmlns="http://www.w3.org/2000/svg">
+        <rect width="60" height="60" rx="8" fill="${colors.background}"/>
+        <text x="30" y="40" font-family="system-ui, -apple-system, sans-serif" 
+              font-size="24" font-weight="600" text-anchor="middle" 
+              fill="${colors.text}">${initials}</text>
+      </svg>
+    `;
+    
+    return `data:image/svg+xml;base64,${btoa(svg)}`;
+  }
+
+  // Get company initials (1-2 characters)
+  private static getCompanyInitials(companyName: string): string {
+    if (!companyName) return 'C';
+    
+    const cleaned = companyName
+      .replace(/[^\w\s]/g, '') // Remove special characters
+      .replace(/\b(inc|llc|ltd|corp|corporation|company|co)\b/gi, '') // Remove common suffixes
+      .trim();
+    
+    const words = cleaned.split(/\s+/).filter(word => word.length > 0);
+    
+    if (words.length === 0) {
+      return companyName.charAt(0).toUpperCase();
+    } else if (words.length === 1) {
+      return words[0].substring(0, 2).toUpperCase();
+    } else {
+      return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
+    }
+  }
+
+  // Get consistent colors for a company based on name hash
+  private static getConsistentColors(companyName: string): { background: string; text: string } {
+    const colorPairs = [
+      { background: '#3B82F6', text: '#FFFFFF' }, // Blue
+      { background: '#10B981', text: '#FFFFFF' }, // Green
+      { background: '#8B5CF6', text: '#FFFFFF' }, // Purple
+      { background: '#F59E0B', text: '#FFFFFF' }, // Orange
+      { background: '#EF4444', text: '#FFFFFF' }, // Red
+      { background: '#06B6D4', text: '#FFFFFF' }, // Cyan
+      { background: '#84CC16', text: '#FFFFFF' }, // Lime
+      { background: '#EC4899', text: '#FFFFFF' }, // Pink
+      { background: '#6366F1', text: '#FFFFFF' }, // Indigo
+      { background: '#14B8A6', text: '#FFFFFF' }, // Teal
+    ];
+
+    let hash = 0;
+    for (let i = 0; i < companyName.length; i++) {
+      const char = companyName.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+
+    return colorPairs[Math.abs(hash) % colorPairs.length];
   }
 
   // Format location string from database fields
@@ -152,13 +215,13 @@ export class JobService {
 
       console.log(`JobService: Fetched ${data?.length || 0} jobs out of ${count || 0} total`);
       
-      const jobs = await Promise.all((data || []).map(async job => {
+      const jobs = (data || []).map(job => {
         try {
-          return await this.transformDatabaseJob(job);
+          return this.transformDatabaseJob(job);
         } catch (transformError) {
           console.error('Error transforming job:', job.job_id, transformError);
           // Return a basic job object if transformation fails
-          const logoResult = await CompanyLogoService.getCompanyLogo(job.company_name || 'Unknown Company');
+          const fallbackLogo = this.generateFallbackLogo(job.company_name || 'Unknown Company');
           return {
             id: job.job_id,
             title: job.job_title || 'Untitled Position',
@@ -169,12 +232,12 @@ export class JobService {
             isProbablyRemote: job.probably_remote || false,
             createdAt: job.created_at,
             posted: 'Recently',
-            logo: logoResult.url,
+            logo: fallbackLogo,
             tags: [],
             type: 'Full-time'
           };
         }
-      }));
+      });
       
       return {
         jobs,
@@ -297,13 +360,13 @@ export class JobService {
 
       console.log(`JobService: Fetched ${paginatedJobs.length} remote jobs out of ${totalCount} total`);
       
-      const jobs = await Promise.all(paginatedJobs.map(async job => {
+      const jobs = paginatedJobs.map(job => {
         try {
-          return await this.transformDatabaseJob(job);
+          return this.transformDatabaseJob(job);
         } catch (transformError) {
           console.error('Error transforming remote job:', job.job_id, transformError);
           // Return a basic job object if transformation fails
-          const logoResult = await CompanyLogoService.getCompanyLogo(job.company_name || 'Unknown Company');
+          const fallbackLogo = this.generateFallbackLogo(job.company_name || 'Unknown Company');
           return {
             id: job.job_id,
             title: job.job_title || 'Untitled Position',
@@ -314,12 +377,12 @@ export class JobService {
             isProbablyRemote: job.probably_remote || false,
             createdAt: job.created_at,
             posted: 'Recently',
-            logo: logoResult.url,
+            logo: fallbackLogo,
             tags: ['Remote'],
             type: 'Full-time'
           };
         }
-      }));
+      });
       
       return {
         jobs,
@@ -400,13 +463,13 @@ export class JobService {
 
       console.log(`JobService: Fetched ${data?.length || 0} exclusive jobs out of ${count || 0} total`);
       
-      const jobs = await Promise.all((data || []).map(async job => {
+      const jobs = (data || []).map(job => {
         try {
-          return await this.transformDatabaseJob(job);
+          return this.transformDatabaseJob(job);
         } catch (transformError) {
           console.error('Error transforming exclusive job:', job.job_id, transformError);
           // Return a basic job object if transformation fails
-          const logoResult = await CompanyLogoService.getCompanyLogo(job.company_name || 'Unknown Company');
+          const fallbackLogo = this.generateFallbackLogo(job.company_name || 'Unknown Company');
           return {
             id: job.job_id,
             title: job.job_title || 'Untitled Position',
@@ -417,12 +480,12 @@ export class JobService {
             isProbablyRemote: job.probably_remote || false,
             createdAt: job.created_at,
             posted: 'Recently',
-            logo: logoResult.url,
+            logo: fallbackLogo,
             tags: ['Exclusive'],
             type: 'Full-time'
           };
         }
-      }));
+      });
       
       return {
         jobs,

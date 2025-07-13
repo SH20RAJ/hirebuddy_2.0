@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CompanyLogo } from "@/components/ui/company-logo";
+import { useProgressiveLogos } from "@/hooks/useProgressiveLogos";
 import { 
   MapPin, 
   Clock, 
@@ -34,6 +35,9 @@ interface JobListProps {
 export const JobList = ({ jobs, isLoading = false, searchQuery, onJobClick }: JobListProps) => {
   const [likedJobs, setLikedJobs] = useState<Set<string>>(new Set());
   const [hoveredJob, setHoveredJob] = useState<string | null>(null);
+  
+  // Use progressive logo loading
+  const { getJobLogo, isLogoLoading } = useProgressiveLogos(jobs);
 
   const toggleLike = (jobId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -124,6 +128,8 @@ export const JobList = ({ jobs, isLoading = false, searchQuery, onJobClick }: Jo
                         <div className="relative">
                           <CompanyLogo 
                             companyName={job.company}
+                            logoUrl={getJobLogo(job)}
+                            isLoading={isLogoLoading(job.id)}
                             size="lg"
                             className="border-2 border-white shadow-lg"
                           />

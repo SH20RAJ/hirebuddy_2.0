@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CompanyLogo } from "@/components/ui/company-logo";
+import { useProgressiveLogos } from "@/hooks/useProgressiveLogos";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { 
@@ -439,6 +440,9 @@ const Dashboard = () => {
   });
 
   const jobRecommendations = jobsData?.jobs || [];
+
+  // Use progressive logo loading for job recommendations
+  const { getJobLogo, isLogoLoading } = useProgressiveLogos(jobRecommendations);
 
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase();
 
