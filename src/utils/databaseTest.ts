@@ -14,10 +14,10 @@ export async function testDatabaseConnection(): Promise<DatabaseTestResult> {
     console.log('- VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL ? '✓ Present' : '❌ Missing');
     console.log('- VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY ? '✓ Present (length: ' + (import.meta.env.VITE_SUPABASE_ANON_KEY?.length || 0) + ')' : '❌ Missing');
 
-    // Test basic connection and get total count
+    // Test basic connection
     const { data, error, count } = await supabase
       .from('email_database')
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact' });
 
     if (error) {
       console.error('❌ Database query failed:', error);
@@ -31,16 +31,9 @@ export async function testDatabaseConnection(): Promise<DatabaseTestResult> {
     console.log('✅ Database connection successful');
     console.log(`📊 Found ${count} contacts in the database`);
 
-    // Get a small sample of contacts for display
-    const { data: sampleData, error: sampleError } = await supabase
-      .from('email_database')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(3);
-
-    if (sampleData && sampleData.length > 0) {
+    if (data && data.length > 0) {
       console.log('📋 Sample contacts:');
-      sampleData.forEach((contact, index) => {
+      data.slice(0, 3).forEach((contact, index) => {
         console.log(`  ${index + 1}. ${contact.full_name || contact.first_name || 'Unknown'} - ${contact.email || 'No email'}`);
       });
     }
@@ -49,7 +42,7 @@ export async function testDatabaseConnection(): Promise<DatabaseTestResult> {
       success: true,
       message: `Successfully connected to database. Found ${count} contacts.`,
       contactCount: count || 0,
-      details: sampleData?.slice(0, 3)
+      details: data?.slice(0, 3)
     };
 
   } catch (error) {
