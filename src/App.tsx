@@ -84,7 +84,7 @@ const App = () => (
             <Route path="/community" element={<Community />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/premium-test" element={<ProtectedRoute><PremiumTest /></ProtectedRoute>} />
-            {/* KYC Compliance Pages */}
+            {/* KYC */}
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsConditions />} />
             <Route path="/cancellation-refund" element={<CancellationRefund />} />
