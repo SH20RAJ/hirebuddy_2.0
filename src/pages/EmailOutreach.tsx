@@ -1137,13 +1137,25 @@ const EmailOutreach = () => {
                 Your Gmail password is never shared with us, 
                 and you can revoke access at any time through your Google Account settings.
               </p>
+              <p className="text-sm text-blue-800 mt-2">
+                For more details about how we handle your data, please read our{' '}
+                <Link 
+                  to="/privacy-policy" 
+                  className="underline hover:text-blue-900 font-medium"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Privacy Policy
+                </Link>
+                .
+              </p>
             </div>
 
             
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <h4 className="font-semibold text-gray-900 mb-2">What we DON'T do:</h4>
               <ul className="text-sm text-gray-600 space-y-1">
-                <li>• We don't store your Gmail password</li>
+                <li>• We don't have access to your Gmail password</li>
                 <li>• We don't read your personal emails</li>
                 <li>• We don't send emails without your explicit action</li>
                 <li>• We don't share your data with third parties</li>
