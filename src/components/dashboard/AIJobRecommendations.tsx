@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CompanyLogo } from "@/components/ui/company-logo";
 import { JobRecommendationService, JobRecommendation } from "@/services/jobRecommendationService";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
@@ -231,12 +231,11 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
           {recommendations.map((job) => (
             <div key={job.id} className="p-4 hover:bg-gray-50 transition-colors">
               <div className="flex items-start gap-3">
-                <Avatar className="h-12 w-12 border border-gray-200">
-                  <AvatarImage src={job.logo} alt={job.company} />
-                  <AvatarFallback className="bg-gray-100 text-gray-700 font-medium">
-                    {job.company.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
+                <CompanyLogo 
+                  companyName={job.company}
+                  size="md"
+                  className="border border-gray-200"
+                />
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-2">

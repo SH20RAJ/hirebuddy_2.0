@@ -1,10 +1,11 @@
 import { supabase } from '@/lib/supabase';
 import { DatabaseJob, Job, JobSearchParams, CreateJobData, UpdateJobData } from '@/types/job';
 import { formatDistanceToNow } from 'date-fns';
+import { CompanyLogoService } from './companyLogoService';
 
 export class JobService {
   // Transform database job to frontend job interface
-  private static transformDatabaseJob(dbJob: DatabaseJob): Job {
+  private static async transformDatabaseJob(dbJob: DatabaseJob): Promise<Job> {
     // Handle date parsing - the database might return just a date string like "2025-06-02"
     let posted = 'Recently';
     try {
@@ -16,6 +17,9 @@ export class JobService {
       console.warn('Error formatting date:', error);
       posted = 'Recently';
     }
+
+    // Get company logo using the new service
+    const logoResult = await CompanyLogoService.getCompanyLogo(dbJob.company_name || 'Unknown Company');
     
     return {
       id: dbJob.job_id,
@@ -31,7 +35,7 @@ export class JobService {
       isProbablyRemote: dbJob.probably_remote || false,
       createdAt: dbJob.created_at,
       posted,
-      logo: this.generateCompanyLogo(dbJob.company_name),
+      logo: logoResult.url,
       tags: this.generateTags(dbJob),
       type: this.determineJobType(dbJob.experience_required)
     };
@@ -87,31 +91,7 @@ export class JobService {
     return 'Not Specified';
   }
 
-  // Generate a company logo URL (placeholder service)
-  private static generateCompanyLogo(companyName?: string | null): string {
-    if (!companyName) return 'https://images.unsplash.com/photo-1549924231-f129b911e442?w=60&h=60&fit=crop&crop=center';
-    
-    // Use a simple hash to consistently generate the same logo for the same company
-    const logos = [
-      'https://images.unsplash.com/photo-1549924231-f129b911e442?w=60&h=60&fit=crop&crop=center',
-      'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=60&h=60&fit=crop&crop=center',
-      'https://images.unsplash.com/photo-1551650975-87deedd944c3?w=60&h=60&fit=crop&crop=center',
-      'https://images.unsplash.com/photo-1551434678-e076c223a692?w=60&h=60&fit=crop&crop=center',
-      'https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=60&h=60&fit=crop&crop=center',
-      'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=60&h=60&fit=crop&crop=center',
-      'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=60&h=60&fit=crop&crop=center',
-      'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=60&h=60&fit=crop&crop=center'
-    ];
-    
-    let hash = 0;
-    for (let i = 0; i < companyName.length; i++) {
-      const char = companyName.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-    
-    return logos[Math.abs(hash) % logos.length];
-  }
+
 
   // Get all jobs with optional search and filtering
   static async getJobs(params: JobSearchParams = {}): Promise<{ jobs: Job[]; total: number }> {
@@ -172,12 +152,13 @@ export class JobService {
 
       console.log(`JobService: Fetched ${data?.length || 0} jobs out of ${count || 0} total`);
       
-      const jobs = (data || []).map(job => {
+      const jobs = await Promise.all((data || []).map(async job => {
         try {
-          return this.transformDatabaseJob(job);
+          return await this.transformDatabaseJob(job);
         } catch (transformError) {
           console.error('Error transforming job:', job.job_id, transformError);
           // Return a basic job object if transformation fails
+          const logoResult = await CompanyLogoService.getCompanyLogo(job.company_name || 'Unknown Company');
           return {
             id: job.job_id,
             title: job.job_title || 'Untitled Position',
@@ -188,12 +169,12 @@ export class JobService {
             isProbablyRemote: job.probably_remote || false,
             createdAt: job.created_at,
             posted: 'Recently',
-            logo: 'https://images.unsplash.com/photo-1549924231-f129b911e442?w=60&h=60&fit=crop&crop=center',
+            logo: logoResult.url,
             tags: [],
             type: 'Full-time'
           };
         }
-      });
+      }));
       
       return {
         jobs,
@@ -316,12 +297,13 @@ export class JobService {
 
       console.log(`JobService: Fetched ${paginatedJobs.length} remote jobs out of ${totalCount} total`);
       
-      const jobs = paginatedJobs.map(job => {
+      const jobs = await Promise.all(paginatedJobs.map(async job => {
         try {
-          return this.transformDatabaseJob(job);
+          return await this.transformDatabaseJob(job);
         } catch (transformError) {
           console.error('Error transforming remote job:', job.job_id, transformError);
           // Return a basic job object if transformation fails
+          const logoResult = await CompanyLogoService.getCompanyLogo(job.company_name || 'Unknown Company');
           return {
             id: job.job_id,
             title: job.job_title || 'Untitled Position',
@@ -332,12 +314,12 @@ export class JobService {
             isProbablyRemote: job.probably_remote || false,
             createdAt: job.created_at,
             posted: 'Recently',
-            logo: 'https://images.unsplash.com/photo-1549924231-f129b911e442?w=60&h=60&fit=crop&crop=center',
+            logo: logoResult.url,
             tags: ['Remote'],
             type: 'Full-time'
           };
         }
-      });
+      }));
       
       return {
         jobs,
@@ -418,12 +400,13 @@ export class JobService {
 
       console.log(`JobService: Fetched ${data?.length || 0} exclusive jobs out of ${count || 0} total`);
       
-      const jobs = (data || []).map(job => {
+      const jobs = await Promise.all((data || []).map(async job => {
         try {
-          return this.transformDatabaseJob(job);
+          return await this.transformDatabaseJob(job);
         } catch (transformError) {
           console.error('Error transforming exclusive job:', job.job_id, transformError);
           // Return a basic job object if transformation fails
+          const logoResult = await CompanyLogoService.getCompanyLogo(job.company_name || 'Unknown Company');
           return {
             id: job.job_id,
             title: job.job_title || 'Untitled Position',
@@ -434,12 +417,12 @@ export class JobService {
             isProbablyRemote: job.probably_remote || false,
             createdAt: job.created_at,
             posted: 'Recently',
-            logo: 'https://images.unsplash.com/photo-1549924231-f129b911e442?w=60&h=60&fit=crop&crop=center',
+            logo: logoResult.url,
             tags: ['Exclusive'],
             type: 'Full-time'
           };
         }
-      });
+      }));
       
       return {
         jobs,

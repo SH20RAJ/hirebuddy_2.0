@@ -39,7 +39,7 @@ import {
   Lock
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CompanyLogo } from "@/components/ui/company-logo";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
@@ -934,12 +934,11 @@ const Jobs = () => {
                                   <div className="flex items-start gap-4">
                                     {/* Company Logo */}
                                     <div className="relative">
-                                      <Avatar className="w-14 h-14 border-2 border-gray-100">
-                                        <AvatarImage src={job.logo} alt={job.company} />
-                                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
-                                          {job.company.charAt(0)}
-                                        </AvatarFallback>
-                                      </Avatar>
+                                      <CompanyLogo 
+                                        companyName={job.company}
+                                        size="md"
+                                        className="border-2 border-gray-100"
+                                      />
                                       {job.isRemote && (
                                         <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
                                           <Globe className="w-3 h-3 text-white" />
@@ -1086,12 +1085,10 @@ const Jobs = () => {
                   <div className="p-6 border-b border-gray-200">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
-                        <Avatar className="w-12 h-12">
-                          <AvatarImage src={selectedJob.logo} alt={selectedJob.company} />
-                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                            {selectedJob.company.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
+                        <CompanyLogo 
+                          companyName={selectedJob.company}
+                          size="md"
+                        />
                         <div>
                           <h2 className="text-lg font-semibold text-gray-900 line-clamp-2">
                             {selectedJob.title}

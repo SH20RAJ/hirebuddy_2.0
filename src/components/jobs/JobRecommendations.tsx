@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CompanyLogo } from "@/components/ui/company-logo";
 import { 
   Sparkles, 
   TrendingUp, 
@@ -183,12 +183,11 @@ export const JobRecommendations = ({
                 >
                   <div className="flex items-start gap-3">
                     {/* Company Logo */}
-                    <Avatar className="w-10 h-10 border border-gray-200">
-                      <AvatarImage src={job.logo} alt={job.company} />
-                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm font-semibold">
-                        {job.company.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
+                    <CompanyLogo 
+                      companyName={job.company}
+                      size="sm"
+                      className="border border-gray-200"
+                    />
 
                     {/* Job Details */}
                     <div className="flex-1 min-w-0">

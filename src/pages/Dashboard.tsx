@@ -2,6 +2,7 @@ import { NewSidebar } from "@/components/layout/NewSidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { CompanyLogo } from "@/components/ui/company-logo";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { 
@@ -264,12 +265,11 @@ const EnhancedJobCard = ({
         </div>
       )}
       <div className="flex items-start gap-4">
-        <Avatar className="h-12 w-12 border-2 border-gray-100">
-          <AvatarImage src={job.logo} alt={job.company} />
-          <AvatarFallback className="text-white font-semibold" style={{ backgroundColor: '#b24e55' }}>
-            {job.company.charAt(0)}
-          </AvatarFallback>
-        </Avatar>
+        <CompanyLogo 
+          companyName={job.company}
+          size="md"
+          className="border-2 border-gray-100"
+        />
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between mb-2">
             <div className="flex-1 min-w-0">

@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CompanyLogo } from "@/components/ui/company-logo";
 import { 
   MapPin, 
   Clock, 
@@ -122,12 +122,11 @@ export const JobList = ({ jobs, isLoading = false, searchQuery, onJobClick }: Jo
                       <div className="flex items-start gap-4">
                         {/* Company Logo with enhanced styling */}
                         <div className="relative">
-                          <Avatar className="w-16 h-16 border-2 border-white shadow-lg">
-                            <AvatarImage src={job.logo} alt={job.company} />
-                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-lg">
-                              {job.company.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
+                          <CompanyLogo 
+                            companyName={job.company}
+                            size="lg"
+                            className="border-2 border-white shadow-lg"
+                          />
                           
                           {/* Remote indicator */}
                           {job.isRemote && (
