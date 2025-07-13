@@ -715,7 +715,7 @@ const Jobs = () => {
                     <div className="px-3 md:px-6 py-3 bg-blue-50 border-b border-blue-200">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Target className="w-4 h-4 text-blue-600" />
+                          
                           <span className="text-sm font-medium text-blue-900">
                             Jobs ranked by your profile match
                           </span>
