@@ -56,7 +56,8 @@ export class JobService {
       </svg>
     `;
     
-    return `data:image/svg+xml;base64,${btoa(svg)}`;
+    // Use URL encoding instead of btoa to handle Unicode characters properly
+    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
   }
 
   // Get company initials (1-2 characters)

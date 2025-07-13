@@ -322,7 +322,8 @@ export class CompanyLogoService {
       </svg>
     `;
     
-    const dataUrl = `data:image/svg+xml;base64,${btoa(svg)}`;
+    // Use URL encoding instead of btoa to handle Unicode characters properly
+    const dataUrl = `data:image/svg+xml,${encodeURIComponent(svg)}`;
     
     return {
       url: dataUrl,
