@@ -14,7 +14,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { usePremiumUser } from "@/hooks/usePremiumUser";
-import { PremiumBadge } from "@/components/ui/premium-badge";
 
 interface DashboardHeaderProps {
   userName: string;
