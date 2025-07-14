@@ -750,6 +750,36 @@ export class DashboardService {
   }
 
   /**
+   * Get total count of all contacts in the email_database table
+   */
+  static async getTotalContactsCount(): Promise<number> {
+    try {
+      const { authenticated, user } = await this.checkAuthStatus();
+      
+      if (!authenticated || !user) {
+        console.log('No authenticated user, returning sample total contacts count for demo');
+        return 150;
+      }
+
+      // Count all contacts from email_database table
+      const { count, error } = await supabase
+        .from('email_database')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) {
+        console.error('Error fetching total contacts count:', error);
+        return 0;
+      }
+
+      console.log('Total contacts in database:', count);
+      return count || 0;
+    } catch (error) {
+      console.error('Error in getTotalContactsCount:', error);
+      return 0;
+    }
+  }
+
+  /**
    * Check if a contact has replied by looking up the replies_kpi table
    */
   static async hasContactReplied(userEmail: string, contactEmail: string): Promise<boolean> {

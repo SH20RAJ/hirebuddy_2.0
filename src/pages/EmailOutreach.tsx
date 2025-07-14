@@ -71,6 +71,7 @@ const EmailOutreach = () => {
   const [emailsSentCount, setEmailsSentCount] = useState(0);
   const [followupsNeededCount, setFollowupsNeededCount] = useState(0);
   const [repliesReceivedCount, setRepliesReceivedCount] = useState(0);
+  const [totalContactsCount, setTotalContactsCount] = useState(0);
   
   // Learn More dialog state
   const [showLearnMoreDialog, setShowLearnMoreDialog] = useState(false);
@@ -252,15 +253,17 @@ const EmailOutreach = () => {
   // Load email stats
   const loadEmailStats = async () => {
     try {
-      const [emailsSent, followupsNeeded, repliesReceived] = await Promise.all([
+      const [emailsSent, followupsNeeded, repliesReceived, totalContacts] = await Promise.all([
         DashboardService.getEmailsSentCount(),
         DashboardService.getFollowupsNeededCount(),
-        DashboardService.getRepliesReceivedCount()
+        DashboardService.getRepliesReceivedCount(),
+        DashboardService.getTotalContactsCount()
       ]);
       
       setEmailsSentCount(emailsSent);
       setFollowupsNeededCount(followupsNeeded);
       setRepliesReceivedCount(repliesReceived);
+      setTotalContactsCount(totalContacts);
     } catch (error) {
       console.error('Error loading email stats:', error);
     }
@@ -519,7 +522,7 @@ const EmailOutreach = () => {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm font-medium text-gray-600">Total Contacts</p>
-                            <p className="text-2xl font-bold text-gray-900">150</p>
+                            <p className="text-2xl font-bold text-gray-900">{totalContactsCount}</p>
                           </div>
                           <div className="bg-blue-100 p-3 rounded-full">
                             <Users className="h-6 w-6 text-blue-600" />
@@ -911,7 +914,7 @@ const EmailOutreach = () => {
                       </div>
                       <div>
                         <div className="text-xs font-medium text-gray-600 mb-1">Total Contacts</div>
-                        <div className="text-xl font-bold text-gray-900">{contacts.length}</div>
+                        <div className="text-xl font-bold text-gray-900">{totalContactsCount}</div>
                       </div>
                     </div>
                     <div className="text-right">
@@ -991,7 +994,7 @@ const EmailOutreach = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-600">Total Contacts</p>
-                        <p className="text-2xl font-bold text-gray-900">{contacts.length}</p>
+                        <p className="text-2xl font-bold text-gray-900">{totalContactsCount}</p>
                       </div>
                       <div className="bg-blue-100 p-3 rounded-full">
                         <Users className="h-6 w-6 text-blue-600" />
