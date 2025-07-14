@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 interface PremiumBadgeProps {
   className?: string;
-  variant?: "default" | "compact" | "icon-only";
+  variant?: "default" | "compact" | "mini" | "icon-only";
   showIcon?: boolean;
 }
 
@@ -26,9 +26,18 @@ export const PremiumBadge = ({
     );
   }
 
+  if (variant === "mini") {
+    return (
+      <Badge className={cn(baseClasses, "text-xs px-1 py-0.5 whitespace-nowrap inline-flex items-center", className)}>
+        {showIcon && <Crown className="h-2.5 w-2.5 mr-0.5" />}
+        Premium
+      </Badge>
+    );
+  }
+
   if (variant === "compact") {
     return (
-      <Badge className={cn(baseClasses, "text-xs px-2 py-1 whitespace-nowrap", className)}>
+      <Badge className={cn(baseClasses, "text-xs px-1.5 py-0.5 whitespace-nowrap", className)}>
         {showIcon && <Crown className="h-3 w-3 mr-1" />}
         Premium
       </Badge>

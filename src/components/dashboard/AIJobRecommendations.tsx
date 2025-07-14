@@ -187,7 +187,7 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
               Apply Now
             </MobileButton>
             <Link to={`/jobs?search=${encodeURIComponent(job.title)}`} className="flex-1">
-              <MobileButton size="sm" variant="outline" className="w-full">
+              <MobileButton size="sm" variant="primary" className="w-full">
                 Details
               </MobileButton>
             </Link>
@@ -365,13 +365,13 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
             </p>
             <div className="flex gap-2 justify-center">
               <Link to="/profile">
-                <MobileButton variant="outline" size="sm">
+                <MobileButton variant="primary" size="sm">
                   <Target className="h-3 w-3 mr-1" />
                   Update Profile
                 </MobileButton>
               </Link>
               <Link to="/jobs">
-                <MobileButton variant="outline" size="sm">
+                <MobileButton variant="primary" size="sm">
                   Browse all jobs
                   <ArrowRight className="h-3 w-3 ml-1" />
                 </MobileButton>

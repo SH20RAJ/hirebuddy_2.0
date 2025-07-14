@@ -63,7 +63,10 @@ export function DashboardHeader({ userName, isNewSession = false }: DashboardHea
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-2xl font-bold tracking-tight">Good {timeOfDay}, {userName}!</h1>
               {isPremium && !premiumLoading && (
-                <PremiumBadge variant="compact" />
+                <PremiumBadge variant="mini" className="md:hidden" />
+              )}
+              {isPremium && !premiumLoading && (
+                <PremiumBadge variant="compact" className="hidden md:inline-flex" />
               )}
             </div>
             <p className="text-muted-foreground mt-1">
