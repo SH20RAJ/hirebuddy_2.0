@@ -46,25 +46,25 @@ export const MainDashboard = () => {
   const { isPremium, premiumData, loading: premiumLoading } = usePremiumUser();
 
   return (
-    <div>
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <div className="px-4 md:px-0">
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
         {/* Column 1 and 2 (Job Board) */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 md:space-y-6">
           {/* Job Board */}
           <Card className={`overflow-hidden border-0 shadow-sm ${isPremium ? 'bg-white border-2 border-gray-200' : ''}`}>
             <CardHeader className={`border-b pb-3 ${isPremium ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-yellow-900' : 'bg-gradient-to-r from-blue-50 to-indigo-50'}`}>
               <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className={isPremium ? 'flex items-center gap-2' : ''}>
-                    {isPremium && <Crown className="h-5 w-5" />}
-                    {isPremium ? 'Premium Job Opportunities' : 'Job Opportunities'}
+                <div className="min-w-0 flex-1">
+                  <CardTitle className={`${isPremium ? 'flex items-center gap-2' : ''} text-base md:text-lg`}>
+                    {isPremium && <Crown className="h-4 w-4 md:h-5 md:w-5" />}
+                    <span className="truncate">{isPremium ? 'Premium Job Opportunities' : 'Job Opportunities'}</span>
                   </CardTitle>
-                  <CardDescription className={isPremium ? 'text-yellow-800' : ''}>
+                  <CardDescription className={`${isPremium ? 'text-yellow-800' : ''} text-sm`}>
                     {isPremium ? 'Exclusive jobs curated for premium members' : 'Recommended based on your profile'}
                   </CardDescription>
                 </div>
-                <Link to="/jobs" className={`text-sm flex items-center gap-1 hover:underline ${isPremium ? 'text-yellow-800' : 'text-blue-600'}`}>
-                  <span>View all</span>
+                <Link to="/jobs" className={`text-sm flex items-center gap-1 hover:underline ${isPremium ? 'text-yellow-800' : 'text-blue-600'} flex-shrink-0 ml-2`}>
+                  <span className="hidden sm:inline">View all</span>
                   <ArrowUpRight className="h-3 w-3" />
                 </Link>
               </div>
@@ -105,11 +105,12 @@ export const MainDashboard = () => {
                   skills={["JavaScript", "React", "CSS"]}
                 />
               </div>
-              <div className="p-4 bg-gray-50 flex justify-center">
+              <div className="p-3 md:p-4 bg-gray-50 flex justify-center">
                 <RainbowButton asChild>
-                  <Link to="/jobs" className="flex items-center gap-1.5">
+                  <Link to="/jobs" className="flex items-center gap-1.5 text-sm">
                     <Search className="h-4 w-4" />
-                    Find More Jobs
+                    <span className="hidden sm:inline">Find More Jobs</span>
+                    <span className="sm:hidden">More Jobs</span>
                   </Link>
                 </RainbowButton>
               </div>

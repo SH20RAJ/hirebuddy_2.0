@@ -36,7 +36,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({ onMenuClick }) => {
       </div>
 
       {/* Right side - User avatar */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 pr-1">
         <Avatar className="h-7 w-7 ring-1 ring-primary/20 mobile-touch-target-sm">
           <AvatarImage src={user?.user_metadata?.avatar_url} />
           <AvatarFallback className="font-semibold mobile-body-xs bg-gradient-to-br from-[#b24e55] to-[#d35c65] text-white">{userInitials}</AvatarFallback>

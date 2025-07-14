@@ -20,8 +20,12 @@ import {
   Briefcase,
   Brain,
   CheckCircle,
-  ArrowRight
+  ArrowRight,
+  ChevronRight
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import MobileCard from "@/components/mobile/MobileCard";
+import MobileButton from "@/components/mobile/MobileButton";
 
 interface AIJobRecommendationsProps {
   limit?: number;
@@ -70,6 +74,127 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
     if (score >= 80) return 'Great';
     if (score >= 70) return 'Good';
     return 'Fair';
+  };
+
+  // Mobile job recommendation card
+  const MobileJobRecommendationCard = ({ job }: { job: JobRecommendation }) => {
+    const formatTimeAgo = (dateString: string) => {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+      
+      if (diffInHours < 24) {
+        return `${diffInHours}h ago`;
+      } else {
+        const diffInDays = Math.floor(diffInHours / 24);
+        return `${diffInDays}d ago`;
+      }
+    };
+
+    return (
+      <MobileCard className="mb-2" variant="compact">
+        <div className="space-y-2">
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold mobile-body text-gray-900 line-clamp-2 leading-tight">
+                {job.title}
+              </h3>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <Building className="w-3 h-3 text-gray-500 flex-shrink-0" />
+                <p className="mobile-body-xs text-gray-600 truncate">{job.company}</p>
+              </div>
+            </div>
+            <div className="text-right ml-2">
+              <div className="flex items-center gap-1">
+                <span className="text-xs font-medium text-primary">
+                  {job.matchScore}%
+                </span>
+                <div className="w-8 h-1.5 bg-gray-100 rounded-full">
+                  <div 
+                    className="h-1.5 bg-primary rounded-full" 
+                    style={{ width: `${job.matchScore}%` }}
+                  ></div>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-0.5">{getMatchScoreText(job.matchScore)}</p>
+            </div>
+          </div>
+
+          {/* Location and Remote */}
+          <div className="flex items-center gap-3 mobile-body-xs text-gray-600">
+            <div className="flex items-center gap-1">
+              <MapPin className="w-3 h-3" />
+              <span className="truncate">{job.location}</span>
+            </div>
+            {job.isRemote && (
+              <Badge variant="secondary" className="mobile-body-xs">
+                Remote
+              </Badge>
+            )}
+            <div className="flex items-center gap-1 ml-auto">
+              <Clock className="w-3 h-3" />
+              <span>{job.posted}</span>
+            </div>
+          </div>
+
+          {/* Match Reasons */}
+          {job.matchReasons.length > 0 && (
+            <div className="bg-gray-50 p-2 rounded-lg">
+              <div className="text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                <CheckCircle className="h-3 w-3 text-gray-600" />
+                Why it matches:
+              </div>
+              <div className="space-y-0.5">
+                {job.matchReasons.slice(0, 2).map((reason, index) => (
+                  <div key={index} className="text-xs text-gray-600 flex items-center gap-1">
+                    <div className="w-1 h-1 bg-gray-400 rounded-full flex-shrink-0" />
+                    <span className="line-clamp-1">{reason}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Skills */}
+          {job.tags && job.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {job.tags.slice(0, 3).map((tag, index) => (
+                <Badge key={index} variant="secondary" className="mobile-body-xs">
+                  {tag}
+                </Badge>
+              ))}
+              {job.tags.length > 3 && (
+                <Badge variant="secondary" className="mobile-body-xs">
+                  +{job.tags.length - 3} more
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {/* Apply Button */}
+          <div className="flex gap-2 pt-1">
+            <MobileButton
+              variant="primary"
+              size="sm"
+              className="flex-1"
+              onClick={() => {
+                if (job.applyLink) {
+                  window.open(job.applyLink, '_blank');
+                }
+              }}
+            >
+              Apply Now
+            </MobileButton>
+            <Link to={`/jobs?search=${encodeURIComponent(job.title)}`} className="flex-1">
+              <MobileButton size="sm" variant="outline" className="w-full">
+                Details
+              </MobileButton>
+            </Link>
+          </div>
+        </div>
+      </MobileCard>
+    );
   };
 
   if (isLoading) {
@@ -202,164 +327,220 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
   }
 
   return (
-    <Card className="border border-gray-200">
-      <CardHeader className="border-b border-gray-100 pb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+    <>
+      {/* Mobile View */}
+      <div className="md:hidden">
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-semibold text-lg flex items-center gap-2">
               <Brain className="h-5 w-5 text-gray-600" />
               Job Recommendations
-              <span className="text-sm font-normal text-gray-500">
+            </h3>
+            <div className="flex items-center gap-2">
+              <Button onClick={handleRefresh} variant="ghost" size="sm" disabled={isRefreshing}>
+                {isRefreshing ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+              </Button>
+              <Badge variant="secondary" className="mobile-body-xs">
                 {recommendations.length} match{recommendations.length !== 1 ? 'es' : ''}
-              </span>
-            </CardTitle>
-            <p className="text-sm text-gray-500">Personalized matches based on your profile</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button onClick={handleRefresh} variant="ghost" size="sm" disabled={isRefreshing}>
-              {isRefreshing ? (
-                <RefreshCw className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-            </Button>
-            <Link to="/jobs" className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1">
-              <span>View all</span>
-              <ArrowUpRight className="h-3 w-3" />
-            </Link>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="divide-y divide-gray-100">
-          {recommendations.map((job) => (
-            <div key={job.id} className="p-4 hover:bg-gray-50 transition-colors">
-              <div className="flex items-start gap-3">
-                <CompanyLogo 
-                  companyName={job.company}
-                  logoUrl={getJobLogo(job)}
-                  isLoading={isLogoLoading(job.id)}
-                  size="md"
-                  className="border border-gray-200"
-                />
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-900">
-                        {job.title}
-                      </h3>
-                      <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-                        <Building className="h-3 w-3" />
-                        <span>{job.company}</span>
-                        <span>•</span>
-                        <MapPin className="h-3 w-3" />
-                        <span>{job.location}</span>
-                        {job.isRemote && (
-                          <>
-                            <span>•</span>
-                            <span className="text-xs text-gray-600 font-medium">Remote</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="text-right">
-                      <div className="text-sm font-medium text-gray-700">
-                        {job.matchScore}% match
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {getMatchScoreText(job.matchScore)}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Match Reasons */}
-                  {job.matchReasons.length > 0 && (
-                    <div className="mb-3">
-                      <div className="text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
-                        <CheckCircle className="h-3 w-3 text-gray-600" />
-                        Why it matches:
-                      </div>
-                      <div className="space-y-1">
-                        {job.matchReasons.slice(0, 2).map((reason, index) => (
-                          <div key={index} className="text-xs text-gray-600 flex items-center gap-1">
-                            <div className="w-1 h-1 bg-gray-400 rounded-full" />
-                            {reason}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Skills */}
-                  <div className="flex flex-wrap gap-1 mb-3">
-                    {job.tags.slice(0, 4).map((skill, index) => (
-                      <span key={index} className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 mt-4">
-                    <Button 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={() => {
-                        if (job.applyLink) {
-                          window.open(job.applyLink, '_blank');
-                        }
-                      }}
-                    >
-                      Apply Now
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      asChild
-                    >
-                      <Link to={`/jobs?search=${encodeURIComponent(job.title)}`}>
-                        <ExternalLink className="h-3 w-3 mr-1" />
-                        Details
-                      </Link>
-                    </Button>
-                  </div>
-
-                  <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {job.posted}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              </Badge>
             </div>
+          </div>
+          <p className="text-sm text-gray-600">Personalized matches based on your profile</p>
+        </div>
+        
+        <div className="space-y-2">
+          {recommendations.map((job) => (
+            <MobileJobRecommendationCard key={job.id} job={job} />
           ))}
         </div>
         
-        <div className="p-4 border-t border-gray-100 bg-gray-50">
+        <div className="mt-4 space-y-2">
           <div className="text-center">
             <p className="text-sm text-gray-600 mb-3">
               Want more personalized recommendations?
             </p>
             <div className="flex gap-2 justify-center">
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/profile" className="text-gray-700">
+              <Link to="/profile">
+                <MobileButton variant="outline" size="sm">
                   <Target className="h-3 w-3 mr-1" />
                   Update Profile
-                </Link>
-              </Button>
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/jobs" className="text-gray-700">
-                  <span>Browse all jobs</span>
+                </MobileButton>
+              </Link>
+              <Link to="/jobs">
+                <MobileButton variant="outline" size="sm">
+                  Browse all jobs
                   <ArrowRight className="h-3 w-3 ml-1" />
-                </Link>
-              </Button>
+                </MobileButton>
+              </Link>
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Desktop View */}
+      <Card className="border border-gray-200 hidden md:block">
+        <CardHeader className="border-b border-gray-100 pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                <Brain className="h-5 w-5 text-gray-600" />
+                Job Recommendations
+                <span className="text-sm font-normal text-gray-500">
+                  {recommendations.length} match{recommendations.length !== 1 ? 'es' : ''}
+                </span>
+              </CardTitle>
+              <p className="text-sm text-gray-500">Personalized matches based on your profile</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button onClick={handleRefresh} variant="ghost" size="sm" disabled={isRefreshing}>
+                {isRefreshing ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+              </Button>
+              <Link to="/jobs" className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1">
+                <span>View all</span>
+                <ArrowUpRight className="h-3 w-3" />
+              </Link>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="divide-y divide-gray-100">
+            {recommendations.map((job) => (
+              <div key={job.id} className="p-4 hover:bg-gray-50 transition-colors">
+                <div className="flex items-start gap-3">
+                  <CompanyLogo 
+                    companyName={job.company}
+                    logoUrl={getJobLogo(job)}
+                    isLoading={isLogoLoading(job.id)}
+                    size="md"
+                    className="border border-gray-200"
+                  />
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900">
+                          {job.title}
+                        </h3>
+                        <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                          <Building className="h-3 w-3" />
+                          <span>{job.company}</span>
+                          <span>•</span>
+                          <MapPin className="h-3 w-3" />
+                          <span>{job.location}</span>
+                          {job.isRemote && (
+                            <>
+                              <span>•</span>
+                              <span className="text-xs text-gray-600 font-medium">Remote</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-gray-700">
+                          {job.matchScore}% match
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {getMatchScoreText(job.matchScore)}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Match Reasons */}
+                    {job.matchReasons.length > 0 && (
+                      <div className="mb-3">
+                        <div className="text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3 text-gray-600" />
+                          Why it matches:
+                        </div>
+                        <div className="space-y-1">
+                          {job.matchReasons.slice(0, 2).map((reason, index) => (
+                            <div key={index} className="text-xs text-gray-600 flex items-center gap-1">
+                              <div className="w-1 h-1 bg-gray-400 rounded-full" />
+                              {reason}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Skills */}
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {job.tags.slice(0, 4).map((skill, index) => (
+                        <span key={index} className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 mt-4">
+                      <Button 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => {
+                          if (job.applyLink) {
+                            window.open(job.applyLink, '_blank');
+                          }
+                        }}
+                      >
+                        Apply Now
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        asChild
+                      >
+                        <Link to={`/jobs?search=${encodeURIComponent(job.title)}`}>
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          Details
+                        </Link>
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {job.posted}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="p-4 border-t border-gray-100 bg-gray-50">
+            <div className="text-center">
+              <p className="text-sm text-gray-600 mb-3">
+                Want more personalized recommendations?
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/profile" className="text-gray-700">
+                    <Target className="h-3 w-3 mr-1" />
+                    Update Profile
+                  </Link>
+                </Button>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/jobs" className="text-gray-700">
+                    <span>Browse all jobs</span>
+                    <ArrowRight className="h-3 w-3 ml-1" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </>
   );
 }; 

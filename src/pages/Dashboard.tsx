@@ -609,7 +609,7 @@ const Dashboard = () => {
             )}
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 pr-2 md:pr-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="rounded-full flex items-center gap-2 p-1 pl-3 hover:bg-gray-100">
