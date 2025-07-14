@@ -223,7 +223,7 @@ export const JobRecommendations = () => {
               Apply Now
             </MobileButton>
             <Link to={`/jobs`} className="flex-1">
-              <MobileButton size="sm" variant="outline" className="w-full">
+              <MobileButton size="sm" variant="primary" className="w-full">
                 View Details
               </MobileButton>
             </Link>
@@ -255,7 +255,7 @@ export const JobRecommendations = () => {
         
         <div className="mt-4">
           <Link to="/jobs">
-            <MobileButton variant="outline" size="full" className="w-full">
+            <MobileButton variant="primary" size="full" className="w-full">
               View All Job Recommendations
             </MobileButton>
           </Link>

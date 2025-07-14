@@ -131,7 +131,7 @@ export const MobileJobCard: React.FC<MobileJobCardProps> = ({
         {onApply && (
           <div className="pt-1.5">
             <MobileButton
-              variant={applied ? "outline" : "primary"}
+              variant={applied ? "secondary" : "primary"}
               size="full"
               onClick={() => onApply()}
               disabled={applied}
