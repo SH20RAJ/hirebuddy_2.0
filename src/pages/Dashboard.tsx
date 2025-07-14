@@ -665,12 +665,7 @@ const Dashboard = () => {
                         <h1 className="mobile-heading-md sm:text-2xl md:text-3xl font-bold text-gray-900">
                           {getGreeting()}, {userName} 👋
                         </h1>
-                        {isPremium && !premiumLoading && (
-                          <PremiumBadge variant="mini" className="md:hidden" />
-                        )}
-                        {isPremium && !premiumLoading && (
-                          <PremiumBadge variant="compact" className="hidden md:inline-flex" />
-                        )}
+                        
                       </div>
                       <p className="text-gray-600 mobile-body-sm sm:text-base md:text-lg mb-2 md:mb-3">
                         {isPremium 
