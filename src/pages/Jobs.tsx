@@ -714,15 +714,7 @@ const Jobs = () => {
                   {shouldUseRankedJobs && activeTab === 'all' && (
                     <div className="px-3 md:px-6 py-3 bg-blue-50 border-b border-blue-200">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          
-                          <span className="text-sm font-medium text-blue-900">
-                            Jobs ranked by your profile match
-                          </span>
-                          <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
-                            Personalized
-                          </Badge>
-                        </div>
+                        
                         <Tooltip>
                           <TooltipTrigger>
                             <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-800">
