@@ -249,21 +249,40 @@ class EmailService {
    */
   async testConnection(): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await fetch(`${this.apiBaseUrl}/`, {
-        method: 'GET',
+      // Test with a minimal POST to send_email endpoint to see if it responds correctly
+      const response = await fetch(`${this.apiBaseUrl}/send_email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: 'test@example.com',
+          to: 'test@example.com',
+          subject: 'Test Connection',
+          body: 'Testing API connectivity'
+        }),
       });
 
-      if (!response.ok) {
+      if (response.status === 400 || response.status === 422) {
+        // These status codes indicate the API is working but validation failed
+        // which means the endpoint is reachable and responding correctly
         return {
-          success: false,
-          message: `API connection failed: ${response.status} - ${response.statusText}`
+          success: true,
+          message: 'AWS Email API connection successful'
         };
       }
 
-      const data = await response.json();
+      if (response.ok) {
+        return {
+          success: true,
+          message: 'AWS Email API connection successful'
+        };
+      }
+
+      const errorText = await response.text();
       return {
-        success: true,
-        message: data.message || 'API connection successful'
+        success: false,
+        message: `API connection failed: ${response.status} - ${errorText}`
       };
     } catch (error) {
       return {
