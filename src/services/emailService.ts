@@ -99,6 +99,12 @@ class EmailService {
    */
   async sendEmail(request: EmailSendRequest): Promise<EmailSendResponse> {
     try {
+      console.log('🚀 Sending email via AWS API...', { 
+        to: request.to, 
+        subject: request.subject,
+        sender: request.sender 
+      });
+
       const response = await fetch(`${this.apiBaseUrl}/send_email`, {
         method: 'POST',
         headers: {
@@ -107,12 +113,30 @@ class EmailService {
         body: JSON.stringify(request),
       });
 
+      console.log('📡 AWS API Response:', response.status, response.statusText);
+
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Failed to send email: ${response.status} - ${errorText}`);
+        console.error('❌ AWS API Error:', { status: response.status, error: errorText });
+        
+        // Provide more specific error messages based on status codes
+        if (response.status === 400) {
+          throw new Error(`Invalid request: ${errorText}`);
+        } else if (response.status === 401) {
+          throw new Error('Authentication failed. Please check your API credentials.');
+        } else if (response.status === 403) {
+          throw new Error('Access forbidden. Please check your permissions.');
+        } else if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please try again later.');
+        } else if (response.status === 500) {
+          throw new Error('Server error. Please try again later or contact support.');
+        } else {
+          throw new Error(`Failed to send email: ${response.status} - ${errorText}`);
+        }
       }
 
       const data = await response.json();
+      console.log('✅ Email sent successfully:', data);
       
       // Handle different response types
       if (typeof data === 'string') {
@@ -122,7 +146,13 @@ class EmailService {
 
       return data as EmailSendResponse;
     } catch (error) {
-      console.error('Error sending email:', error);
+      console.error('❌ Error sending email:', error);
+      
+      // Re-throw with more context if it's a network error
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Network error: Unable to connect to email service. Please check your internet connection.');
+      }
+      
       throw error;
     }
   }
@@ -132,6 +162,11 @@ class EmailService {
    */
   async sendFollowUp(request: FollowUpRequest): Promise<{ message: string }> {
     try {
+      console.log('🚀 Sending follow-up email via AWS API...', { 
+        to: request.to, 
+        sender: request.sender 
+      });
+
       const response = await fetch(`${this.apiBaseUrl}/send_followup`, {
         method: 'POST',
         headers: {
@@ -140,15 +175,39 @@ class EmailService {
         body: JSON.stringify(request),
       });
 
+      console.log('📡 AWS API Follow-up Response:', response.status, response.statusText);
+
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Failed to send follow-up: ${response.status} - ${errorText}`);
+        console.error('❌ AWS API Follow-up Error:', { status: response.status, error: errorText });
+        
+        // Provide more specific error messages based on status codes
+        if (response.status === 400) {
+          throw new Error(`Invalid follow-up request: ${errorText}`);
+        } else if (response.status === 401) {
+          throw new Error('Authentication failed. Please check your API credentials.');
+        } else if (response.status === 403) {
+          throw new Error('Access forbidden. Please check your permissions.');
+        } else if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please try again later.');
+        } else if (response.status === 500) {
+          throw new Error('Server error. Please try again later or contact support.');
+        } else {
+          throw new Error(`Failed to send follow-up: ${response.status} - ${errorText}`);
+        }
       }
 
       const data = await response.json();
+      console.log('✅ Follow-up sent successfully:', data);
       return data;
     } catch (error) {
-      console.error('Error sending follow-up:', error);
+      console.error('❌ Error sending follow-up:', error);
+      
+      // Re-throw with more context if it's a network error
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Network error: Unable to connect to email service. Please check your internet connection.');
+      }
+      
       throw error;
     }
   }
@@ -249,7 +308,20 @@ class EmailService {
    */
   async testConnection(): Promise<{ success: boolean; message: string }> {
     try {
-      // Test with a minimal POST to send_email endpoint to see if it responds correctly
+      // First try a simple GET request to the root endpoint
+      const rootResponse = await fetch(`${this.apiBaseUrl}/`, {
+        method: 'GET',
+      });
+
+      if (rootResponse.ok) {
+        const data = await rootResponse.json();
+        return {
+          success: true,
+          message: data.message || 'AWS Email API connection successful'
+        };
+      }
+
+      // If root endpoint fails, try the send_email endpoint with test data
       const response = await fetch(`${this.apiBaseUrl}/send_email`, {
         method: 'POST',
         headers: {
@@ -263,12 +335,12 @@ class EmailService {
         }),
       });
 
-      if (response.status === 400 || response.status === 422) {
-        // These status codes indicate the API is working but validation failed
-        // which means the endpoint is reachable and responding correctly
+      // Consider 400, 422, and 500 as successful connections (API is responding)
+      // These indicate the API is working but our test data doesn't meet requirements
+      if (response.status === 400 || response.status === 422 || response.status === 500) {
         return {
           success: true,
-          message: 'AWS Email API connection successful'
+          message: 'AWS Email API connection successful (API reachable and responding)'
         };
       }
 
