@@ -36,14 +36,18 @@ interface JobMatchingResult {
   };
 }
 
+import { EnvironmentValidator, SecureErrorHandler } from '../utils/security';
+
 class OpenAIService {
   private apiKey: string;
   private baseUrl = 'https://api.openai.com/v1/chat/completions';
 
   constructor() {
-    this.apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-    if (!this.apiKey) {
+    try {
+      this.apiKey = EnvironmentValidator.getSecureEnvVar('VITE_OPENAI_API_KEY');
+    } catch (error) {
       console.warn('OpenAI API key not found in environment variables. AI features will be limited.');
+      this.apiKey = '';
     }
   }
 
@@ -62,6 +66,7 @@ class OpenAIService {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.apiKey}`,
+          'X-Content-Type-Options': 'nosniff',
         },
         body: JSON.stringify({
           model: 'gpt-4o-mini',
@@ -72,14 +77,20 @@ class OpenAIService {
       });
 
       if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+        const errorMessage = `OpenAI API error: ${response.status} ${response.statusText}`;
+        throw SecureErrorHandler.createSafeError(new Error(errorMessage), 'AI service temporarily unavailable. Please try again later.');
       }
 
       const data: OpenAIResponse = await response.json();
       return data.choices[0]?.message?.content || '';
     } catch (error) {
       console.error('OpenAI API request failed:', error);
-      throw error;
+      
+      if (error instanceof Error && SecureErrorHandler.isSafeErrorMessage(error.message)) {
+        throw error;
+      }
+      
+      throw SecureErrorHandler.createSafeError(error, 'AI service temporarily unavailable. Please try again later.');
     }
   }
 

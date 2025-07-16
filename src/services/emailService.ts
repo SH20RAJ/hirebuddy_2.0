@@ -1,3 +1,5 @@
+import { EnvironmentValidator, InputValidator, InputSanitizer, SecureErrorHandler } from '../utils/security';
+
 export interface EmailSendRequest {
   sender: string;
   to: string;
@@ -90,8 +92,16 @@ class EmailService {
   private openaiApiKey: string;
 
   constructor() {
-    this.apiBaseUrl = 'https://a2wzu306xj.execute-api.us-east-1.amazonaws.com';
-    this.openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY || '';
+    // Use secure environment variable access
+    try {
+      this.apiBaseUrl = EnvironmentValidator.getSecureEnvVar('VITE_AWS_API_BASE_URL');
+      this.openaiApiKey = EnvironmentValidator.getSecureEnvVar('VITE_OPENAI_API_KEY');
+    } catch (error) {
+      throw SecureErrorHandler.createSafeError(
+        error,
+        'Email service configuration error. Please check your environment variables.'
+      );
+    }
   }
 
   /**
@@ -99,18 +109,45 @@ class EmailService {
    */
   async sendEmail(request: EmailSendRequest): Promise<EmailSendResponse> {
     try {
+      // Input validation and sanitization
+      if (!InputValidator.isValidEmail(request.to)) {
+        throw new Error('Invalid recipient email address');
+      }
+      if (!InputValidator.isValidEmail(request.sender)) {
+        throw new Error('Invalid sender email address');
+      }
+      if (!InputValidator.isSafeText(request.subject)) {
+        throw new Error('Invalid characters in email subject');
+      }
+      if (!InputValidator.isSafeText(request.body)) {
+        throw new Error('Invalid characters in email body');
+      }
+
+
+
+      // Sanitize inputs
+      const sanitizedRequest = {
+        ...request,
+        to: InputSanitizer.sanitizeEmail(request.to),
+        sender: InputSanitizer.sanitizeEmail(request.sender),
+        subject: InputSanitizer.sanitizeText(request.subject),
+        body: InputSanitizer.sanitizeText(request.body)
+      };
+
       console.log('🚀 Sending email via AWS API...', { 
-        to: request.to, 
-        subject: request.subject,
-        sender: request.sender 
+        to: sanitizedRequest.to, 
+        subject: sanitizedRequest.subject,
+        sender: sanitizedRequest.sender 
       });
 
       const response = await fetch(`${this.apiBaseUrl}/send_email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Content-Type-Options': 'nosniff',
+          'X-Frame-Options': 'DENY',
         },
-        body: JSON.stringify(request),
+        body: JSON.stringify(sanitizedRequest),
       });
 
       console.log('📡 AWS API Response:', response.status, response.statusText);
@@ -148,12 +185,18 @@ class EmailService {
     } catch (error) {
       console.error('❌ Error sending email:', error);
       
-      // Re-throw with more context if it's a network error
+      // Use secure error handling to prevent information leakage
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error('Network error: Unable to connect to email service. Please check your internet connection.');
+        throw SecureErrorHandler.createSafeError(error, 'Unable to connect to email service. Please check your internet connection.');
       }
       
-      throw error;
+      // Check if error message is safe to show to user
+      if (error instanceof Error && SecureErrorHandler.isSafeErrorMessage(error.message)) {
+        throw error;
+      }
+      
+      // For any other errors, return a generic message
+      throw SecureErrorHandler.createSafeError(error, 'Failed to send email. Please try again later.');
     }
   }
 
