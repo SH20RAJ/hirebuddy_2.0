@@ -710,34 +710,7 @@ const Jobs = () => {
                     </TabsTrigger>
                   </TabsList>
 
-                  {/* Ranking Information */}
-                  {shouldUseRankedJobs && activeTab === 'all' && (
-                    <div className="px-3 md:px-6 py-3 bg-blue-50 border-b border-blue-200">
-                      <div className="flex items-center justify-between">
-                        
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-800">
-                              <AlertCircle className="w-4 h-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <div className="space-y-2">
-                              <p className="font-medium">How ranking works:</p>
-                              <p className="text-xs">Jobs are ranked based on:</p>
-                              <ul className="text-xs space-y-1">
-                                <li>• Skills match (35%)</li>
-                                <li>• Role preferences (25%)</li>
-                                <li>• Experience level (20%)</li>
-                                <li>• Location & work mode (15%)</li>
-                                <li>• Other factors (5%)</li>
-                              </ul>
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                    </div>
-                  )}
+                  
                 </Tabs>
               </div>
 
