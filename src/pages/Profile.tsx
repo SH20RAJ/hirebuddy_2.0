@@ -747,12 +747,7 @@ const Profile = () => {
                           <Mail className="w-3 h-3 mr-1" />
                           {user?.email}
                         </p>
-                        {profile.experience_years && (
-                          <p className="text-sm text-gray-600 flex items-center mt-1">
-                            <Calendar className="w-3 h-3 mr-1" />
-                            {profile.experience_years} {profile.experience_years === 1 ? 'year' : 'years'} experience
-                          </p>
-                        )}
+                        
                         
                         {/* Quick Social Links */}
                         <div className="flex items-center gap-3 mt-2">
