@@ -1,7 +1,4 @@
--- Safe Profile Database Setup Script
--- This script can be run multiple times without errors
 
--- Create user profiles table (only if it doesn't exist)
 CREATE TABLE IF NOT EXISTS user_profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
