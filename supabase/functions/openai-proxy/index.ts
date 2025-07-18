@@ -1,10 +1,17 @@
+// @deno-types="https://deno.land/x/types/index.d.ts"
+declare const Deno: any;
+
+// @ts-ignore - Deno runtime module
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+// @ts-ignore - Deno runtime module  
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-requested-with",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Max-Age": "86400",
 };
 
 interface OpenAIRequest {
@@ -15,12 +22,25 @@ interface OpenAIRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      status: 200,
+      headers: corsHeaders 
+    });
   }
 
   if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }), 
+      { 
+        status: 405, 
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        }
+      }
+    );
   }
 
   try {
@@ -87,13 +107,33 @@ const handler = async (req: Request): Promise<Response> => {
 
   } catch (error) {
     console.error('OpenAI proxy error:', error);
+    
+    // Determine appropriate status code based on error type
+    let status = 500;
+    let errorMessage = "Internal server error";
+    
+    if (error instanceof Error) {
+      if (error.message.includes("Unauthorized") || error.message.includes("No authorization header")) {
+        status = 401;
+        errorMessage = "Authentication required";
+      } else if (error.message.includes("OpenAI API key not configured")) {
+        status = 503;
+        errorMessage = "Service temporarily unavailable";
+      } else if (error.message.includes("Invalid request")) {
+        status = 400;
+        errorMessage = error.message;
+      } else {
+        errorMessage = error.message;
+      }
+    }
+    
     return new Response(
       JSON.stringify({ 
-        error: "Internal server error", 
-        message: error instanceof Error ? error.message : "Unknown error" 
+        error: errorMessage,
+        details: error instanceof Error ? error.message : "Unknown error" 
       }),
       {
-        status: 500,
+        status,
         headers: {
           ...corsHeaders,
           "Content-Type": "application/json",
