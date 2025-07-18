@@ -1,11 +1,23 @@
 import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
 
-const supabaseUrl = 'https://xthxutsliqptoodkzrcp.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0aHh1dHNsaXFwdG9vZGt6cmNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NTY5MTQsImV4cCI6MjA2NDQzMjkxNH0.K4XzmJauoydPB5jAECh4041MmZIvQLA3WaeACy8Y8mI';
+// Load environment variables
+dotenv.config({ path: '.env.local' });
+
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
 console.log('Testing database connection...');
-console.log('Supabase URL:', supabaseUrl);
-console.log('Supabase Key:', supabaseAnonKey ? 'Present' : 'Missing');
+console.log('Supabase URL:', supabaseUrl ? `${supabaseUrl.substring(0, 30)}...` : 'Missing');
+console.log('Supabase Key:', supabaseAnonKey ? `Present (${supabaseAnonKey.length} chars)` : 'Missing');
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('❌ Missing required environment variables:');
+  console.error('- VITE_SUPABASE_URL or SUPABASE_URL');
+  console.error('- VITE_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY');
+  console.error('Please check your .env.local file');
+  process.exit(1);
+}
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
