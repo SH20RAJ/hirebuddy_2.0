@@ -482,7 +482,7 @@ Structure the email in the following format:
 
 3. **Closing Paragraph** – Include a short, polite call to action. Invite them to connect or refer to the sender's resume.
 
-4. **Email Signature** – Include a professional signature with the sender's name, contact information, and relevant credentials in a standard format.
+4. **Email Signature** – Include a professional signature with the sender's name, contact information, and LinkedIn profile link in a standard format.
 
 RESPONSE FORMAT:
 You must respond in this exact JSON format:
