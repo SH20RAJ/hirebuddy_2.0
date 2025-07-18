@@ -462,6 +462,28 @@ class EmailService {
    * Build system prompt based on email type and tone
    */
   private buildSystemPrompt(emailType: string, tone: string): string {
+    if (emailType === 'follow_up') {
+      return `You are an expert cold email copywriter helping job seekers write short, impactful cold emails to recruiters, HRs, or startup founders.
+
+Your task is to generate a concise, human-sounding follow-up email. Don't generate the email more than 3-4 lines. Always keep in mind this is follow up email not original email.
+
+Additional rules:
+- Always personalize the greeting with the recipient's name and company (if provided).
+- If a LinkedIn profile of the recipient is provided, use a slightly warmer tone.
+- Be humble and authentic in tone — never overhype.
+- Do not use long paragraphs or fluff. Keep it structured and skimmable.
+- Highlight the sender's skills clearly.
+- If available, use the recipient company website to justify the sender's interest in them.
+
+RESPONSE FORMAT:
+You must respond in this exact JSON format:
+{
+  "subject": "Compelling subject line here",
+  "body": "Email body here with proper line breaks using \\n\\n for paragraphs",
+  "reasoning": "Brief explanation of personalization choices"
+}`;
+    }
+
     return `You are an expert cold email copywriter helping job seekers write short, impactful cold emails to recruiters, HRs, or startup founders.
 
 Your task is to generate a concise, human-sounding cold email that fits within one screen (max 150–180 words). The language should match the selected tone (e.g., professional, formal, friendly, or casual) and remain clear and readable.
@@ -482,7 +504,12 @@ Structure the email in the following format:
 
 3. **Closing Paragraph** – Include a short, polite call to action. Invite them to connect or refer to the sender's resume.
 
-4. **Email Signature** – Include a professional signature with the sender's name, contact information, and the exact LinkedIn profile link from the sender's profile data in a standard format.
+4. **Email Signature** – Format it exactly as follows:
+   - Line 1: {{user_name}}
+   - Line 2: {{user_education}}
+   - Line 3: {{user_phone}}
+   - Line 4: {{user_linkedin}}
+
 
 RESPONSE FORMAT:
 You must respond in this exact JSON format:
@@ -499,6 +526,26 @@ You must respond in this exact JSON format:
   private buildUserPrompt(request: AIEmailGenerationRequest): string {
     const { contact, userProfile, customInstructions, targetRoles } = request;
 
+    // Handle follow-up emails with simpler format
+    if (request.emailType === 'follow_up') {
+      return `TONE: ${request.tone || 'professional'}
+TARGET ROLE: ${targetRoles && targetRoles.length > 0 ? targetRoles.join(', ') : 'General Opportunities'}
+CUSTOM INSTRUCTIONS: ${customInstructions || 'None'}
+
+RECIPIENT INFORMATION:
+- Name: ${contact.name}
+- Company: ${contact.company || 'N/A'}
+- Position: ${contact.position || 'N/A'}
+- LinkedIn: ${contact.linkedin_link || 'N/A'}
+- Company_website: N/A
+
+SENDER INFORMATION:
+- Name: ${userProfile.full_name || 'N/A'}
+- Phone: ${userProfile.phone || 'N/A'}
+- Senders Linkedin: ${userProfile.linkedin || 'N/A'}`;
+    }
+
+    // Regular email format
     let prompt = `TONE: ${request.tone || 'professional'}
 TARGET ROLE: ${targetRoles && targetRoles.length > 0 ? targetRoles.join(', ') : 'General Opportunities'}
 CUSTOM INSTRUCTIONS: ${customInstructions || 'None'}
