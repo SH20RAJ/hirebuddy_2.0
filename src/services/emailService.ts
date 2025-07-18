@@ -436,8 +436,9 @@ class EmailService {
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
           ],
-          temperature: 0.7,
-          max_tokens: 1500,
+          temperature: 1,
+          max_tokens: 2048,
+          top_p: 1,
         }),
       });
 
@@ -461,24 +462,31 @@ class EmailService {
    * Build system prompt based on email type and tone
    */
   private buildSystemPrompt(emailType: string, tone: string): string {
-    const basePrompt = `You are a professional email writing assistant specializing in creating personalized, effective emails for job seekers and professionals. Your emails should be:
+    return `You are an expert cold email copywriter helping job seekers write short, impactful cold emails to recruiters, HRs, or startup founders.
 
-1. PERSONALIZED - Use specific details about the recipient and sender
-2. CONCISE - Keep it brief and to the point (150-250 words max)
-3. PROFESSIONAL - Maintain appropriate business tone
-4. ACTION-ORIENTED - Include a clear call to action
-5. AUTHENTIC - Sound genuine and human, not robotic
+Your task is to generate a concise, human-sounding cold email that fits within one screen (max 150–180 words). The language should match the selected tone (e.g., professional, formal, friendly, or casual) and remain clear and readable.
 
-TONE: ${tone}
-EMAIL TYPE: ${emailType}
+Additional rules:
+- Always personalize the greeting with the recipient's name and company (if provided).
+- If a LinkedIn profile of the recipient is provided, use a slightly warmer tone.
+- Be humble and authentic in tone — never overhype.
+- Do not use long paragraphs or fluff. Keep it structured and skimmable.
+- Highlight the sender's skills clearly.
+- If available, use the recipient company website to justify the sender's interest in them.
 
-IMPORTANT GUIDELINES:
-- Only include relevant information from the user's profile - don't overwhelm with unnecessary details
-- Use the recipient's name and company naturally
-- Avoid generic templates - make each email feel personal
-- Include specific value propositions relevant to the recipient
-- Keep subject lines compelling but professional (6-8 words max)
-- End with a clear, specific call to action
+Structure the email in the following format:
+
+1. **Opening Paragraph** – Introduce the sender: who they are, their current role, education background, and interest in the recipient's company. If the company website is provided, include a short line about why the sender is reaching out (e.g., "I came across your work at {{recipient_company}} and was impressed by...").
+
+2. **Middle Paragraph** – Highlight the sender's top skills, years of experience, and recent work (2–3 notable roles or achievements). Focus on relevant experience tied to the target role.
+
+3. **Closing Paragraph** – Include a short, polite call to action. Invite them to connect or refer to the sender's resume.
+
+4. **Email Signature** – Format it exactly as follows:
+   - Line 1: {{sender_name}}
+   - Line 2: {{senders_education}}
+   - Line 3: {{senders_phone}}
+   - Line 4: {{senders_linkedin}}
 
 RESPONSE FORMAT:
 You must respond in this exact JSON format:
@@ -487,16 +495,6 @@ You must respond in this exact JSON format:
   "body": "Email body here with proper line breaks using \\n\\n for paragraphs",
   "reasoning": "Brief explanation of personalization choices"
 }`;
-
-    const typeSpecificGuidelines = {
-      'cold_outreach': 'Focus on building rapport and offering value. Mention specific achievements or skills that would interest the recipient.',
-      'follow_up': 'Reference previous communication politely. Show continued interest and provide additional value.',
-      'job_application': 'Highlight relevant experience and skills that match the role. Show enthusiasm for the specific position.',
-      'networking': 'Focus on mutual connections, shared interests, or industry insights. Keep it conversational.',
-      'partnership': 'Emphasize mutual benefits and specific collaboration opportunities.'
-    };
-
-    return `${basePrompt}\n\nSPECIFIC GUIDELINES FOR ${emailType.toUpperCase()}:\n${typeSpecificGuidelines[emailType as keyof typeof typeSpecificGuidelines]}`;
   }
 
   /**
@@ -505,96 +503,61 @@ You must respond in this exact JSON format:
   private buildUserPrompt(request: AIEmailGenerationRequest): string {
     const { contact, userProfile, customInstructions, targetRoles } = request;
 
-    let prompt = `Generate a personalized email with the following information:
+    let prompt = `TONE: ${request.tone || 'professional'}
+TARGET ROLE: ${targetRoles && targetRoles.length > 0 ? targetRoles.join(', ') : 'General Opportunities'}
+CUSTOM INSTRUCTIONS: ${customInstructions || 'None'}
 
 RECIPIENT INFORMATION:
 - Name: ${contact.name}
-- Email: ${contact.email}`;
+- Company: ${contact.company || 'N/A'}
+- Position: ${contact.position || 'N/A'}
+- LinkedIn: ${contact.linkedin_link || 'N/A'}
+- Company_website: N/A
 
-    if (contact.company) prompt += `\n- Company: ${contact.company}`;
-    if (contact.position) prompt += `\n- Position: ${contact.position}`;
-    if (contact.linkedin_link) prompt += `\n- LinkedIn: ${contact.linkedin_link}`;
+SENDER INFORMATION:
+- Name: ${userProfile.full_name || 'N/A'}
+- Current Title: ${userProfile.title || 'N/A'}
+- Current Company: ${userProfile.company || 'N/A'}
+- Location: ${userProfile.location || 'N/A'}
+- Education: ${userProfile.college || 'N/A'}
+- Years of Experience: ${userProfile.experience_years || 'N/A'}
+- Available for Work: ${userProfile.available_for_work !== undefined ? (userProfile.available_for_work ? 'Yes' : 'No') : 'N/A'}
+- Phone: ${userProfile.phone || 'N/A'}
+- Resume Link: N/A
+- Key Skills: ${userProfile.skills && userProfile.skills.length > 0 ? userProfile.skills.slice(0, 8).join(', ') : 'N/A'}`;
 
-    prompt += `\n\nSENDER (USER) INFORMATION:`;
-    if (userProfile.full_name) prompt += `\n- Name: ${userProfile.full_name}`;
-    if (userProfile.title) prompt += `\n- Current Title: ${userProfile.title}`;
-    if (userProfile.company) prompt += `\n- Current Company: ${userProfile.company}`;
-    if (userProfile.location) prompt += `\n- Location: ${userProfile.location}`;
-    if (userProfile.college) prompt += `\n- Education: ${userProfile.college}`;
-    if (userProfile.experience_years) prompt += `\n- Years of Experience: ${userProfile.experience_years}`;
-    if (userProfile.phone) prompt += `\n- Phone: ${userProfile.phone}`;
-    if (userProfile.available_for_work !== undefined) {
-      prompt += `\n- Available for Work: ${userProfile.available_for_work ? 'Yes' : 'No'}`;
-    }
-    if (userProfile.bio) prompt += `\n- Bio: ${userProfile.bio}`;
-    
-    if (userProfile.skills && userProfile.skills.length > 0) {
-      const topSkills = userProfile.skills.slice(0, 8); // Increased to top 8 skills for better context
-      prompt += `\n- Key Skills: ${topSkills.join(', ')}`;
-    }
-
-    // Add detailed work experience information
+    // Add work experience information
     if (userProfile.experiences && userProfile.experiences.length > 0) {
-      prompt += `\n- Work Experience:`;
-      // Limit to most recent 3 experiences to avoid overwhelming the prompt
       const recentExperiences = userProfile.experiences.slice(0, 3);
+      let workExText = '';
       
       recentExperiences.forEach((exp, index) => {
-        prompt += `\n  ${index + 1}. ${exp.job_title} at ${exp.company}`;
-        if (exp.location) prompt += ` (${exp.location})`;
+        workExText += `${index + 1}. ${exp.job_title} at ${exp.company}`;
         if (exp.start_date || exp.end_date) {
           const startDate = exp.start_date ? new Date(exp.start_date).getFullYear() : 'Unknown';
           const endDate = exp.is_current ? 'Present' : (exp.end_date ? new Date(exp.end_date).getFullYear() : 'Unknown');
-          prompt += ` | ${startDate} - ${endDate}`;
+          workExText += ` (${startDate} - ${endDate})`;
         }
         
         if (exp.description) {
-          // Limit description to first 100 characters to keep prompt manageable
           const shortDescription = exp.description.length > 100 
             ? exp.description.substring(0, 100) + '...' 
             : exp.description;
-          prompt += `\n     Description: ${shortDescription}`;
+          workExText += ` - ${shortDescription}`;
         }
         
         if (exp.achievements && exp.achievements.length > 0) {
-          // Include top 2 achievements
           const topAchievements = exp.achievements.slice(0, 2);
-          prompt += `\n     Key Achievements: ${topAchievements.join('; ')}`;
+          workExText += ` Key achievements: ${topAchievements.join('; ')}`;
         }
         
-        if (exp.skills_used && exp.skills_used.length > 0) {
-          // Include relevant skills from this role
-          const roleSkills = exp.skills_used.slice(0, 5);
-          prompt += `\n     Skills Used: ${roleSkills.join(', ')}`;
-        }
+        if (index < recentExperiences.length - 1) workExText += '; ';
       });
+      
+      prompt += `\n- Work Experience: ${workExText}`;
+    } else {
+      prompt += `\n- Work Experience: N/A`;
     }
-
-    if (userProfile.linkedin) prompt += `\n- LinkedIn: ${userProfile.linkedin}`;
-    if (userProfile.github) prompt += `\n- GitHub: ${userProfile.github}`;
-    if (userProfile.website) prompt += `\n- Website: ${userProfile.website}`;
-
-    if (targetRoles && targetRoles.length > 0) {
-      prompt += `\n\nTARGET ROLES:\nThe sender is looking for opportunities in the following roles: ${targetRoles.join(', ')}`;
-    }
-
-    if (customInstructions) {
-      prompt += `\n\nCUSTOM INSTRUCTIONS:\n${customInstructions}`;
-    }
-
-    prompt += `\n\nPlease generate a personalized email that:
-1. Uses the most relevant and impressive information from the sender's profile and experience
-2. References specific details about the recipient when possible
-3. Highlights relevant achievements, skills, and experience that would interest the recipient
-4. Sounds natural and conversational, not like a template
-5. Includes a clear value proposition based on the sender's background
-6. Ends with a specific call to action
-7. Keeps the overall length concise (150-250 words) while being impactful
-8. If target roles are specified, tailor the email content to emphasize skills and experience relevant to those roles
-
-IMPORTANT: Select only the most relevant profile information that would be compelling to the recipient. Don't include every detail - focus on what would make the strongest impression for this specific email type and recipient. If target roles are provided, emphasize how the sender's background aligns with those specific roles.
-
-Remember to respond in the exact JSON format specified in the system prompt.`;
 
     return prompt;
   }
