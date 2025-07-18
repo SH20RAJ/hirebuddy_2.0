@@ -1,4 +1,5 @@
-import { EnvironmentValidator, InputValidator, InputSanitizer, SecureErrorHandler } from '../utils/security';
+import { EnvironmentValidator, SecureErrorHandler, InputValidator, InputSanitizer } from '../utils/security';
+import { supabase } from '@/lib/supabase';
 
 export interface EmailSendRequest {
   sender: string;
@@ -89,13 +90,13 @@ export interface AIEmailResponse {
 
 class EmailService {
   private apiBaseUrl: string;
-  private openaiApiKey: string;
+  private openaiProxyUrl: string;
 
   constructor() {
     // Use secure environment variable access
     try {
       this.apiBaseUrl = EnvironmentValidator.getSecureEnvVar('VITE_AWS_API_BASE_URL');
-      this.openaiApiKey = EnvironmentValidator.getSecureEnvVar('VITE_OPENAI_API_KEY');
+      this.openaiProxyUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/openai-proxy`;
     } catch (error) {
       throw SecureErrorHandler.createSafeError(
         error,
@@ -126,13 +127,13 @@ class EmailService {
 
 
       // Sanitize inputs
-      const sanitizedRequest = {
-        ...request,
-        to: InputSanitizer.sanitizeEmail(request.to),
-        sender: InputSanitizer.sanitizeEmail(request.sender),
-        subject: InputSanitizer.sanitizeText(request.subject),
-        body: InputSanitizer.sanitizeText(request.body)
-      };
+              const sanitizedRequest = {
+          ...request,
+          to: InputSanitizer.sanitizeEmail(request.to),
+          sender: InputSanitizer.sanitizeEmail(request.sender),
+          subject: InputSanitizer.sanitizeText(request.subject),
+          body: InputSanitizer.sanitizeText(request.body)
+        };
 
       console.log('🚀 Sending email via AWS API...', { 
         to: sanitizedRequest.to, 
@@ -411,20 +412,24 @@ class EmailService {
    * Generate AI-powered personalized email content using OpenAI 4o-mini
    */
   async generateAIEmail(request: AIEmailGenerationRequest): Promise<AIEmailResponse> {
-    if (!this.openaiApiKey) {
-      throw new Error('OpenAI API key not configured. Please add VITE_OPENAI_API_KEY to your environment variables.');
-    }
-
     try {
       const systemPrompt = this.buildSystemPrompt(request.emailType, request.tone || 'professional');
       const userPrompt = this.buildUserPrompt(request);
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.openaiApiKey}`,
-        },
+              // Get current session for authentication
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.access_token) {
+          throw new Error('Authentication required for AI features');
+        }
+
+        const response = await fetch(this.openaiProxyUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+          },
         body: JSON.stringify({
           model: 'gpt-4o-mini',
           messages: [

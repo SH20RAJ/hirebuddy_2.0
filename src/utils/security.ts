@@ -7,7 +7,6 @@ export class EnvironmentValidator {
   private static requiredVars = [
     'VITE_SUPABASE_URL',
     'VITE_SUPABASE_ANON_KEY',
-    'VITE_OPENAI_API_KEY',
     'VITE_AWS_API_BASE_URL',
     'VITE_GOOGLE_CLIENT_ID'
   ];

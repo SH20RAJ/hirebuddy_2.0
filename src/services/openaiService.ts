@@ -1,3 +1,11 @@
+import { supabase } from '@/lib/supabase';
+import { EnvironmentValidator, SecureErrorHandler } from '../utils/security';
+
+interface ChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
 interface OpenAIResponse {
   choices: Array<{
     message: {
@@ -36,61 +44,56 @@ interface JobMatchingResult {
   };
 }
 
-import { EnvironmentValidator, SecureErrorHandler } from '../utils/security';
-
 class OpenAIService {
-  private apiKey: string;
-  private baseUrl = 'https://api.openai.com/v1/chat/completions';
+  private baseUrl: string;
 
   constructor() {
-    try {
-      this.apiKey = EnvironmentValidator.getSecureEnvVar('VITE_OPENAI_API_KEY');
-    } catch (error) {
-      console.warn('OpenAI API key not found in environment variables. AI features will be limited.');
-      this.apiKey = '';
-    }
+    // Use Supabase Edge Function instead of direct OpenAI API
+    this.baseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/openai-proxy`;
   }
 
-  private checkApiKey(): boolean {
-    if (!this.apiKey) {
-      console.error('OpenAI API key not configured');
-      return false;
-    }
-    return true;
-  }
-
-  private async makeRequest(messages: Array<{ role: string; content: string }>, temperature = 0.7): Promise<string> {
+  private async makeSecureRequest(messages: ChatMessage[], options: {
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+  } = {}): Promise<string> {
     try {
+      // Get current session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('Authentication required for AI features');
+      }
+
       const response = await fetch(this.baseUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
-          'X-Content-Type-Options': 'nosniff',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: options.model || 'gpt-4o-mini',
           messages,
-          temperature,
-          max_tokens: 2000,
+          temperature: options.temperature || 0.7,
+          max_tokens: options.maxTokens || 1500,
         }),
       });
 
       if (!response.ok) {
-        const errorMessage = `OpenAI API error: ${response.status} ${response.statusText}`;
-        throw SecureErrorHandler.createSafeError(new Error(errorMessage), 'AI service temporarily unavailable. Please try again later.');
+        const errorData = await response.json();
+        throw new Error(`OpenAI API error: ${response.status} - ${errorData.message || 'Unknown error'}`);
       }
 
       const data: OpenAIResponse = await response.json();
       return data.choices[0]?.message?.content || '';
+
     } catch (error) {
-      console.error('OpenAI API request failed:', error);
-      
-      if (error instanceof Error && SecureErrorHandler.isSafeErrorMessage(error.message)) {
-        throw error;
-      }
-      
-      throw SecureErrorHandler.createSafeError(error, 'AI service temporarily unavailable. Please try again later.');
+      console.error('Secure OpenAI request failed:', error);
+      throw SecureErrorHandler.createSafeError(
+        error,
+        'AI service is temporarily unavailable. Please try again later.'
+      );
     }
   }
 
@@ -124,12 +127,12 @@ Return the response in this exact JSON format:
 }
 `;
 
-    const messages = [
+    const messages: ChatMessage[] = [
       { role: 'system', content: 'You are an expert resume writer and career coach.' },
       { role: 'user', content: prompt }
     ];
 
-    const response = await this.makeRequest(messages);
+    const response = await this.makeSecureRequest(messages);
     
     try {
       return JSON.parse(response);
@@ -171,12 +174,12 @@ Return the response in this exact JSON format:
 }
 `;
 
-    const messages = [
+    const messages: ChatMessage[] = [
       { role: 'system', content: 'You are an expert career counselor and technical recruiter.' },
       { role: 'user', content: prompt }
     ];
 
-    const response = await this.makeRequest(messages);
+    const response = await this.makeSecureRequest(messages);
     
     try {
       return JSON.parse(response);
@@ -254,12 +257,12 @@ Return the response in this exact JSON format (ensure valid JSON):
 Important: Ensure the response is valid JSON. Do not include any text before or after the JSON object.
 `;
 
-    const messages = [
+    const messages: ChatMessage[] = [
       { role: 'system', content: 'You are an expert ATS optimization specialist and resume writer. Always respond with valid JSON only.' },
       { role: 'user', content: prompt }
     ];
 
-    const response = await this.makeRequest(messages, 0.3); // Lower temperature for more consistent formatting
+    const response = await this.makeSecureRequest(messages, { temperature: 0.3 }); // Lower temperature for more consistent formatting
     
     try {
       // Clean the response to ensure it's valid JSON
@@ -329,9 +332,6 @@ Important: Ensure the response is valid JSON. Do not include any text before or 
       industryTrends: string[];
     };
   }> {
-    if (!this.checkApiKey()) {
-      throw new Error('OpenAI API key not configured');
-    }
     const contextInfo = jobTitle && industry ? 
       `Target Role: ${jobTitle} in ${industry} industry (${experienceLevel || 'Mid-level'})` : 
       'General market analysis';
@@ -395,7 +395,7 @@ Return response in this exact JSON format:
 }
 `;
 
-    const messages = [
+    const messages: ChatMessage[] = [
       { 
         role: 'system', 
         content: 'You are an expert career analyst and market researcher with deep knowledge of current job market trends, salary data, and skill demands across industries.' 
@@ -403,7 +403,7 @@ Return response in this exact JSON format:
       { role: 'user', content: prompt }
     ];
 
-    const response = await this.makeRequest(messages, 0.3);
+    const response = await this.makeSecureRequest(messages, { temperature: 0.3 });
     
     try {
       return JSON.parse(response);
@@ -432,9 +432,6 @@ Return response in this exact JSON format:
     salaryImpact: string;
     description: string;
   }>> {
-    if (!this.checkApiKey()) {
-      throw new Error('OpenAI API key not configured');
-    }
     const contextInfo = jobTitle && industry ? 
       `Target Role: ${jobTitle} in ${industry} industry (${experienceLevel || 'Mid-level'})` : 
       'General market analysis';
@@ -491,7 +488,7 @@ Return ONLY a JSON array of skills:
 ]
 `;
 
-    const messages = [
+    const messages: ChatMessage[] = [
       { 
         role: 'system', 
         content: 'You are an expert career analyst. Generate diverse, unique skill recommendations that help users stay competitive in the job market.' 
@@ -499,7 +496,7 @@ Return ONLY a JSON array of skills:
       { role: 'user', content: prompt }
     ];
 
-    const response = await this.makeRequest(messages, 0.4);
+    const response = await this.makeSecureRequest(messages, { temperature: 0.4 });
     
     try {
       const skills = JSON.parse(response);
