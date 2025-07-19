@@ -808,7 +808,7 @@ const AWSEmailComposer = ({
               id="sender-email"
               type="email"
               placeholder="your-email@gmail.com"
-              value={emailData.senderEmail}
+em              value={emailData.senderEmail}
               disabled
               className="bg-gray-50 text-gray-700"
             />

@@ -30,6 +30,13 @@ export const useCampaignContacts = () => {
 
       if (error) {
         console.error('Supabase function error:', error);
+        // Check if it's an email limit error
+        if (error.message && error.message.includes('Email limit exceeded')) {
+          const limitError = new Error(error.message);
+          (limitError as any).isEmailLimitError = true;
+          (limitError as any).currentUsage = data?.current_usage;
+          throw limitError;
+        }
         throw new Error(error.message || 'Failed to send emails');
       }
 
@@ -43,9 +50,12 @@ export const useCampaignContacts = () => {
           variant: "destructive",
         });
       } else {
+        const emailUsageText = data.email_usage 
+          ? ` (${data.email_usage.used}/${data.email_usage.limit} emails used)`
+          : '';
         toast({
           title: "Campaign emails sent successfully!",
-          description: `${data.successful || 0} emails sent successfully${data.failed > 0 ? `, ${data.failed} failed` : ''}`,
+          description: `${data.successful || 0} emails sent successfully${data.failed > 0 ? `, ${data.failed} failed` : ''}${emailUsageText}`,
         });
       }
 

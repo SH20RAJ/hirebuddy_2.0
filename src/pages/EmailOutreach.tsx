@@ -46,6 +46,9 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import MobileCard from '@/components/mobile/MobileCard';
 import MobileButton from '@/components/mobile/MobileButton';
+import { EmailUsageProgress } from '@/components/email/EmailUsageProgress';
+import { SubscriptionRenewalDialog } from '@/components/email/SubscriptionRenewalDialog';
+import { useEmailUsage } from '@/hooks/useEmailUsage';
 
 const EmailOutreach = () => {
   const { signOut } = useAuth();
@@ -75,6 +78,10 @@ const EmailOutreach = () => {
   
   // Learn More dialog state
   const [showLearnMoreDialog, setShowLearnMoreDialog] = useState(false);
+  
+  // Email usage and renewal dialog state
+  const [showRenewalDialog, setShowRenewalDialog] = useState(false);
+  const { emailUsage, loading: emailUsageLoading, refreshUsage, checkCanSendEmails, incrementEmailCount } = useEmailUsage();
 
   // Load Google contacts
   const loadGoogleContacts = async () => {
@@ -356,6 +363,16 @@ const EmailOutreach = () => {
       return;
     }
 
+    // Check email limits before sending (only for premium users)
+    if (isPremium) {
+      const canSendResult = await checkCanSendEmails(selectedContacts.length);
+      if (!canSendResult.canSend) {
+        toast.error(canSendResult.message || 'Email limit exceeded');
+        setShowRenewalDialog(true);
+        return;
+      }
+    }
+
     setIsSending(true);
     
     try {
@@ -407,6 +424,15 @@ const EmailOutreach = () => {
         toast.success(
           `Successfully ${useGmailMode ? 'sent' : 'simulated'} ${successCount} email${successCount !== 1 ? 's' : ''}`
         );
+        
+        // Update email count for premium users
+        if (isPremium && useGmailMode) {
+          try {
+            await incrementEmailCount(successCount);
+          } catch (error) {
+            console.error('Failed to update email count:', error);
+          }
+        }
       }
       
       if (failureCount > 0) {
@@ -987,6 +1013,18 @@ const EmailOutreach = () => {
                 </MobileCard>
               </div>
 
+              {/* Email Usage Progress (Premium Users Only) */}
+              {isPremium && (
+                <div className="mb-6">
+                  <EmailUsageProgress
+                    usage={emailUsage}
+                    loading={emailUsageLoading}
+                    onRenewClick={() => setShowRenewalDialog(true)}
+                    compact={false}
+                  />
+                </div>
+              )}
+
               {/* Desktop Stats */}
               <div className="hidden md:grid grid-cols-1 md:grid-cols-4 gap-6">
                 <Card>
@@ -1188,6 +1226,17 @@ const EmailOutreach = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Subscription Renewal Dialog */}
+      <SubscriptionRenewalDialog
+        isOpen={showRenewalDialog}
+        onClose={() => setShowRenewalDialog(false)}
+        emailUsage={emailUsage}
+        onRenewalSuccess={() => {
+          refreshUsage();
+          toast.success('Subscription renewed successfully!');
+        }}
+      />
     </div>
   );
 };

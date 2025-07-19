@@ -181,8 +181,17 @@ const EmailComposer = () => {
           if (result.domainVerificationRequired) {
             setShowDomainGuide(true);
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error sending emails:', error);
+          
+          // Check if it's an email limit error
+          if (error.isEmailLimitError) {
+            toast({
+              title: "Email limit exceeded",
+              description: error.message || "You've reached your email sending limit.",
+              variant: "destructive",
+            });
+          }
           // Don't throw here as the campaign was created successfully
         }
       }
