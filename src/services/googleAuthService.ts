@@ -375,6 +375,32 @@ class GoogleAuthService {
         }),
       });
 
+      if (response.ok) {
+        // Log successful email to useremaillog table
+        try {
+          const responseData = await response.json();
+          const { data: user } = await supabase.auth.getUser();
+          
+          if (user.user?.email) {
+            await supabase
+              .from('useremaillog')
+              .insert({
+                sent_at: new Date().toISOString(),
+                to: to,
+                user_id: user.user.email, // useremaillog uses email as user_id
+                messageId: responseData.id || `gmail-${Date.now()}`,
+                threadId: responseData.threadId || responseData.id,
+                reference: 'gmail-manual',
+                subject: subject
+              });
+            console.log(`Logged Gmail email to useremaillog for ${to}`);
+          }
+        } catch (logError) {
+          console.error('Failed to log Gmail email to useremaillog:', logError);
+          // Don't fail the email send if logging fails
+        }
+      }
+
       return response.ok;
     } catch (error) {
       console.error('Error sending email:', error);

@@ -1,7 +1,11 @@
+// @ts-ignore - Deno edge function imports
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+// @ts-ignore - Deno edge function imports  
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
+// @ts-ignore - Deno edge function imports
 import { Resend } from "npm:resend@2.0.0";
 
+// @ts-ignore - Deno global
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
@@ -26,7 +30,9 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const supabaseClient = createClient(
+      // @ts-ignore - Deno global
       Deno.env.get("SUPABASE_URL") ?? "",
+      // @ts-ignore - Deno global
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
@@ -45,6 +51,73 @@ const handler = async (req: Request): Promise<Response> => {
     const { campaignId, contactIds }: SendCampaignRequest = await req.json();
 
     console.log(`Processing campaign ${campaignId} for ${contactIds.length} contacts`);
+
+    // Check email limits before proceeding
+    // First get the email limit from totalemailcounttable
+    const { data: emailCountRecord, error: emailCountError } = await supabaseClient
+      .from("totalemailcounttable")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+
+    let emailLimit = 125;
+
+    if (emailCountRecord && !emailCountError) {
+      emailLimit = emailCountRecord.email_limit || 125;
+    } else {
+      // Create email count record if it doesn't exist
+      const { data: newEmailRecord, error: createError } = await supabaseClient
+        .from("totalemailcounttable")
+        .insert([{
+          user_id: user.id,
+          total_count: 0,
+          email_limit: 125
+        }])
+        .select()
+        .single();
+
+      if (createError) {
+        console.error("Error creating email count record:", createError);
+      }
+    }
+
+    // Count actual emails sent from useremaillog table
+    const { data: emailLogs, error: emailLogError } = await supabaseClient
+      .from("useremaillog")
+      .select("id")
+      .eq("user_id", user.email); // useremaillog uses email as user_id
+
+    let currentEmailCount = 0;
+    if (!emailLogError && emailLogs) {
+      currentEmailCount = emailLogs.length;
+      console.log(`User has sent ${currentEmailCount} emails from useremaillog`);
+    } else {
+      console.warn("Could not count from useremaillog, using stored count:", emailLogError);
+      currentEmailCount = emailCountRecord?.total_count || 0;
+    }
+
+    // Check if user can send the requested number of emails
+    const emailsToSend = contactIds.length;
+    const remainingEmails = emailLimit - currentEmailCount;
+
+    if (emailsToSend > remainingEmails) {
+      return new Response(
+        JSON.stringify({
+          error: "Email limit exceeded",
+          message: `You can only send ${remainingEmails} more emails. You've used ${currentEmailCount} out of ${emailLimit} emails.`,
+          current_usage: {
+            used: currentEmailCount,
+            limit: emailLimit,
+            remaining: remainingEmails,
+            percentage: Math.min(100, (currentEmailCount / emailLimit) * 100)
+          }
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
 
     // Get campaign details
     const { data: campaign, error: campaignError } = await supabaseClient
@@ -94,7 +167,12 @@ const handler = async (req: Request): Promise<Response> => {
     // Process emails in batches to respect rate limits
     const batchSize = 10; // Send 10 emails at a time
     const delay = 1000; // 1 second delay between batches
-    const results = [];
+    const results: Array<{
+      success: boolean;
+      contact: string;
+      emailId?: string;
+      error?: string;
+    }> = [];
     
     for (let i = 0; i < contacts.length; i += batchSize) {
       const batch = contacts.slice(i, i + batchSize);
@@ -164,6 +242,25 @@ const handler = async (req: Request): Promise<Response> => {
           }
 
           console.log(`Email sent successfully to ${contact.email}:`, emailResponse.data?.id);
+
+          // Log to useremaillog table for email counting
+          try {
+            await supabaseClient
+              .from("useremaillog")
+              .insert({
+                sent_at: new Date().toISOString(),
+                to: contact.email,
+                user_id: user.email, // useremaillog uses email as user_id
+                messageId: emailResponse.data?.id,
+                threadId: emailResponse.data?.id, // Use the same ID for thread initially
+                reference: `campaign-${campaign.id}`,
+                subject: personalizedSubject
+              });
+            console.log(`Logged email to useremaillog for ${contact.email}`);
+          } catch (logError) {
+            console.error(`Failed to log email to useremaillog for ${contact.email}:`, logError);
+            // Don't fail the entire process if logging fails
+          }
 
           // Update campaign_contacts with sent status
           if (campaignContact) {
@@ -243,13 +340,35 @@ const handler = async (req: Request): Promise<Response> => {
       message += `\n\nNote: Some emails failed due to domain verification. To send emails to any address, please verify your domain at https://resend.com/domains and update your profile email to use that domain.`;
     }
 
+    // Get updated email count from useremaillog after sending
+    let finalEmailCount = currentEmailCount + successful;
+    try {
+      const { data: updatedEmailLogs, error: countError } = await supabaseClient
+        .from("useremaillog")
+        .select("id")
+        .eq("user_id", user.email);
+      
+      if (!countError && updatedEmailLogs) {
+        finalEmailCount = updatedEmailLogs.length;
+        console.log(`Updated email count from useremaillog: ${finalEmailCount}`);
+      }
+    } catch (countError) {
+      console.warn("Could not get updated count from useremaillog:", countError);
+    }
+
     return new Response(
       JSON.stringify({
         message,
         results,
         successful,
         failed,
-        domainVerificationRequired: domainErrors.length > 0
+        domainVerificationRequired: domainErrors.length > 0,
+        email_usage: {
+          used: finalEmailCount,
+          limit: emailLimit,
+          remaining: emailLimit - finalEmailCount,
+          percentage: Math.min(100, (finalEmailCount / emailLimit) * 100)
+        }
       }),
       {
         status: 200,
