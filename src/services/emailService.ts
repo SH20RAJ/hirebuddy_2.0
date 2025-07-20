@@ -463,59 +463,53 @@ class EmailService {
    */
   private buildSystemPrompt(emailType: string, tone: string): string {
     if (emailType === 'follow_up') {
-      return `You are an expert cold email copywriter helping job seekers write short, impactful cold emails to recruiters, HRs, or startup founders.
+      return `You are an expert email writer specializing in professional follow-up communications.
 
-Your task is to generate a concise, human-sounding follow-up email. Don't generate the email more than 3-4 lines. Always keep in mind this is follow up email not original email.
+OBJECTIVE: Create a concise, compelling follow-up email (2-3 sentences max).
 
-Additional rules:
-- Always personalize the greeting with the recipient's name and company (if provided).
-- If a LinkedIn profile of the recipient is provided, use a slightly warmer tone.
-- Be humble and authentic in tone — never overhype.
-- Do not use long paragraphs or fluff. Keep it structured and skimmable.
-- Highlight the sender's skills clearly.
-- If available, use the recipient company website to justify the sender's interest in them.
+REQUIREMENTS:
+- Personalize with recipient's name and company
+- Reference the initial outreach subtly
+- Include a clear, soft call-to-action
+- Keep tone ${tone} but professional
+- Be brief and respectful of their time
 
-RESPONSE FORMAT:
-You must respond in this exact JSON format:
+OUTPUT FORMAT:
 {
-  "subject": "Compelling subject line here",
-  "body": "Email body here with proper line breaks using \\n\\n for paragraphs",
-  "reasoning": "Brief explanation of personalization choices"
+  "subject": "Brief, compelling subject line",
+  "body": "Email body with \\n\\n for paragraph breaks",
+  "reasoning": "Brief explanation of personalization strategy"
 }`;
     }
 
-    return `You are an expert cold email copywriter helping job seekers write short, impactful cold emails to recruiters, HRs, or startup founders.
+    return `You are an expert cold email copywriter for job seekers targeting recruiters, hiring managers, and startup founders.
 
-Your task is to generate a concise, human-sounding cold email that fits within one screen (max 150–180 words). The language should match the selected tone (e.g., professional, formal, friendly, or casual) and remain clear and readable.
+OBJECTIVE: Create a compelling, personalized cold email (100-150 words max) that generates responses.
 
-Additional rules:
-- Always personalize the greeting with the recipient's name and company (if provided).
-- If a LinkedIn profile of the recipient is provided, use a slightly warmer tone.
-- Be humble and authentic in tone — never overhype.
-- Do not use long paragraphs or fluff. Keep it structured and skimmable.
-- Highlight the sender's skills clearly.
-- If available, use the recipient company website to justify the sender's interest in them.
+EMAIL STRUCTURE:
+1. OPENER (1 sentence): Personal greeting + specific company detail/achievement
+2. INTRODUCTION (2 sentences): Who you are + relevant background
+3. VALUE PROPOSITION (2 sentences): Key skills/experience relevant to their needs
+4. CALL TO ACTION (1 sentence): Clear, low-pressure request
 
-Structure the email in the following format:
+REQUIREMENTS:
+- Tone: ${tone}
+- Use recipient's name and company details
+- Highlight sender's most relevant skills and experience
+- Include proper email signature with contact details
+- Be specific and avoid generic phrases
+- Focus on value you can bring to their organization
 
-1. **Opening Paragraph** – Introduce the sender: who they are, their current role, education background, and interest in the recipient's company. If the company website is provided, include a short line about why the sender is reaching out (e.g., "I came across your work at {{recipient_company}} and was impressed by...").
+SIGNATURE FORMAT:
+{{sender_name}}
+{{sender_education}}
+{{sender_phone}}
+{{sender_linkedin}}
 
-2. **Middle Paragraph** – Highlight the sender's top skills, years of experience, and recent work (2–3 notable roles or achievements). Focus on relevant experience tied to the target role.
-
-3. **Closing Paragraph** – Include a short, polite call to action. Invite them to connect or refer to the sender's resume.
-
-4. **Email Signature** – Format it exactly as follows:
-   - Line 1: {{user_name}}
-   - Line 2: {{user_education}}
-   - Line 3: {{user_phone}}
-   - Line 4: {{user_linkedin}}
-
-
-RESPONSE FORMAT:
-You must respond in this exact JSON format:
+OUTPUT FORMAT:
 {
-  "subject": "Compelling subject line here",
-  "body": "Email body here with proper line breaks using \\n\\n for paragraphs",
+  "subject": "Compelling, specific subject line",
+  "body": "Email body with \\n\\n for paragraph breaks and proper signature",
   "reasoning": "Brief explanation of personalization choices"
 }`;
   }
@@ -526,83 +520,113 @@ You must respond in this exact JSON format:
   private buildUserPrompt(request: AIEmailGenerationRequest): string {
     const { contact, userProfile, customInstructions, targetRoles } = request;
 
-    // Handle follow-up emails with simpler format
+    // Enhanced follow-up prompt
     if (request.emailType === 'follow_up') {
-      return `TONE: ${request.tone || 'professional'}
-TARGET ROLE: ${targetRoles && targetRoles.length > 0 ? targetRoles.join(', ') : 'General Opportunities'}
-CUSTOM INSTRUCTIONS: ${customInstructions || 'None'}
+      return `CONTEXT:
+Target Role: ${targetRoles?.join(', ') || 'General Opportunities'}
+Tone: ${request.tone || 'professional'}
+Custom Instructions: ${customInstructions || 'None'}
 
-RECIPIENT INFORMATION:
-- Name: ${contact.name}
-- Company: ${contact.company || 'N/A'}
-- Position: ${contact.position || 'N/A'}
-- LinkedIn: ${contact.linkedin_link || 'N/A'}
-- Company_website: N/A
+RECIPIENT:
+Name: ${contact.name}
+Company: ${contact.company || 'Company not specified'}
+Position: ${contact.position || 'Position not specified'}
+LinkedIn: ${contact.linkedin_link ? 'Available' : 'Not available'}
 
-SENDER INFORMATION:
-- Name: ${userProfile.full_name || 'N/A'}
-- Phone: ${userProfile.phone || 'N/A'}
-- Senders Linkedin: ${userProfile.linkedin || 'N/A'}`;
+SENDER:
+Name: ${userProfile.full_name || 'User'}
+Current Role: ${userProfile.title || 'Job Seeker'}
+Location: ${userProfile.location || 'Location not specified'}
+Phone: ${userProfile.phone || 'Phone not provided'}
+LinkedIn: ${userProfile.linkedin || 'LinkedIn not provided'}
+
+Generate a brief follow-up referencing the initial email about job opportunities.`;
     }
 
-    // Regular email format
-    let prompt = `TONE: ${request.tone || 'professional'}
-TARGET ROLE: ${targetRoles && targetRoles.length > 0 ? targetRoles.join(', ') : 'General Opportunities'}
-CUSTOM INSTRUCTIONS: ${customInstructions || 'None'}
+    // Enhanced regular email prompt with structured data
+    const workExperience = this.formatWorkExperience(userProfile.experiences);
+    const skillsSummary = this.formatSkills(userProfile.skills);
+    
+    return `CONTEXT:
+Target Roles: ${targetRoles?.join(', ') || 'General Opportunities'}
+Tone: ${request.tone || 'professional'}
+Custom Instructions: ${customInstructions || 'Standard job application outreach'}
 
-RECIPIENT INFORMATION:
-- Name: ${contact.name}
-- Company: ${contact.company || 'N/A'}
-- Position: ${contact.position || 'N/A'}
-- LinkedIn: ${contact.linkedin_link || 'N/A'}
-- Company_website: N/A
+RECIPIENT DATA:
+Name: ${contact.name}
+Company: ${contact.company || 'Company not available'}
+Position: ${contact.position || 'Position not available'}
+LinkedIn Profile: ${contact.linkedin_link ? 'Available for personalization' : 'Not available'}
 
-SENDER INFORMATION:
-- Name: ${userProfile.full_name || 'N/A'}
-- Current Title: ${userProfile.title || 'N/A'}
-- Current Company: ${userProfile.company || 'N/A'}
-- Location: ${userProfile.location || 'N/A'}
-- Education: ${userProfile.college || 'N/A'}
-- Years of Experience: ${userProfile.experience_years || 'N/A'}
-- Available for Work: ${userProfile.available_for_work !== undefined ? (userProfile.available_for_work ? 'Yes' : 'No') : 'N/A'}
-- Phone: ${userProfile.phone || 'N/A'}
-- Resume Link: N/A
-- Key Skills: ${userProfile.skills && userProfile.skills.length > 0 ? userProfile.skills.slice(0, 8).join(', ') : 'N/A'}`;
+SENDER PROFILE:
+Name: ${userProfile.full_name || 'User'}
+Current Position: ${userProfile.title || 'Job Seeker'}
+Current Company: ${userProfile.company || 'Currently seeking opportunities'}
+Location: ${userProfile.location || 'Location flexible'}
+Education: ${userProfile.college || 'Educational background available'}
+Experience Level: ${userProfile.experience_years || 0} years
+Available for Work: ${userProfile.available_for_work ? 'Immediately' : 'Open to opportunities'}
+Phone: ${userProfile.phone || 'Available upon request'}
+LinkedIn: ${userProfile.linkedin || 'LinkedIn profile available'}
+Professional Website: ${userProfile.website || 'Portfolio available upon request'}
 
-    // Add work experience information
-    if (userProfile.experiences && userProfile.experiences.length > 0) {
-      const recentExperiences = userProfile.experiences.slice(0, 3);
-      let workExText = '';
-      
-      recentExperiences.forEach((exp, index) => {
-        workExText += `${index + 1}. ${exp.job_title} at ${exp.company}`;
-        if (exp.start_date || exp.end_date) {
-          const startDate = exp.start_date ? new Date(exp.start_date).getFullYear() : 'Unknown';
-          const endDate = exp.is_current ? 'Present' : (exp.end_date ? new Date(exp.end_date).getFullYear() : 'Unknown');
-          workExText += ` (${startDate} - ${endDate})`;
-        }
-        
-        if (exp.description) {
-          const shortDescription = exp.description.length > 100 
-            ? exp.description.substring(0, 100) + '...' 
-            : exp.description;
-          workExText += ` - ${shortDescription}`;
-        }
-        
-        if (exp.achievements && exp.achievements.length > 0) {
-          const topAchievements = exp.achievements.slice(0, 2);
-          workExText += ` Key achievements: ${topAchievements.join('; ')}`;
-        }
-        
-        if (index < recentExperiences.length - 1) workExText += '; ';
-      });
-      
-      prompt += `\n- Work Experience: ${workExText}`;
-    } else {
-      prompt += `\n- Work Experience: N/A`;
+SKILLS PROFILE:
+${skillsSummary}
+
+RECENT WORK EXPERIENCE:
+${workExperience}
+
+SIGNATURE VARIABLES:
+{{sender_name}} = ${userProfile.full_name || 'User'}
+{{sender_education}} = ${userProfile.college || 'Educational Background Available'}
+{{sender_phone}} = ${userProfile.phone || 'Phone Available Upon Request'}
+{{sender_linkedin}} = ${userProfile.linkedin || 'LinkedIn Profile Available'}
+
+Generate a personalized email leveraging this data for maximum relevance.`;
+  }
+
+  /**
+   * Format work experience for prompt
+   */
+  private formatWorkExperience(experiences?: Array<any>): string {
+    if (!experiences || experiences.length === 0) {
+      return 'Fresh graduate or career changer seeking new opportunities';
     }
 
-    return prompt;
+    return experiences.slice(0, 2).map((exp, index) => {
+      const duration = this.formatExperienceDuration(exp.start_date, exp.end_date, exp.is_current);
+      const achievements = exp.achievements?.slice(0, 2).join('; ') || '';
+      const keySkills = exp.skills_used?.slice(0, 4).join(', ') || '';
+      
+      return `${index + 1}. ${exp.job_title} at ${exp.company} (${duration})
+   Key Skills: ${keySkills}
+   Top Achievements: ${achievements}
+   ${exp.description ? exp.description.substring(0, 120) + '...' : ''}`;
+    }).join('\n\n');
+  }
+
+  /**
+   * Format skills for prompt
+   */
+  private formatSkills(skills?: string[]): string {
+    if (!skills || skills.length === 0) {
+      return 'Diverse skill set with strong learning ability';
+    }
+
+    const topSkills = skills.slice(0, 8).join(', ');
+    return `Core Competencies: ${topSkills}${skills.length > 8 ? ' and more' : ''}`;
+  }
+
+  /**
+   * Format experience duration
+   */
+  private formatExperienceDuration(startDate?: string, endDate?: string, isCurrent?: boolean): string {
+    if (!startDate) return 'Duration available';
+    
+    const start = new Date(startDate).getFullYear();
+    const end = isCurrent ? 'Present' : (endDate ? new Date(endDate).getFullYear() : 'Present');
+    
+    return `${start} - ${end}`;
   }
 
   /**
