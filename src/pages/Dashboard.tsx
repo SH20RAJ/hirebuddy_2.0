@@ -85,7 +85,8 @@ import {
   Lightbulb,
   Network,
   Loader2,
-  Crown
+  Crown,
+  ArrowLeft
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -588,6 +589,14 @@ const Dashboard = () => {
         {/* Enhanced Header */}
         <header className="hidden md:flex h-16 shrink-0 items-center justify-between px-6 border-b bg-white sticky top-0 z-10 shadow-sm">
           <div className="flex items-center gap-4">
+            {/* Back Button */}
+            <Link to="/">
+              <Button variant="ghost" size="sm" className="flex items-center gap-2 hover:bg-gray-100">
+                <ArrowLeft className="w-4 h-4" />
+                <span className="text-sm">Back to Home</span>
+              </Button>
+            </Link>
+            
             {/* Connection Status Indicator */}
             {connectionStatus === 'demo' && (
               <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
