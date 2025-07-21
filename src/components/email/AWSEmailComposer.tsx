@@ -93,7 +93,7 @@ const AWSEmailComposer = ({
   const [followUpAiSettings, setFollowUpAiSettings] = useState({
     emailType: 'follow_up' as AIEmailGenerationRequest['emailType'],
     tone: 'professional' as AIEmailGenerationRequest['tone'],
-    customInstructions: '',
+    customInstructions: 'Keep this as a brief reminder, not a full introduction',
     targetRoles: [] as string[]
   });
   const [activeTab, setActiveTab] = useState<'compose' | 'followup' | 'conversation'>('compose');
@@ -723,7 +723,7 @@ const AWSEmailComposer = ({
         targetRoles: followUpAiSettings.targetRoles.length > 0 ? followUpAiSettings.targetRoles : undefined
       };
 
-      const aiResponse = await emailService.generateAIEmail(aiRequest);
+      const aiResponse = await emailService.generateAIFollowUp(aiRequest);
 
       setFollowUpData(prev => ({
         ...prev,
@@ -1317,9 +1317,9 @@ const AWSEmailComposer = ({
                 <MessageSquare className="h-5 w-5" />
                 <span>Compose Follow-up Email</span>
               </CardTitle>
-              <CardDescription>
-                Send a follow-up email to contacts you've previously emailed
-              </CardDescription>
+                          <CardDescription>
+              Send a brief follow-up reminder to contacts you've previously emailed (short, gentle reminders)
+            </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* AI Settings Toggle for Follow-up */}
@@ -1371,7 +1371,7 @@ const AWSEmailComposer = ({
                       <Label htmlFor="followup-custom-instructions" className="text-xs">Custom Instructions</Label>
                       <Textarea 
                         id="followup-custom-instructions"
-                        placeholder="Add specific instructions for the AI (e.g., mention a specific topic, reference previous conversation, etc.)"
+                        placeholder="Add specific instructions for the brief follow-up reminder (e.g., mention a specific topic from previous email, etc.)"
                         className="min-h-[60px] text-xs"
                         value={followUpAiSettings.customInstructions}
                         onChange={(e) => setFollowUpAiSettings(prev => ({ ...prev, customInstructions: e.target.value }))}

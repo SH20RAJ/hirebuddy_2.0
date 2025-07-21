@@ -52,7 +52,7 @@ const EmailPreview: React.FC<EmailPreviewProps> = ({
             <div className="flex items-start gap-2">
               <div className="text-green-600 mt-0.5">✅</div>
               <div className="text-sm text-green-800">
-                <strong>Email Format:</strong> Now sending as HTML for proper line spacing and formatting across all email clients. This ensures your emails display with correct paragraph breaks and professional structure.
+                <strong>Email Format:</strong> Now sending as concise HTML emails (100-120 words) with proper formatting. Each email gets straight to the point with one key achievement and a clear call to action.
               </div>
             </div>
           </div>

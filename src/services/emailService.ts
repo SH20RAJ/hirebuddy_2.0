@@ -447,6 +447,55 @@ class EmailService {
   }
 
   /**
+   * Generate AI-powered follow-up email (short reminder)
+   */
+  async generateAIFollowUp(request: AIEmailGenerationRequest): Promise<AIEmailResponse> {
+    try {
+      const systemPrompt = this.buildFollowUpSystemPrompt(request.tone || 'professional');
+      const userPrompt = this.buildFollowUpUserPrompt(request);
+
+      // Get current session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('Authentication required for AI features');
+      }
+
+      const response = await fetch(this.openaiProxyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.6,
+          max_tokens: 500, // Much shorter for follow-ups
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+      }
+
+      const data = await response.json();
+      const aiResponse = data.choices[0]?.message?.content || '';
+
+      // Parse the AI response to extract subject and body
+      return this.parseAIResponse(aiResponse);
+    } catch (error) {
+      console.error('Error generating AI follow-up:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Generate AI-powered personalized email content using OpenAI 4o-mini
    */
   async generateAIEmail(request: AIEmailGenerationRequest): Promise<AIEmailResponse> {
@@ -496,13 +545,109 @@ class EmailService {
   }
 
   /**
+   * Build system prompt specifically for follow-up emails
+   */
+  private buildFollowUpSystemPrompt(tone: string): string {
+    return `You are a professional email assistant specializing in creating SHORT, EFFECTIVE follow-up emails. Your follow-ups should be:
+
+1. EXTREMELY BRIEF - 30-50 words maximum (not including greeting/closing)
+2. GENTLE REMINDER - Don't be pushy or aggressive
+3. VALUE-FOCUSED - Quickly remind them of your value
+4. ACTION-ORIENTED - Clear, simple call to action
+5. RESPECTFUL - Acknowledge they're busy
+
+TONE: ${tone}
+
+FOLLOW-UP SPECIFIC GUIDELINES:
+- This is a FOLLOW-UP to a previous email, not a first introduction
+- Keep it shorter than a text message
+- Reference the previous email briefly
+- Don't repeat all your qualifications again
+- Just a gentle reminder with one reason to respond
+- Be understanding that they're busy
+- Maximum 2-3 sentences for the main content
+
+EMAIL STRUCTURE FOR FOLLOW-UPS:
+- Greeting: "Hi [Name],"
+- Context: "I wanted to follow up on my previous email."
+- Value reminder: ONE brief sentence about value/benefit
+- Call to action: Simple, specific request
+- Closing: "Best regards,\\n[Name]"
+
+RESPONSE FORMAT:
+You must respond in this exact JSON format:
+{
+  "subject": "Follow-up: [Brief subject]",
+  "body": "Follow-up email body with proper line breaks using \\n\\n for paragraphs",
+  "reasoning": "Brief explanation of approach"
+}`;
+  }
+
+  /**
+   * Build user prompt specifically for follow-up emails
+   */
+  private buildFollowUpUserPrompt(request: AIEmailGenerationRequest): string {
+    const { contact, userProfile, customInstructions } = request;
+
+    let prompt = `Generate a SHORT follow-up email (reminder) with the following information:
+
+RECIPIENT:
+- Name: ${contact.name}
+- Email: ${contact.email}`;
+
+    if (contact.company) prompt += `\n- Company: ${contact.company}`;
+    if (contact.position) prompt += `\n- Position: ${contact.position}`;
+
+    prompt += `\n\nSENDER:`;
+    if (userProfile.full_name) prompt += `\n- Name: ${userProfile.full_name}`;
+    if (userProfile.title) prompt += `\n- Title: ${userProfile.title}`;
+    if (userProfile.company) prompt += `\n- Company: ${userProfile.company}`;
+
+    // Only include the most impressive achievement for follow-ups
+    if (userProfile.experiences && userProfile.experiences.length > 0) {
+      const topExperience = userProfile.experiences[0];
+      if (topExperience.achievements && topExperience.achievements.length > 0) {
+        prompt += `\n- Key Achievement: ${topExperience.achievements[0]}`;
+      }
+    }
+
+    if (customInstructions) {
+      prompt += `\n\nCUSTOM INSTRUCTIONS: ${customInstructions}`;
+    }
+
+    prompt += `\n\nGenerate a VERY SHORT follow-up email that:
+1. Acknowledges this is a follow-up to a previous email
+2. Briefly reminds them of ONE key value you offer
+3. Includes a simple, non-pushy call to action
+4. Stays under 50 words for the main content (excluding greeting/closing)
+5. Uses understanding tone - they're busy people
+6. Structure: Greeting → Follow-up context → Brief value reminder → Simple CTA → Closing
+
+EXAMPLE STRUCTURE:
+"Hi [Name],
+
+I wanted to follow up on my previous email.
+
+I'm the [title] who helped [achievement/value in one sentence].
+
+Would you have 10 minutes for a quick call this week?
+
+Best regards,
+[Name]"
+
+Keep it SHORT, RESPECTFUL, and VALUE-FOCUSED. This should feel like a gentle reminder, not a sales pitch.`;
+
+    return prompt;
+  }
+
+  /**
    * Build system prompt based on email type and tone
    */
   private buildSystemPrompt(emailType: string, tone: string): string {
     const basePrompt = `You are a professional email writing assistant specializing in creating personalized, effective emails for job seekers and professionals. Your emails should be:
 
 1. PERSONALIZED - Use specific details about the recipient and sender
-2. CONCISE - Keep it brief and to the point (150-250 words max)
+2. CONCISE - Keep it very brief and to the point (100-150 words max)
 3. PROFESSIONAL - Maintain appropriate business tone
 4. ACTION-ORIENTED - Include a clear call to action
 5. AUTHENTIC - Sound genuine and human, not robotic
@@ -511,20 +656,23 @@ TONE: ${tone}
 EMAIL TYPE: ${emailType}
 
 IMPORTANT GUIDELINES:
-- Only include relevant information from the user's profile - don't overwhelm with unnecessary details
+- Focus on 1-2 most relevant achievements or skills only
 - Use the recipient's name and company naturally
 - Avoid generic templates - make each email feel personal
-- Include specific value propositions relevant to the recipient
-- Keep subject lines compelling but professional (6-8 words max)
+- Include one specific value proposition relevant to the recipient
+- Keep subject lines compelling but professional (4-6 words max)
 - End with a clear, specific call to action
+- Eliminate unnecessary words and filler content
+- Every sentence must add value
 
 EMAIL FORMATTING REQUIREMENTS:
 - Use \\n\\n to separate paragraphs (this creates proper spacing)
-- Use \\n for line breaks within the same thought/paragraph
-- Start with a proper greeting (e.g., "Hi [Name]," or "Dear [Name],")
-- Include proper spacing before closing (\\n\\nBest regards,\\n[Your Name])
-- Structure should be: Greeting → Opening → Body → Call to Action → Closing
-- Ensure each paragraph serves a specific purpose and flows naturally
+- Start with a brief greeting: "Hi [Name],"
+- Structure: Greeting → One sentence context → Key value proposition → Call to action → Brief closing
+- Maximum 3-4 paragraphs total
+- Each paragraph should be 1-2 sentences maximum
+- Eliminate unnecessary transitional phrases
+- Get straight to the point
 
 RESPONSE FORMAT:
 You must respond in this exact JSON format:
@@ -535,11 +683,11 @@ You must respond in this exact JSON format:
 }`;
 
     const typeSpecificGuidelines = {
-      'cold_outreach': 'Focus on building rapport and offering value. Mention specific achievements or skills that would interest the recipient.',
-      'follow_up': 'Reference previous communication politely. Show continued interest and provide additional value.',
-      'job_application': 'Highlight relevant experience and skills that match the role. Show enthusiasm for the specific position.',
-      'networking': 'Focus on mutual connections, shared interests, or industry insights. Keep it conversational.',
-      'partnership': 'Emphasize mutual benefits and specific collaboration opportunities.'
+      'cold_outreach': 'Lead with ONE impressive achievement that would interest them. Skip small talk.',
+      'follow_up': 'Brief reference to previous contact. Add ONE new piece of value.',
+      'job_application': 'State the role. Highlight ONE relevant achievement with numbers. Show enthusiasm briefly.',
+      'networking': 'Mention ONE mutual connection or shared interest. Keep extremely conversational.',
+      'partnership': 'State ONE specific mutual benefit or collaboration opportunity immediately.'
     };
 
     return `${basePrompt}\n\nSPECIFIC GUIDELINES FOR ${emailType.toUpperCase()}:\n${typeSpecificGuidelines[emailType as keyof typeof typeSpecificGuidelines]}`;
@@ -575,45 +723,34 @@ RECIPIENT INFORMATION:
     if (userProfile.bio) prompt += `\n- Bio: ${userProfile.bio}`;
     
     if (userProfile.skills && userProfile.skills.length > 0) {
-      const topSkills = userProfile.skills.slice(0, 8); // Increased to top 8 skills for better context
+      const topSkills = userProfile.skills.slice(0, 4); // Limit to top 4 skills for conciseness
       prompt += `\n- Key Skills: ${topSkills.join(', ')}`;
     }
 
-    // Add detailed work experience information
+    // Add focused work experience information
     if (userProfile.experiences && userProfile.experiences.length > 0) {
-      prompt += `\n- Work Experience:`;
-      // Limit to most recent 3 experiences to avoid overwhelming the prompt
-      const recentExperiences = userProfile.experiences.slice(0, 3);
+      prompt += `\n- Most Recent Experience:`;
+      // Focus on just the most recent/relevant experience to keep emails concise
+      const topExperience = userProfile.experiences[0];
       
-      recentExperiences.forEach((exp, index) => {
-        prompt += `\n  ${index + 1}. ${exp.job_title} at ${exp.company}`;
-        if (exp.location) prompt += ` (${exp.location})`;
-        if (exp.start_date || exp.end_date) {
-          const startDate = exp.start_date ? new Date(exp.start_date).getFullYear() : 'Unknown';
-          const endDate = exp.is_current ? 'Present' : (exp.end_date ? new Date(exp.end_date).getFullYear() : 'Unknown');
-          prompt += ` | ${startDate} - ${endDate}`;
-        }
-        
-        if (exp.description) {
-          // Limit description to first 100 characters to keep prompt manageable
-          const shortDescription = exp.description.length > 100 
-            ? exp.description.substring(0, 100) + '...' 
-            : exp.description;
-          prompt += `\n     Description: ${shortDescription}`;
-        }
-        
-        if (exp.achievements && exp.achievements.length > 0) {
-          // Include top 2 achievements
-          const topAchievements = exp.achievements.slice(0, 2);
-          prompt += `\n     Key Achievements: ${topAchievements.join('; ')}`;
-        }
-        
-        if (exp.skills_used && exp.skills_used.length > 0) {
-          // Include relevant skills from this role
-          const roleSkills = exp.skills_used.slice(0, 5);
-          prompt += `\n     Skills Used: ${roleSkills.join(', ')}`;
-        }
-      });
+      prompt += `\n  Current: ${topExperience.job_title} at ${topExperience.company}`;
+      if (topExperience.start_date || topExperience.end_date) {
+        const startDate = topExperience.start_date ? new Date(topExperience.start_date).getFullYear() : 'Unknown';
+        const endDate = topExperience.is_current ? 'Present' : (topExperience.end_date ? new Date(topExperience.end_date).getFullYear() : 'Unknown');
+        prompt += ` (${startDate} - ${endDate})`;
+      }
+      
+      if (topExperience.achievements && topExperience.achievements.length > 0) {
+        // Include only the most impressive achievement
+        const topAchievement = topExperience.achievements[0];
+        prompt += `\n  Top Achievement: ${topAchievement}`;
+      }
+      
+      if (topExperience.skills_used && topExperience.skills_used.length > 0) {
+        // Include top 3 skills only
+        const topSkills = topExperience.skills_used.slice(0, 3);
+        prompt += `\n  Key Skills: ${topSkills.join(', ')}`;
+      }
     }
 
     if (userProfile.linkedin) prompt += `\n- LinkedIn: ${userProfile.linkedin}`;
@@ -628,29 +765,31 @@ RECIPIENT INFORMATION:
       prompt += `\n\nCUSTOM INSTRUCTIONS:\n${customInstructions}`;
     }
 
-    prompt += `\n\nPlease generate a personalized email that:
-1. Uses the most relevant and impressive information from the sender's profile and experience
-2. References specific details about the recipient when possible
-3. Highlights relevant achievements, skills, and experience that would interest the recipient
+    prompt += `\n\nPlease generate a very concise, impactful email that:
+1. Uses ONLY the most relevant and impressive information (1-2 key points maximum)
+2. References the recipient's name and company naturally
+3. Highlights ONE specific achievement or skill that would interest the recipient
 4. Sounds natural and conversational, not like a template
-5. Includes a clear value proposition based on the sender's background
-6. Ends with a specific call to action
-7. Keeps the overall length concise (150-250 words) while being impactful
-8. If target roles are specified, tailor the email content to emphasize skills and experience relevant to those roles
+5. Includes ONE clear value proposition
+6. Ends with a specific, actionable call to action
+7. Keeps the total length under 100-120 words maximum
+8. If target roles are specified, focus on the most relevant alignment only
 
-IMPORTANT FORMATTING INSTRUCTIONS:
-- Start with "Hi [Name]," or "Dear [Name]," (use the recipient's actual name)
-- Use \\n\\n to separate each paragraph for proper spacing
-- Structure the email as: Greeting → Opening → Body → Call to Action → Closing
-- End with proper closing like "\\n\\nBest regards,\\n[Your actual name]"
-- Ensure each paragraph is concise and serves a specific purpose
-- Don't use excessive formatting - keep it clean and professional
+STRICT CONCISENESS REQUIREMENTS:
+- Start with "Hi [Name],"
+- Use \\n\\n to separate paragraphs (maximum 3-4 paragraphs)
+- Structure: Greeting → One context sentence → Key value/achievement → Call to action → Brief closing
+- Each paragraph: 1-2 sentences maximum
+- NO unnecessary words, transitions, or filler content
+- Get straight to the point immediately
+- End with "Best regards,\\n[Name]"
 
-CONTENT GUIDELINES:
-- Select only the most relevant profile information that would be compelling to the recipient
-- Don't include every detail - focus on what would make the strongest impression for this specific email type and recipient
-- If target roles are provided, emphasize how the sender's background aligns with those specific roles
-- Make sure the email flows naturally from introduction to value proposition to call to action
+CONTENT FOCUS:
+- Choose the SINGLE most impressive achievement or skill that matches the recipient's interests
+- Include ONE specific number, percentage, or measurable result if available
+- Mention the recipient's company or role briefly for personalization
+- Focus on value you can provide, not what you want
+- Make every word count - eliminate redundancy
 
 Remember to respond in the exact JSON format specified in the system prompt.`;
 
