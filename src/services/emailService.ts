@@ -8,6 +8,8 @@ export interface EmailSendRequest {
   body: string;
   attachment_path?: string;
   isHtml?: boolean;
+  content_type?: string;
+  mime_type?: string;
 }
 
 export interface FollowUpRequest {
@@ -16,6 +18,8 @@ export interface FollowUpRequest {
   to: string;
   subject?: string;
   isHtml?: boolean;
+  content_type?: string;
+  mime_type?: string;
 }
 
 export interface EmailConversationRequest {
@@ -93,7 +97,7 @@ export interface AIEmailResponse {
 class EmailService {
   private apiBaseUrl: string;
   private openaiProxyUrl: string;
-  private useHtmlEmails: boolean = false; // TODO: Set to true when AWS backend API supports HTML emails with proper content-type headers
+  private useHtmlEmails: boolean = true; // Enable HTML emails for proper formatting and line spacing
 
   constructor() {
     // Use secure environment variable access
@@ -143,7 +147,11 @@ class EmailService {
       console.log('🚀 Sending email via AWS API...', { 
         to: sanitizedRequest.to, 
         subject: sanitizedRequest.subject,
-        sender: sanitizedRequest.sender 
+        sender: sanitizedRequest.sender,
+        isHtml: sanitizedRequest.isHtml,
+        content_type: sanitizedRequest.content_type,
+        mime_type: sanitizedRequest.mime_type,
+        bodyPreview: sanitizedRequest.body.substring(0, 200) + '...'
       });
 
       const response = await fetch(`${this.apiBaseUrl}/send_email`, {
@@ -234,7 +242,11 @@ class EmailService {
 
       console.log('🚀 Sending follow-up email via AWS API...', { 
         to: sanitizedRequest.to, 
-        sender: sanitizedRequest.sender 
+        sender: sanitizedRequest.sender,
+        isHtml: sanitizedRequest.isHtml,
+        content_type: sanitizedRequest.content_type,
+        mime_type: sanitizedRequest.mime_type,
+        bodyPreview: sanitizedRequest.body.substring(0, 200) + '...'
       });
 
       const response = await fetch(`${this.apiBaseUrl}/send_followup`, {

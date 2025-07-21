@@ -365,7 +365,9 @@ const AWSEmailComposer = ({
           to: contact.email,
           subject: emailData.subject,
           body: emailService.getFormattedEmailContent(emailBody),
-          isHtml: isHtmlEnabled
+          isHtml: isHtmlEnabled,
+          content_type: isHtmlEnabled ? 'text/html; charset=utf-8' : 'text/plain; charset=utf-8',
+          mime_type: isHtmlEnabled ? 'text/html' : 'text/plain'
           // Removed attachment_path to avoid email sending issues
         };
 
@@ -467,7 +469,9 @@ const AWSEmailComposer = ({
         sender: emailData.senderEmail,
         to: selectedContact.email,
         body: emailService.getFormattedEmailContent(followUpData.body),
-        isHtml: isHtmlEnabled
+        isHtml: isHtmlEnabled,
+        content_type: isHtmlEnabled ? 'text/html; charset=utf-8' : 'text/plain; charset=utf-8',
+        mime_type: isHtmlEnabled ? 'text/html' : 'text/plain'
       };
 
       const response = await emailService.sendFollowUp(followUpRequest);

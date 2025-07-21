@@ -48,32 +48,19 @@ const EmailPreview: React.FC<EmailPreviewProps> = ({
           </div>
 
           {/* Current Format Notice */}
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
             <div className="flex items-start gap-2">
-              <div className="text-amber-600 mt-0.5">ℹ️</div>
-              <div className="text-sm text-amber-800">
-                <strong>Email Format:</strong> Currently sending as plain text with proper line spacing for maximum compatibility across email clients. HTML format is available for future use when backend support is confirmed.
+              <div className="text-green-600 mt-0.5">✅</div>
+              <div className="text-sm text-green-800">
+                <strong>Email Format:</strong> Now sending as HTML for proper line spacing and formatting across all email clients. This ensures your emails display with correct paragraph breaks and professional structure.
               </div>
             </div>
           </div>
 
-          {/* Email Body Preview - Plain Text (Currently Used) */}
+          {/* Email Body Preview - HTML Version (Currently Used) */}
           <div className="border rounded-lg overflow-hidden">
             <div className="bg-green-100 px-4 py-2 text-sm font-medium text-green-800 border-b">
-              ✅ Email Content (Plain Text - Currently Sent)
-            </div>
-            
-            <div className="p-6 bg-white">
-              <pre className="whitespace-pre-wrap font-sans text-sm text-gray-900 leading-relaxed">
-                {formattedPlainText}
-              </pre>
-            </div>
-          </div>
-
-          {/* Email Body Preview - HTML Version */}
-          <div className="border rounded-lg overflow-hidden">
-            <div className="bg-blue-100 px-4 py-2 text-sm font-medium text-blue-800 border-b">
-              📋 Email Content (HTML Format - For Future Use)
+              ✅ Email Content (HTML Format - Currently Sent)
             </div>
             
             <div className="p-6 bg-white">
@@ -81,6 +68,19 @@ const EmailPreview: React.FC<EmailPreviewProps> = ({
                 dangerouslySetInnerHTML={{ __html: formattedHtml }}
                 className="prose prose-sm max-w-none"
               />
+            </div>
+          </div>
+
+          {/* Email Body Preview - Plain Text Version */}
+          <div className="border rounded-lg overflow-hidden">
+            <div className="bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 border-b">
+              📋 Email Content (Plain Text - Backup Format)
+            </div>
+            
+            <div className="p-6 bg-white">
+              <pre className="whitespace-pre-wrap font-sans text-sm text-gray-900 leading-relaxed">
+                {formattedPlainText}
+              </pre>
             </div>
           </div>
 
