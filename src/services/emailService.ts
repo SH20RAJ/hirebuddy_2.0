@@ -461,46 +461,39 @@ class EmailService {
    * Build system prompt based on email type and tone
    */
   private buildSystemPrompt(emailType: string, tone: string): string {
-    const basePrompt = `You are a professional email writing assistant specializing in creating short, simple, and effective emails for job seekers and professionals. Your emails should be:
+    const basePrompt = `You are a professional email writing assistant specializing in creating personalized, effective emails for job seekers and professionals. Your emails should be:
 
-1. ULTRA-CONCISE - Keep it extremely brief (80-120 words max, 3-4 sentences ideal)
-2. SIMPLE - Use simple language, avoid jargon or complex terms
-3. DIRECT - Get straight to the point without unnecessary fluff
-4. PERSONALIZED - Use specific details about the recipient when available
-5. ACTION-ORIENTED - Include ONE clear, simple call to action
+1. PERSONALIZED - Use specific details about the recipient and sender
+2. CONCISE - Keep it brief and to the point (150-250 words max)
+3. PROFESSIONAL - Maintain appropriate business tone
+4. ACTION-ORIENTED - Include a clear call to action
+5. AUTHENTIC - Sound genuine and human, not robotic
 
 TONE: ${tone}
 EMAIL TYPE: ${emailType}
 
-CRITICAL REQUIREMENTS:
-- Maximum 120 words total (excluding signature)
-- Use 2-3 short paragraphs maximum
-- Subject line must be 4-6 words only
-- Include clickable links in proper HTML format: <a href="URL">Link Text</a>
-- End with ONE simple call to action
-- Avoid buzzwords, corporate speak, or lengthy explanations
-- Make every word count - remove unnecessary adjectives and filler
-
-LINK FORMATTING:
-- LinkedIn profiles: <a href="linkedin_url">LinkedIn Profile</a>
-- Websites: <a href="website_url">Portfolio</a> or <a href="website_url">Website</a>
-- GitHub: <a href="github_url">GitHub</a>
-- Always ensure links are properly formatted and clickable
+IMPORTANT GUIDELINES:
+- Only include relevant information from the user's profile - don't overwhelm with unnecessary details
+- Use the recipient's name and company naturally
+- Avoid generic templates - make each email feel personal
+- Include specific value propositions relevant to the recipient
+- Keep subject lines compelling but professional (6-8 words max)
+- End with a clear, specific call to action
 
 RESPONSE FORMAT:
 You must respond in this exact JSON format:
 {
-  "subject": "Short subject (4-6 words)",
-  "body": "Ultra-concise email body with proper HTML links using <a href='URL'>Text</a> format and \\n\\n for paragraphs",
-  "reasoning": "Brief explanation of choices"
+  "subject": "Compelling subject line here",
+  "body": "Email body here with proper line breaks using \\n\\n for paragraphs",
+  "reasoning": "Brief explanation of personalization choices"
 }`;
 
     const typeSpecificGuidelines = {
-      'cold_outreach': 'One sentence intro, one key skill/achievement, simple call to action. Keep it under 100 words.',
-      'follow_up': 'Brief reference to previous contact, one new value point, direct ask. Maximum 80 words.',
-      'job_application': 'State interest in role, highlight ONE relevant skill/experience, request interview. Stay under 100 words.',
-      'networking': 'Mention connection/shared interest, brief value proposition, suggest quick call. Keep to 90 words max.',
-      'partnership': 'State partnership interest, ONE key benefit, propose brief discussion. Maximum 100 words.'
+      'cold_outreach': 'Focus on building rapport and offering value. Mention specific achievements or skills that would interest the recipient.',
+      'follow_up': 'Reference previous communication politely. Show continued interest and provide additional value.',
+      'job_application': 'Highlight relevant experience and skills that match the role. Show enthusiasm for the specific position.',
+      'networking': 'Focus on mutual connections, shared interests, or industry insights. Keep it conversational.',
+      'partnership': 'Emphasize mutual benefits and specific collaboration opportunities.'
     };
 
     return `${basePrompt}\n\nSPECIFIC GUIDELINES FOR ${emailType.toUpperCase()}:\n${typeSpecificGuidelines[emailType as keyof typeof typeSpecificGuidelines]}`;
@@ -536,30 +529,43 @@ RECIPIENT INFORMATION:
     if (userProfile.bio) prompt += `\n- Bio: ${userProfile.bio}`;
     
     if (userProfile.skills && userProfile.skills.length > 0) {
-      const topSkills = userProfile.skills.slice(0, 4); // Limited to top 4 skills for brevity
+      const topSkills = userProfile.skills.slice(0, 8); // Increased to top 8 skills for better context
       prompt += `\n- Key Skills: ${topSkills.join(', ')}`;
     }
 
-    // Add concise work experience information
+    // Add detailed work experience information
     if (userProfile.experiences && userProfile.experiences.length > 0) {
       prompt += `\n- Work Experience:`;
-      // Limit to most recent 2 experiences for ultra-concise emails
-      const recentExperiences = userProfile.experiences.slice(0, 2);
+      // Limit to most recent 3 experiences to avoid overwhelming the prompt
+      const recentExperiences = userProfile.experiences.slice(0, 3);
       
       recentExperiences.forEach((exp, index) => {
         prompt += `\n  ${index + 1}. ${exp.job_title} at ${exp.company}`;
+        if (exp.location) prompt += ` (${exp.location})`;
         if (exp.start_date || exp.end_date) {
-          const startDate = exp.start_date ? new Date(exp.start_date).getFullYear() : '';
-          const endDate = exp.is_current ? 'Present' : (exp.end_date ? new Date(exp.end_date).getFullYear() : '');
-          if (startDate || endDate) prompt += ` (${startDate}-${endDate})`;
+          const startDate = exp.start_date ? new Date(exp.start_date).getFullYear() : 'Unknown';
+          const endDate = exp.is_current ? 'Present' : (exp.end_date ? new Date(exp.end_date).getFullYear() : 'Unknown');
+          prompt += ` | ${startDate} - ${endDate}`;
         }
         
-        // Only include the most impressive achievement or skill for brevity
+        if (exp.description) {
+          // Limit description to first 100 characters to keep prompt manageable
+          const shortDescription = exp.description.length > 100 
+            ? exp.description.substring(0, 100) + '...' 
+            : exp.description;
+          prompt += `\n     Description: ${shortDescription}`;
+        }
+        
         if (exp.achievements && exp.achievements.length > 0) {
-          prompt += `\n     Top Achievement: ${exp.achievements[0]}`;
-        } else if (exp.skills_used && exp.skills_used.length > 0) {
-          const topSkill = exp.skills_used[0];
-          prompt += `\n     Key Skill: ${topSkill}`;
+          // Include top 2 achievements
+          const topAchievements = exp.achievements.slice(0, 2);
+          prompt += `\n     Key Achievements: ${topAchievements.join('; ')}`;
+        }
+        
+        if (exp.skills_used && exp.skills_used.length > 0) {
+          // Include relevant skills from this role
+          const roleSkills = exp.skills_used.slice(0, 5);
+          prompt += `\n     Skills Used: ${roleSkills.join(', ')}`;
         }
       });
     }
@@ -576,28 +582,19 @@ RECIPIENT INFORMATION:
       prompt += `\n\nCUSTOM INSTRUCTIONS:\n${customInstructions}`;
     }
 
-    prompt += `\n\nGenerate an ultra-concise, simple email that:
-1. Uses ONLY the most relevant detail from sender's profile (pick 1-2 key points maximum)
-2. Mentions recipient's name and company if available
-3. States purpose in ONE simple sentence
-4. Includes ONE clear call to action
-5. Maximum 120 words total
-6. Formats any URLs as clickable HTML links: <a href="URL">Text</a>
+    prompt += `\n\nPlease generate a personalized email that:
+1. Uses the most relevant and impressive information from the sender's profile and experience
+2. References specific details about the recipient when possible
+3. Highlights relevant achievements, skills, and experience that would interest the recipient
+4. Sounds natural and conversational, not like a template
+5. Includes a clear value proposition based on the sender's background
+6. Ends with a specific call to action
+7. Keeps the overall length concise (150-250 words) while being impactful
+8. If target roles are specified, tailor the email content to emphasize skills and experience relevant to those roles
 
-CRITICAL LINK FORMATTING:
-- LinkedIn: Convert ${userProfile.linkedin || 'linkedin_url'} to <a href="${userProfile.linkedin || 'linkedin_url'}">LinkedIn Profile</a>
-- GitHub: Convert ${userProfile.github || 'github_url'} to <a href="${userProfile.github || 'github_url'}">GitHub</a>
-- Website: Convert ${userProfile.website || 'website_url'} to <a href="${userProfile.website || 'website_url'}">Portfolio</a>
-- Any other URLs must be in <a href="URL">descriptive text</a> format
+IMPORTANT: Select only the most relevant profile information that would be compelling to the recipient. Don't include every detail - focus on what would make the strongest impression for this specific email type and recipient. If target roles are provided, emphasize how the sender's background aligns with those specific roles.
 
-SIMPLICITY RULES:
-- Use simple, everyday language
-- Avoid industry jargon or buzzwords
-- One idea per sentence
-- Get to the point immediately
-- Skip lengthy introductions or explanations
-
-Remember: MAXIMUM 120 words. Every word must add value.`;
+Remember to respond in the exact JSON format specified in the system prompt.`;
 
     return prompt;
   }
@@ -618,22 +615,10 @@ Remember: MAXIMUM 120 words. Every word must add value.`;
         throw new Error('Invalid AI response format');
       }
 
-      // Ensure links are properly formatted
-      const processedBody = this.ensureClickableLinks(parsed.body);
-
-      // Validate brevity requirements
-      const validation = this.validateEmailBrevity(parsed.subject, processedBody);
-      
-      let reasoning = parsed.reasoning || '';
-      if (!validation.isValid) {
-        console.warn('Email brevity validation failed:', validation.warnings);
-        reasoning += (reasoning ? ' | ' : '') + `Warnings: ${validation.warnings.join(', ')}`;
-      }
-
       return {
         subject: parsed.subject,
-        body: processedBody,
-        reasoning
+        body: parsed.body,
+        reasoning: parsed.reasoning || ''
       };
     } catch (error) {
       console.error('Error parsing AI response:', error);
@@ -641,7 +626,7 @@ Remember: MAXIMUM 120 words. Every word must add value.`;
       // Fallback: try to extract subject and body manually
       const lines = aiResponse.split('\n').filter(line => line.trim());
       const subjectLine = lines.find(line => line.toLowerCase().includes('subject:'));
-      const subject = subjectLine ? subjectLine.replace(/subject:/i, '').trim() : 'Quick Question';
+      const subject = subjectLine ? subjectLine.replace(/subject:/i, '').trim() : 'Follow-up';
       
       // Use the full response as body if parsing fails
       const body = aiResponse.includes('{') ? 
@@ -650,54 +635,10 @@ Remember: MAXIMUM 120 words. Every word must add value.`;
 
       return {
         subject,
-        body: this.ensureClickableLinks(body.trim()),
+        body: body.trim(),
         reasoning: 'AI response parsing failed, using fallback format'
       };
     }
-  }
-
-  /**
-   * Ensure all URLs in the email body are properly formatted as clickable HTML links
-   */
-  private ensureClickableLinks(body: string): string {
-    // First handle specific platform patterns before general URL conversion
-    let processedBody = body;
-
-    // Handle LinkedIn profiles (without https prefix)
-    processedBody = processedBody.replace(
-      /(?<!href=["'])(www\.)?linkedin\.com\/in\/[^\s<>"]+/gi,
-      (match) => {
-        const url = match.startsWith('www.') ? `https://${match}` : `https://${match}`;
-        return `<a href="${url}">LinkedIn Profile</a>`;
-      }
-    );
-
-    // Handle GitHub profiles (without https prefix)
-    processedBody = processedBody.replace(
-      /(?<!href=["'])(www\.)?github\.com\/[^\s<>"]+/gi,
-      (match) => {
-        const url = match.startsWith('www.') ? `https://${match}` : `https://${match}`;
-        return `<a href="${url}">GitHub</a>`;
-      }
-    );
-
-    // Convert remaining plain URLs to clickable links (only if not already in <a> tags)
-    processedBody = processedBody.replace(
-      /(?<!href=["']|>)(https?:\/\/[^\s<>"]+)(?![^<]*<\/a>)/gi,
-      '<a href="$1">$1</a>'
-    );
-
-    // Handle www. URLs without protocol
-    processedBody = processedBody.replace(
-      /(?<!href=["']|>|https?:\/\/)(www\.[^\s<>"]+)(?![^<]*<\/a>)/gi,
-      '<a href="https://$1">$1</a>'
-    );
-
-    // Ensure proper spacing around links
-    processedBody = processedBody.replace(/(<\/a>)([^\s\n\.,!?])/g, '$1 $2');
-    processedBody = processedBody.replace(/([^\s\n])(<a href)/g, '$1 $2');
-
-    return processedBody;
   }
 
   /**
@@ -705,19 +646,22 @@ Remember: MAXIMUM 120 words. Every word must add value.`;
    */
   async generateEmailContent(companyName: string, founderName: string): Promise<{ subject: string; body: string }> {
     const template = {
-      subject: `Partnership with ${companyName}`,
+      subject: `Partnership Opportunity - ${companyName}`,
       body: `Hi ${founderName},
 
-I'm reaching out about a partnership between ${companyName} and <a href="https://hirebuddy.net">Hirebuddy</a>.
+I hope this email finds you well. I'm reaching out because I believe there might be a great opportunity for collaboration between ${companyName} and Hirebuddy.
 
-Hirebuddy helps 10,000+ professionals find jobs through our platform. We partner with companies to connect them with qualified talent quickly.
+Hirebuddy is a job search and automation platform with a growing community of 10,000+ students and working professionals. We collaborate with top-tier institutions like Master's Union and Tetr School of Business, and have successfully helped numerous companies hire qualified talent quickly and efficiently.
 
-Would you be open to a 15-minute call this week to explore how we can help ${companyName} hire better?
+I'd love to explore how we can work together to help ${companyName} find the right talent while providing our community with exciting opportunities.
+
+Would you be open to a brief 15-minute call this week to discuss this further?
 
 Best regards,
 Sarvagya Kulshreshtha
-Co-Founder, <a href="https://hirebuddy.net">Hirebuddy</a>
-Phone: +91 92893 93231`
+Co-Founder, Hirebuddy (https://hirebuddy.net)
+Phone: +91 92893 93231
+Email: kulshreshthasarv@gmail.com`
     };
 
     return template;
@@ -734,64 +678,12 @@ Phone: +91 92893 93231`
   /**
    * Format email body as HTML
    */
-  formatAsHtml(text: string): string {
-    // Check if text already contains HTML tags
-    if (/<[a-z][\s\S]*>/i.test(text)) {
-      // Text already contains HTML, just format paragraphs
-      return text
-        .replace(/\n\n/g, '</p><p>')
-        .replace(/\n/g, '<br>')
-        .replace(/^(?!<p>)/, '<p>')
-        .replace(/(?<!<\/p>)$/, '</p>')
-        .replace(/<p><\/p>/g, ''); // Remove empty paragraphs
-    } else {
-      // Plain text, convert to HTML
-      return text
-        .replace(/\n\n/g, '</p><p>')
-        .replace(/\n/g, '<br>')
-        .replace(/^/, '<p>')
-        .replace(/$/, '</p>');
-    }
-  }
-
-  /**
-   * Get email body formatted for HTML display (for UI components)
-   */
-  getHtmlFormattedEmail(body: string): string {
-    // Ensure links are clickable and add proper spacing
-    const processedBody = this.ensureClickableLinks(body);
-    return this.formatAsHtml(processedBody);
-  }
-
-  /**
-   * Validate email meets brevity requirements
-   */
-  private validateEmailBrevity(subject: string, body: string): { isValid: boolean; warnings: string[] } {
-    const warnings: string[] = [];
-    
-    // Count words (excluding HTML tags)
-    const bodyText = body.replace(/<[^>]*>/g, '').trim();
-    const wordCount = bodyText.split(/\s+/).length;
-    const subjectWords = subject.split(/\s+/).length;
-    
-    if (subjectWords > 6) {
-      warnings.push(`Subject is too long (${subjectWords} words, max 6)`);
-    }
-    
-    if (wordCount > 120) {
-      warnings.push(`Email body is too long (${wordCount} words, max 120)`);
-    }
-    
-    // Check for paragraph count
-    const paragraphs = bodyText.split(/\n\n/).length;
-    if (paragraphs > 3) {
-      warnings.push(`Too many paragraphs (${paragraphs}, max 3)`);
-    }
-    
-    return {
-      isValid: warnings.length === 0,
-      warnings
-    };
+  formatAsHtml(plainText: string): string {
+    return plainText
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br>')
+      .replace(/^/, '<p>')
+      .replace(/$/, '</p>');
   }
 }
 
