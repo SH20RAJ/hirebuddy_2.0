@@ -7,6 +7,7 @@ export interface EmailSendRequest {
   subject: string;
   body: string;
   attachment_path?: string;
+  isHtml?: boolean;
 }
 
 export interface FollowUpRequest {
@@ -14,6 +15,7 @@ export interface FollowUpRequest {
   body: string;
   to: string;
   subject?: string;
+  isHtml?: boolean;
 }
 
 export interface EmailConversationRequest {
@@ -91,6 +93,7 @@ export interface AIEmailResponse {
 class EmailService {
   private apiBaseUrl: string;
   private openaiProxyUrl: string;
+  private useHtmlEmails: boolean = false; // TODO: Set to true when AWS backend API supports HTML emails with proper content-type headers
 
   constructor() {
     // Use secure environment variable access
@@ -120,20 +123,22 @@ class EmailService {
       if (!InputValidator.isSafeText(request.subject)) {
         throw new Error('Invalid characters in email subject');
       }
-      if (!InputValidator.isSafeText(request.body)) {
+      if (request.isHtml && !InputValidator.isSafeHtmlEmail(request.body)) {
+        throw new Error('Unsafe HTML content in email body');
+      } else if (!request.isHtml && !InputValidator.isSafeText(request.body)) {
         throw new Error('Invalid characters in email body');
       }
 
 
 
       // Sanitize inputs
-              const sanitizedRequest = {
-          ...request,
-          to: InputSanitizer.sanitizeEmail(request.to),
-          sender: InputSanitizer.sanitizeEmail(request.sender),
-          subject: InputSanitizer.sanitizeText(request.subject),
-          body: InputSanitizer.sanitizeText(request.body)
-        };
+      const sanitizedRequest = {
+        ...request,
+        to: InputSanitizer.sanitizeEmail(request.to),
+        sender: InputSanitizer.sanitizeEmail(request.sender),
+        subject: InputSanitizer.sanitizeText(request.subject),
+        body: request.isHtml ? InputSanitizer.sanitizeHtmlEmail(request.body) : InputSanitizer.sanitizeText(request.body)
+      };
 
       console.log('🚀 Sending email via AWS API...', { 
         to: sanitizedRequest.to, 
@@ -206,9 +211,30 @@ class EmailService {
    */
   async sendFollowUp(request: FollowUpRequest): Promise<{ message: string }> {
     try {
+      // Input validation and sanitization for follow-up emails
+      if (!InputValidator.isValidEmail(request.to)) {
+        throw new Error('Invalid recipient email address');
+      }
+      if (!InputValidator.isValidEmail(request.sender)) {
+        throw new Error('Invalid sender email address');
+      }
+      if (request.isHtml && !InputValidator.isSafeHtmlEmail(request.body)) {
+        throw new Error('Unsafe HTML content in follow-up email body');
+      } else if (!request.isHtml && !InputValidator.isSafeText(request.body)) {
+        throw new Error('Invalid characters in follow-up email body');
+      }
+
+      // Sanitize inputs
+      const sanitizedRequest = {
+        ...request,
+        to: InputSanitizer.sanitizeEmail(request.to),
+        sender: InputSanitizer.sanitizeEmail(request.sender),
+        body: request.isHtml ? InputSanitizer.sanitizeHtmlEmail(request.body) : InputSanitizer.sanitizeText(request.body)
+      };
+
       console.log('🚀 Sending follow-up email via AWS API...', { 
-        to: request.to, 
-        sender: request.sender 
+        to: sanitizedRequest.to, 
+        sender: sanitizedRequest.sender 
       });
 
       const response = await fetch(`${this.apiBaseUrl}/send_followup`, {
@@ -216,7 +242,7 @@ class EmailService {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(request),
+        body: JSON.stringify(sanitizedRequest),
       });
 
       console.log('📡 AWS API Follow-up Response:', response.status, response.statusText);
@@ -696,6 +722,34 @@ Email: kulshreshthasarv@gmail.com`
   }
 
   /**
+   * Format email body as plain text with proper structure and spacing for email clients
+   */
+  formatAsPlainText(plainText: string): string {
+    if (!plainText || typeof plainText !== 'string') {
+      return 'No content provided';
+    }
+
+    // Clean the input text
+    let cleanText = plainText.trim();
+    
+    // Handle different line break patterns that AI might use
+    cleanText = cleanText
+      // Normalize various line break patterns
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      // Handle multiple consecutive line breaks (more than 2)
+      .replace(/\n{3,}/g, '\n\n')
+      // Clean up any trailing whitespace on lines
+      .replace(/[ \t]+$/gm, '');
+
+    // Split into paragraphs and ensure proper spacing
+    const paragraphs = cleanText.split(/\n\n+/).filter(p => p.trim().length > 0);
+    
+    // Join paragraphs with double line breaks for proper email formatting
+    return paragraphs.join('\n\n');
+  }
+
+  /**
    * Format email body as HTML with proper structure and spacing
    */
   formatAsHtml(plainText: string): string {
@@ -807,9 +861,24 @@ Email: kulshreshthasarv@gmail.com`
 
   /**
    * Get properly formatted email content for sending
+   * Uses plain text formatting for better compatibility until HTML backend support is confirmed
    */
-  getFormattedEmailContent(plainTextBody: string): string {
-    return this.formatAsHtml(plainTextBody);
+  getFormattedEmailContent(plainTextBody: string, useHtml: boolean = this.useHtmlEmails): string {
+    return useHtml ? this.formatAsHtml(plainTextBody) : this.formatAsPlainText(plainTextBody);
+  }
+
+  /**
+   * Check if HTML emails are enabled
+   */
+  isHtmlEmailsEnabled(): boolean {
+    return this.useHtmlEmails;
+  }
+
+  /**
+   * Enable or disable HTML emails (for when backend support is ready)
+   */
+  setHtmlEmailsEnabled(enabled: boolean): void {
+    this.useHtmlEmails = enabled;
   }
 }
 

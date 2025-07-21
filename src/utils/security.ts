@@ -83,6 +83,23 @@ export class InputSanitizer {
       .replace(/javascript:/gi, '') // Remove javascript: protocol
       .replace(/on\w+=/gi, ''); // Remove event handlers
   }
+
+  /**
+   * Sanitize HTML email content - allows safe HTML tags but removes dangerous scripts
+   */
+  static sanitizeHtmlEmail(html: string): string {
+    return html
+      .trim()
+      // Remove script tags and their content
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      // Remove javascript: protocols
+      .replace(/javascript:/gi, '')
+      // Remove event handlers
+      .replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '')
+      // Remove form elements for security
+      .replace(/<\s*(form|input|textarea|select|button)[^>]*>/gi, '')
+      .replace(/<\/\s*(form|input|textarea|select|button)\s*>/gi, '');
+  }
 }
 
 // Input validation
@@ -123,6 +140,31 @@ export class InputValidator {
     ];
 
     return !dangerousPatterns.some(pattern => pattern.test(text));
+  }
+
+  /**
+   * Validate HTML email content for security
+   */
+  static isSafeHtmlEmail(html: string): boolean {
+    const dangerousPatterns = [
+      /<script/i,
+      /javascript:/i,
+      /on\w+\s*=/i,
+      /<iframe/i,
+      /<object/i,
+      /<embed/i,
+      /<form/i,
+      /<input/i,
+      /<textarea/i,
+      /<select/i,
+      /<button/i,
+      /eval\(/i,
+      /Function\(/i,
+      /document\./i,
+      /window\./i
+    ];
+
+    return !dangerousPatterns.some(pattern => pattern.test(html));
   }
 
   /**

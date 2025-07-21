@@ -16,6 +16,7 @@ const EmailPreview: React.FC<EmailPreviewProps> = ({
   children 
 }) => {
   const formattedHtml = emailService.formatAsHtml(body);
+  const formattedPlainText = emailService.formatAsPlainText(body);
 
   return (
     <Dialog>
@@ -46,13 +47,35 @@ const EmailPreview: React.FC<EmailPreviewProps> = ({
             </div>
           </div>
 
-          {/* Email Body Preview */}
+          {/* Current Format Notice */}
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <div className="flex items-start gap-2">
+              <div className="text-amber-600 mt-0.5">ℹ️</div>
+              <div className="text-sm text-amber-800">
+                <strong>Email Format:</strong> Currently sending as plain text with proper line spacing for maximum compatibility across email clients. HTML format is available for future use when backend support is confirmed.
+              </div>
+            </div>
+          </div>
+
+          {/* Email Body Preview - Plain Text (Currently Used) */}
           <div className="border rounded-lg overflow-hidden">
-            <div className="bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 border-b">
-              Email Content (Formatted)
+            <div className="bg-green-100 px-4 py-2 text-sm font-medium text-green-800 border-b">
+              ✅ Email Content (Plain Text - Currently Sent)
             </div>
             
-            {/* Raw HTML preview */}
+            <div className="p-6 bg-white">
+              <pre className="whitespace-pre-wrap font-sans text-sm text-gray-900 leading-relaxed">
+                {formattedPlainText}
+              </pre>
+            </div>
+          </div>
+
+          {/* Email Body Preview - HTML Version */}
+          <div className="border rounded-lg overflow-hidden">
+            <div className="bg-blue-100 px-4 py-2 text-sm font-medium text-blue-800 border-b">
+              📋 Email Content (HTML Format - For Future Use)
+            </div>
+            
             <div className="p-6 bg-white">
               <div 
                 dangerouslySetInnerHTML={{ __html: formattedHtml }}
@@ -73,10 +96,10 @@ const EmailPreview: React.FC<EmailPreviewProps> = ({
             </div>
           </details>
 
-          {/* Plain Text Version */}
+          {/* Original Input */}
           <details className="bg-gray-50 rounded-lg">
             <summary className="px-4 py-2 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-100">
-              View Plain Text Version
+              View Original Input (Before Formatting)
             </summary>
             <div className="p-4 border-t">
               <pre className="text-sm whitespace-pre-wrap text-gray-700 bg-white p-3 rounded border">

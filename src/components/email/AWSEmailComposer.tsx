@@ -359,11 +359,13 @@ const AWSEmailComposer = ({
           emailBody = emailData.body + resumeSection;
         }
 
+        const isHtmlEnabled = emailService.isHtmlEmailsEnabled();
         const request: EmailSendRequest = {
           sender: emailData.senderEmail,
           to: contact.email,
           subject: emailData.subject,
-          body: emailService.getFormattedEmailContent(emailBody)
+          body: emailService.getFormattedEmailContent(emailBody),
+          isHtml: isHtmlEnabled
           // Removed attachment_path to avoid email sending issues
         };
 
@@ -460,10 +462,12 @@ const AWSEmailComposer = ({
       }
 
       // Use the follow-up API endpoint - backend automatically handles subject from original email
+      const isHtmlEnabled = emailService.isHtmlEmailsEnabled();
       const followUpRequest: FollowUpRequest = {
         sender: emailData.senderEmail,
         to: selectedContact.email,
-        body: emailService.getFormattedEmailContent(followUpData.body)
+        body: emailService.getFormattedEmailContent(followUpData.body),
+        isHtml: isHtmlEnabled
       };
 
       const response = await emailService.sendFollowUp(followUpRequest);
