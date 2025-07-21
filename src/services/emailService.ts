@@ -436,9 +436,8 @@ class EmailService {
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
           ],
-          temperature: 1,
-          max_tokens: 2048,
-          top_p: 1,
+          temperature: 0.7,
+          max_tokens: 1500,
         }),
       });
 
@@ -462,56 +461,49 @@ class EmailService {
    * Build system prompt based on email type and tone
    */
   private buildSystemPrompt(emailType: string, tone: string): string {
-    if (emailType === 'follow_up') {
-      return `You are an expert email writer specializing in professional follow-up communications.
+    const basePrompt = `You are a professional email writing assistant specializing in creating short, simple, and effective emails for job seekers and professionals. Your emails should be:
 
-OBJECTIVE: Create a concise, compelling follow-up email (2-3 sentences max).
+1. ULTRA-CONCISE - Keep it extremely brief (80-120 words max, 3-4 sentences ideal)
+2. SIMPLE - Use simple language, avoid jargon or complex terms
+3. DIRECT - Get straight to the point without unnecessary fluff
+4. PERSONALIZED - Use specific details about the recipient when available
+5. ACTION-ORIENTED - Include ONE clear, simple call to action
 
-REQUIREMENTS:
-- Personalize with recipient's name and company
-- Reference the initial outreach subtly
-- Include a clear, soft call-to-action
-- Keep tone ${tone} but professional
-- Be brief and respectful of their time
+TONE: ${tone}
+EMAIL TYPE: ${emailType}
 
-OUTPUT FORMAT:
+CRITICAL REQUIREMENTS:
+- Maximum 120 words total (excluding signature)
+- Use 2-3 short paragraphs maximum
+- Subject line must be 4-6 words only
+- Include clickable links in proper HTML format: <a href="URL">Link Text</a>
+- End with ONE simple call to action
+- Avoid buzzwords, corporate speak, or lengthy explanations
+- Make every word count - remove unnecessary adjectives and filler
+
+LINK FORMATTING:
+- LinkedIn profiles: <a href="linkedin_url">LinkedIn Profile</a>
+- Websites: <a href="website_url">Portfolio</a> or <a href="website_url">Website</a>
+- GitHub: <a href="github_url">GitHub</a>
+- Always ensure links are properly formatted and clickable
+
+RESPONSE FORMAT:
+You must respond in this exact JSON format:
 {
-  "subject": "Brief, compelling subject line",
-  "body": "Email body with \\n\\n for paragraph breaks",
-  "reasoning": "Brief explanation of personalization strategy"
+  "subject": "Short subject (4-6 words)",
+  "body": "Ultra-concise email body with proper HTML links using <a href='URL'>Text</a> format and \\n\\n for paragraphs",
+  "reasoning": "Brief explanation of choices"
 }`;
-    }
 
-    return `You are an expert cold email copywriter for job seekers targeting recruiters, hiring managers, and startup founders.
+    const typeSpecificGuidelines = {
+      'cold_outreach': 'One sentence intro, one key skill/achievement, simple call to action. Keep it under 100 words.',
+      'follow_up': 'Brief reference to previous contact, one new value point, direct ask. Maximum 80 words.',
+      'job_application': 'State interest in role, highlight ONE relevant skill/experience, request interview. Stay under 100 words.',
+      'networking': 'Mention connection/shared interest, brief value proposition, suggest quick call. Keep to 90 words max.',
+      'partnership': 'State partnership interest, ONE key benefit, propose brief discussion. Maximum 100 words.'
+    };
 
-OBJECTIVE: Create a compelling, personalized cold email (100-150 words max) that generates responses.
-
-EMAIL STRUCTURE:
-1. OPENER (1 sentence): Personal greeting + specific company detail/achievement
-2. INTRODUCTION (2 sentences): Who you are + relevant background
-3. VALUE PROPOSITION (2 sentences): Key skills/experience relevant to their needs
-4. CALL TO ACTION (1 sentence): Clear, low-pressure request
-
-REQUIREMENTS:
-- Tone: ${tone}
-- Use recipient's name and company details
-- Highlight sender's most relevant skills and experience
-- Include proper email signature with contact details
-- Be specific and avoid generic phrases
-- Focus on value you can bring to their organization
-
-SIGNATURE FORMAT:
-{{sender_name}}
-{{sender_education}}
-{{sender_phone}}
-{{sender_linkedin}}
-
-OUTPUT FORMAT:
-{
-  "subject": "Compelling, specific subject line",
-  "body": "Email body with \\n\\n for paragraph breaks and proper signature",
-  "reasoning": "Brief explanation of personalization choices"
-}`;
+    return `${basePrompt}\n\nSPECIFIC GUIDELINES FOR ${emailType.toUpperCase()}:\n${typeSpecificGuidelines[emailType as keyof typeof typeSpecificGuidelines]}`;
   }
 
   /**
@@ -520,113 +512,94 @@ OUTPUT FORMAT:
   private buildUserPrompt(request: AIEmailGenerationRequest): string {
     const { contact, userProfile, customInstructions, targetRoles } = request;
 
-    // Enhanced follow-up prompt
-    if (request.emailType === 'follow_up') {
-      return `CONTEXT:
-Target Role: ${targetRoles?.join(', ') || 'General Opportunities'}
-Tone: ${request.tone || 'professional'}
-Custom Instructions: ${customInstructions || 'None'}
+    let prompt = `Generate a personalized email with the following information:
 
-RECIPIENT:
-Name: ${contact.name}
-Company: ${contact.company || 'Company not specified'}
-Position: ${contact.position || 'Position not specified'}
-LinkedIn: ${contact.linkedin_link ? 'Available' : 'Not available'}
+RECIPIENT INFORMATION:
+- Name: ${contact.name}
+- Email: ${contact.email}`;
 
-SENDER:
-Name: ${userProfile.full_name || 'User'}
-Current Role: ${userProfile.title || 'Job Seeker'}
-Location: ${userProfile.location || 'Location not specified'}
-Phone: ${userProfile.phone || 'Phone not provided'}
-LinkedIn: ${userProfile.linkedin || 'LinkedIn not provided'}
+    if (contact.company) prompt += `\n- Company: ${contact.company}`;
+    if (contact.position) prompt += `\n- Position: ${contact.position}`;
+    if (contact.linkedin_link) prompt += `\n- LinkedIn: ${contact.linkedin_link}`;
 
-Generate a brief follow-up referencing the initial email about job opportunities.`;
+    prompt += `\n\nSENDER (USER) INFORMATION:`;
+    if (userProfile.full_name) prompt += `\n- Name: ${userProfile.full_name}`;
+    if (userProfile.title) prompt += `\n- Current Title: ${userProfile.title}`;
+    if (userProfile.company) prompt += `\n- Current Company: ${userProfile.company}`;
+    if (userProfile.location) prompt += `\n- Location: ${userProfile.location}`;
+    if (userProfile.college) prompt += `\n- Education: ${userProfile.college}`;
+    if (userProfile.experience_years) prompt += `\n- Years of Experience: ${userProfile.experience_years}`;
+    if (userProfile.phone) prompt += `\n- Phone: ${userProfile.phone}`;
+    if (userProfile.available_for_work !== undefined) {
+      prompt += `\n- Available for Work: ${userProfile.available_for_work ? 'Yes' : 'No'}`;
     }
-
-    // Enhanced regular email prompt with structured data
-    const workExperience = this.formatWorkExperience(userProfile.experiences);
-    const skillsSummary = this.formatSkills(userProfile.skills);
+    if (userProfile.bio) prompt += `\n- Bio: ${userProfile.bio}`;
     
-    return `CONTEXT:
-Target Roles: ${targetRoles?.join(', ') || 'General Opportunities'}
-Tone: ${request.tone || 'professional'}
-Custom Instructions: ${customInstructions || 'Standard job application outreach'}
-
-RECIPIENT DATA:
-Name: ${contact.name}
-Company: ${contact.company || 'Company not available'}
-Position: ${contact.position || 'Position not available'}
-LinkedIn Profile: ${contact.linkedin_link ? 'Available for personalization' : 'Not available'}
-
-SENDER PROFILE:
-Name: ${userProfile.full_name || 'User'}
-Current Position: ${userProfile.title || 'Job Seeker'}
-Current Company: ${userProfile.company || 'Currently seeking opportunities'}
-Location: ${userProfile.location || 'Location flexible'}
-Education: ${userProfile.college || 'Educational background available'}
-Experience Level: ${userProfile.experience_years || 0} years
-Available for Work: ${userProfile.available_for_work ? 'Immediately' : 'Open to opportunities'}
-Phone: ${userProfile.phone || 'Available upon request'}
-LinkedIn: ${userProfile.linkedin || 'LinkedIn profile available'}
-Professional Website: ${userProfile.website || 'Portfolio available upon request'}
-
-SKILLS PROFILE:
-${skillsSummary}
-
-RECENT WORK EXPERIENCE:
-${workExperience}
-
-SIGNATURE VARIABLES:
-{{sender_name}} = ${userProfile.full_name || 'User'}
-{{sender_education}} = ${userProfile.college || 'Educational Background Available'}
-{{sender_phone}} = ${userProfile.phone || 'Phone Available Upon Request'}
-{{sender_linkedin}} = ${userProfile.linkedin || 'LinkedIn Profile Available'}
-
-Generate a personalized email leveraging this data for maximum relevance.`;
-  }
-
-  /**
-   * Format work experience for prompt
-   */
-  private formatWorkExperience(experiences?: Array<any>): string {
-    if (!experiences || experiences.length === 0) {
-      return 'Fresh graduate or career changer seeking new opportunities';
+    if (userProfile.skills && userProfile.skills.length > 0) {
+      const topSkills = userProfile.skills.slice(0, 4); // Limited to top 4 skills for brevity
+      prompt += `\n- Key Skills: ${topSkills.join(', ')}`;
     }
 
-    return experiences.slice(0, 2).map((exp, index) => {
-      const duration = this.formatExperienceDuration(exp.start_date, exp.end_date, exp.is_current);
-      const achievements = exp.achievements?.slice(0, 2).join('; ') || '';
-      const keySkills = exp.skills_used?.slice(0, 4).join(', ') || '';
+    // Add concise work experience information
+    if (userProfile.experiences && userProfile.experiences.length > 0) {
+      prompt += `\n- Work Experience:`;
+      // Limit to most recent 2 experiences for ultra-concise emails
+      const recentExperiences = userProfile.experiences.slice(0, 2);
       
-      return `${index + 1}. ${exp.job_title} at ${exp.company} (${duration})
-   Key Skills: ${keySkills}
-   Top Achievements: ${achievements}
-   ${exp.description ? exp.description.substring(0, 120) + '...' : ''}`;
-    }).join('\n\n');
-  }
-
-  /**
-   * Format skills for prompt
-   */
-  private formatSkills(skills?: string[]): string {
-    if (!skills || skills.length === 0) {
-      return 'Diverse skill set with strong learning ability';
+      recentExperiences.forEach((exp, index) => {
+        prompt += `\n  ${index + 1}. ${exp.job_title} at ${exp.company}`;
+        if (exp.start_date || exp.end_date) {
+          const startDate = exp.start_date ? new Date(exp.start_date).getFullYear() : '';
+          const endDate = exp.is_current ? 'Present' : (exp.end_date ? new Date(exp.end_date).getFullYear() : '');
+          if (startDate || endDate) prompt += ` (${startDate}-${endDate})`;
+        }
+        
+        // Only include the most impressive achievement or skill for brevity
+        if (exp.achievements && exp.achievements.length > 0) {
+          prompt += `\n     Top Achievement: ${exp.achievements[0]}`;
+        } else if (exp.skills_used && exp.skills_used.length > 0) {
+          const topSkill = exp.skills_used[0];
+          prompt += `\n     Key Skill: ${topSkill}`;
+        }
+      });
     }
 
-    const topSkills = skills.slice(0, 8).join(', ');
-    return `Core Competencies: ${topSkills}${skills.length > 8 ? ' and more' : ''}`;
-  }
+    if (userProfile.linkedin) prompt += `\n- LinkedIn: ${userProfile.linkedin}`;
+    if (userProfile.github) prompt += `\n- GitHub: ${userProfile.github}`;
+    if (userProfile.website) prompt += `\n- Website: ${userProfile.website}`;
 
-  /**
-   * Format experience duration
-   */
-  private formatExperienceDuration(startDate?: string, endDate?: string, isCurrent?: boolean): string {
-    if (!startDate) return 'Duration available';
-    
-    const start = new Date(startDate).getFullYear();
-    const end = isCurrent ? 'Present' : (endDate ? new Date(endDate).getFullYear() : 'Present');
-    
-    return `${start} - ${end}`;
+    if (targetRoles && targetRoles.length > 0) {
+      prompt += `\n\nTARGET ROLES:\nThe sender is looking for opportunities in the following roles: ${targetRoles.join(', ')}`;
+    }
+
+    if (customInstructions) {
+      prompt += `\n\nCUSTOM INSTRUCTIONS:\n${customInstructions}`;
+    }
+
+    prompt += `\n\nGenerate an ultra-concise, simple email that:
+1. Uses ONLY the most relevant detail from sender's profile (pick 1-2 key points maximum)
+2. Mentions recipient's name and company if available
+3. States purpose in ONE simple sentence
+4. Includes ONE clear call to action
+5. Maximum 120 words total
+6. Formats any URLs as clickable HTML links: <a href="URL">Text</a>
+
+CRITICAL LINK FORMATTING:
+- LinkedIn: Convert ${userProfile.linkedin || 'linkedin_url'} to <a href="${userProfile.linkedin || 'linkedin_url'}">LinkedIn Profile</a>
+- GitHub: Convert ${userProfile.github || 'github_url'} to <a href="${userProfile.github || 'github_url'}">GitHub</a>
+- Website: Convert ${userProfile.website || 'website_url'} to <a href="${userProfile.website || 'website_url'}">Portfolio</a>
+- Any other URLs must be in <a href="URL">descriptive text</a> format
+
+SIMPLICITY RULES:
+- Use simple, everyday language
+- Avoid industry jargon or buzzwords
+- One idea per sentence
+- Get to the point immediately
+- Skip lengthy introductions or explanations
+
+Remember: MAXIMUM 120 words. Every word must add value.`;
+
+    return prompt;
   }
 
   /**
@@ -645,10 +618,22 @@ Generate a personalized email leveraging this data for maximum relevance.`;
         throw new Error('Invalid AI response format');
       }
 
+      // Ensure links are properly formatted
+      const processedBody = this.ensureClickableLinks(parsed.body);
+
+      // Validate brevity requirements
+      const validation = this.validateEmailBrevity(parsed.subject, processedBody);
+      
+      let reasoning = parsed.reasoning || '';
+      if (!validation.isValid) {
+        console.warn('Email brevity validation failed:', validation.warnings);
+        reasoning += (reasoning ? ' | ' : '') + `Warnings: ${validation.warnings.join(', ')}`;
+      }
+
       return {
         subject: parsed.subject,
-        body: parsed.body,
-        reasoning: parsed.reasoning || ''
+        body: processedBody,
+        reasoning
       };
     } catch (error) {
       console.error('Error parsing AI response:', error);
@@ -656,7 +641,7 @@ Generate a personalized email leveraging this data for maximum relevance.`;
       // Fallback: try to extract subject and body manually
       const lines = aiResponse.split('\n').filter(line => line.trim());
       const subjectLine = lines.find(line => line.toLowerCase().includes('subject:'));
-      const subject = subjectLine ? subjectLine.replace(/subject:/i, '').trim() : 'Follow-up';
+      const subject = subjectLine ? subjectLine.replace(/subject:/i, '').trim() : 'Quick Question';
       
       // Use the full response as body if parsing fails
       const body = aiResponse.includes('{') ? 
@@ -665,10 +650,54 @@ Generate a personalized email leveraging this data for maximum relevance.`;
 
       return {
         subject,
-        body: body.trim(),
+        body: this.ensureClickableLinks(body.trim()),
         reasoning: 'AI response parsing failed, using fallback format'
       };
     }
+  }
+
+  /**
+   * Ensure all URLs in the email body are properly formatted as clickable HTML links
+   */
+  private ensureClickableLinks(body: string): string {
+    // First handle specific platform patterns before general URL conversion
+    let processedBody = body;
+
+    // Handle LinkedIn profiles (without https prefix)
+    processedBody = processedBody.replace(
+      /(?<!href=["'])(www\.)?linkedin\.com\/in\/[^\s<>"]+/gi,
+      (match) => {
+        const url = match.startsWith('www.') ? `https://${match}` : `https://${match}`;
+        return `<a href="${url}">LinkedIn Profile</a>`;
+      }
+    );
+
+    // Handle GitHub profiles (without https prefix)
+    processedBody = processedBody.replace(
+      /(?<!href=["'])(www\.)?github\.com\/[^\s<>"]+/gi,
+      (match) => {
+        const url = match.startsWith('www.') ? `https://${match}` : `https://${match}`;
+        return `<a href="${url}">GitHub</a>`;
+      }
+    );
+
+    // Convert remaining plain URLs to clickable links (only if not already in <a> tags)
+    processedBody = processedBody.replace(
+      /(?<!href=["']|>)(https?:\/\/[^\s<>"]+)(?![^<]*<\/a>)/gi,
+      '<a href="$1">$1</a>'
+    );
+
+    // Handle www. URLs without protocol
+    processedBody = processedBody.replace(
+      /(?<!href=["']|>|https?:\/\/)(www\.[^\s<>"]+)(?![^<]*<\/a>)/gi,
+      '<a href="https://$1">$1</a>'
+    );
+
+    // Ensure proper spacing around links
+    processedBody = processedBody.replace(/(<\/a>)([^\s\n\.,!?])/g, '$1 $2');
+    processedBody = processedBody.replace(/([^\s\n])(<a href)/g, '$1 $2');
+
+    return processedBody;
   }
 
   /**
@@ -676,22 +705,19 @@ Generate a personalized email leveraging this data for maximum relevance.`;
    */
   async generateEmailContent(companyName: string, founderName: string): Promise<{ subject: string; body: string }> {
     const template = {
-      subject: `Partnership Opportunity - ${companyName}`,
+      subject: `Partnership with ${companyName}`,
       body: `Hi ${founderName},
 
-I hope this email finds you well. I'm reaching out because I believe there might be a great opportunity for collaboration between ${companyName} and Hirebuddy.
+I'm reaching out about a partnership between ${companyName} and <a href="https://hirebuddy.net">Hirebuddy</a>.
 
-Hirebuddy is a job search and automation platform with a growing community of 10,000+ students and working professionals. We collaborate with top-tier institutions like Master's Union and Tetr School of Business, and have successfully helped numerous companies hire qualified talent quickly and efficiently.
+Hirebuddy helps 10,000+ professionals find jobs through our platform. We partner with companies to connect them with qualified talent quickly.
 
-I'd love to explore how we can work together to help ${companyName} find the right talent while providing our community with exciting opportunities.
-
-Would you be open to a brief 15-minute call this week to discuss this further?
+Would you be open to a 15-minute call this week to explore how we can help ${companyName} hire better?
 
 Best regards,
 Sarvagya Kulshreshtha
-Co-Founder, Hirebuddy (https://hirebuddy.net)
-Phone: +91 92893 93231
-Email: kulshreshthasarv@gmail.com`
+Co-Founder, <a href="https://hirebuddy.net">Hirebuddy</a>
+Phone: +91 92893 93231`
     };
 
     return template;
@@ -708,12 +734,64 @@ Email: kulshreshthasarv@gmail.com`
   /**
    * Format email body as HTML
    */
-  formatAsHtml(plainText: string): string {
-    return plainText
-      .replace(/\n\n/g, '</p><p>')
-      .replace(/\n/g, '<br>')
-      .replace(/^/, '<p>')
-      .replace(/$/, '</p>');
+  formatAsHtml(text: string): string {
+    // Check if text already contains HTML tags
+    if (/<[a-z][\s\S]*>/i.test(text)) {
+      // Text already contains HTML, just format paragraphs
+      return text
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>')
+        .replace(/^(?!<p>)/, '<p>')
+        .replace(/(?<!<\/p>)$/, '</p>')
+        .replace(/<p><\/p>/g, ''); // Remove empty paragraphs
+    } else {
+      // Plain text, convert to HTML
+      return text
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>')
+        .replace(/^/, '<p>')
+        .replace(/$/, '</p>');
+    }
+  }
+
+  /**
+   * Get email body formatted for HTML display (for UI components)
+   */
+  getHtmlFormattedEmail(body: string): string {
+    // Ensure links are clickable and add proper spacing
+    const processedBody = this.ensureClickableLinks(body);
+    return this.formatAsHtml(processedBody);
+  }
+
+  /**
+   * Validate email meets brevity requirements
+   */
+  private validateEmailBrevity(subject: string, body: string): { isValid: boolean; warnings: string[] } {
+    const warnings: string[] = [];
+    
+    // Count words (excluding HTML tags)
+    const bodyText = body.replace(/<[^>]*>/g, '').trim();
+    const wordCount = bodyText.split(/\s+/).length;
+    const subjectWords = subject.split(/\s+/).length;
+    
+    if (subjectWords > 6) {
+      warnings.push(`Subject is too long (${subjectWords} words, max 6)`);
+    }
+    
+    if (wordCount > 120) {
+      warnings.push(`Email body is too long (${wordCount} words, max 120)`);
+    }
+    
+    // Check for paragraph count
+    const paragraphs = bodyText.split(/\n\n/).length;
+    if (paragraphs > 3) {
+      warnings.push(`Too many paragraphs (${paragraphs}, max 3)`);
+    }
+    
+    return {
+      isValid: warnings.length === 0,
+      warnings
+    };
   }
 }
 
