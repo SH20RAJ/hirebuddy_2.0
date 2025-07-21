@@ -18,6 +18,7 @@ import { contactsService } from '@/services/contactsService';
 import { conversationService, ContactWithConversation, EmailConversation } from '@/services/conversationService';
 import { JOB_ROLES, DEFAULT_JOB_ROLE } from '@/constants/jobRoles';
 import WhatsAppLikeConversation from './WhatsAppLikeConversation';
+import EmailPreview from './EmailPreview';
 import { 
   Mail, 
   Send, 
@@ -41,7 +42,8 @@ import {
   FileText,
   Paperclip,
   X,
-  Download
+  Download,
+  Eye
 } from 'lucide-react';
 
 interface Contact {
@@ -361,7 +363,7 @@ const AWSEmailComposer = ({
           sender: emailData.senderEmail,
           to: contact.email,
           subject: emailData.subject,
-          body: emailService.formatAsHtml(emailBody)
+          body: emailService.getFormattedEmailContent(emailBody)
           // Removed attachment_path to avoid email sending issues
         };
 
@@ -461,7 +463,7 @@ const AWSEmailComposer = ({
       const followUpRequest: FollowUpRequest = {
         sender: emailData.senderEmail,
         to: selectedContact.email,
-        body: followUpData.body
+        body: emailService.getFormattedEmailContent(followUpData.body)
       };
 
       const response = await emailService.sendFollowUp(followUpRequest);
@@ -988,20 +990,36 @@ const AWSEmailComposer = ({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="body">Email Content</Label>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={generateAIEmail}
-                    disabled={selectedContacts.length === 0 || isGeneratingAI}
-                    className="flex items-center gap-2 bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 hover:from-purple-100 hover:to-blue-100"
-                  >
-                    {isGeneratingAI ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-4 w-4 text-purple-600" />
-                    )}
-                    {isGeneratingAI ? 'Generating...' : 'Generate with AI'}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <EmailPreview 
+                      subject={emailData.subject} 
+                      body={emailData.body}
+                    >
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!emailData.body}
+                        className="flex items-center gap-2"
+                      >
+                        <Eye className="h-4 w-4" />
+                        Preview
+                      </Button>
+                    </EmailPreview>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={generateAIEmail}
+                      disabled={selectedContacts.length === 0 || isGeneratingAI}
+                      className="flex items-center gap-2 bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 hover:from-purple-100 hover:to-blue-100"
+                    >
+                      {isGeneratingAI ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-4 w-4 text-purple-600" />
+                      )}
+                      {isGeneratingAI ? 'Generating...' : 'Generate with AI'}
+                    </Button>
+                  </div>
                 </div>
                 <Textarea
                   id="body"
@@ -1391,7 +1409,23 @@ const AWSEmailComposer = ({
                
 
                 <div className="space-y-2">
-                  <Label htmlFor="followup-body">Follow-up Message</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="followup-body">Follow-up Message</Label>
+                    <EmailPreview 
+                      subject="Re: Follow-up" 
+                      body={followUpData.body}
+                    >
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!followUpData.body}
+                        className="flex items-center gap-2"
+                      >
+                        <Eye className="h-4 w-4" />
+                        Preview
+                      </Button>
+                    </EmailPreview>
+                  </div>
                   <Textarea
                     id="followup-body"
                     placeholder="Write your follow-up message here..."

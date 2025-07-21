@@ -17,7 +17,8 @@ import { ProfileCompletionWarning } from '@/components/ui/profile-completion-war
 import emailService, { AIEmailGenerationRequest, UserProfileData } from '@/services/emailService';
 import { ProfileService, UserProfile } from '@/services/profileService';
 import { JOB_ROLES, DEFAULT_JOB_ROLE } from '@/constants/jobRoles';
-import { Send, Mail, Users, X, Loader2, Sparkles, Settings, Lightbulb } from 'lucide-react';
+import { Send, Mail, Users, X, Loader2, Sparkles, Settings, Lightbulb, Eye } from 'lucide-react';
+import EmailPreview from './EmailPreview';
 
 interface EmailContact {
   id: string;
@@ -472,9 +473,25 @@ const SimpleEmailComposer: React.FC<SimpleEmailComposerProps> = ({
 
             {/* Message Body */}
             <div className="space-y-2">
-              <Label htmlFor="body" className="text-sm font-medium">
-                Message *
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="body" className="text-sm font-medium">
+                  Message *
+                </Label>
+                <EmailPreview 
+                  subject={subject} 
+                  body={body}
+                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!body}
+                    className="flex items-center gap-2"
+                  >
+                    <Eye className="h-4 w-4" />
+                    Preview
+                  </Button>
+                </EmailPreview>
+              </div>
               <Textarea
                 id="body"
                 placeholder={

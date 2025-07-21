@@ -480,11 +480,19 @@ IMPORTANT GUIDELINES:
 - Keep subject lines compelling but professional (6-8 words max)
 - End with a clear, specific call to action
 
+EMAIL FORMATTING REQUIREMENTS:
+- Use \\n\\n to separate paragraphs (this creates proper spacing)
+- Use \\n for line breaks within the same thought/paragraph
+- Start with a proper greeting (e.g., "Hi [Name]," or "Dear [Name],")
+- Include proper spacing before closing (\\n\\nBest regards,\\n[Your Name])
+- Structure should be: Greeting → Opening → Body → Call to Action → Closing
+- Ensure each paragraph serves a specific purpose and flows naturally
+
 RESPONSE FORMAT:
 You must respond in this exact JSON format:
 {
   "subject": "Compelling subject line here",
-  "body": "Email body here with proper line breaks using \\n\\n for paragraphs",
+  "body": "Email body here with proper line breaks using \\n\\n for paragraphs and \\n for line breaks within paragraphs",
   "reasoning": "Brief explanation of personalization choices"
 }`;
 
@@ -592,7 +600,19 @@ RECIPIENT INFORMATION:
 7. Keeps the overall length concise (150-250 words) while being impactful
 8. If target roles are specified, tailor the email content to emphasize skills and experience relevant to those roles
 
-IMPORTANT: Select only the most relevant profile information that would be compelling to the recipient. Don't include every detail - focus on what would make the strongest impression for this specific email type and recipient. If target roles are provided, emphasize how the sender's background aligns with those specific roles.
+IMPORTANT FORMATTING INSTRUCTIONS:
+- Start with "Hi [Name]," or "Dear [Name]," (use the recipient's actual name)
+- Use \\n\\n to separate each paragraph for proper spacing
+- Structure the email as: Greeting → Opening → Body → Call to Action → Closing
+- End with proper closing like "\\n\\nBest regards,\\n[Your actual name]"
+- Ensure each paragraph is concise and serves a specific purpose
+- Don't use excessive formatting - keep it clean and professional
+
+CONTENT GUIDELINES:
+- Select only the most relevant profile information that would be compelling to the recipient
+- Don't include every detail - focus on what would make the strongest impression for this specific email type and recipient
+- If target roles are provided, emphasize how the sender's background aligns with those specific roles
+- Make sure the email flows naturally from introduction to value proposition to call to action
 
 Remember to respond in the exact JSON format specified in the system prompt.`;
 
@@ -676,14 +696,120 @@ Email: kulshreshthasarv@gmail.com`
   }
 
   /**
-   * Format email body as HTML
+   * Format email body as HTML with proper structure and spacing
    */
   formatAsHtml(plainText: string): string {
-    return plainText
-      .replace(/\n\n/g, '</p><p>')
-      .replace(/\n/g, '<br>')
-      .replace(/^/, '<p>')
-      .replace(/$/, '</p>');
+    if (!plainText || typeof plainText !== 'string') {
+      return '<p>No content provided</p>';
+    }
+
+    // Clean the input text
+    let cleanText = plainText.trim();
+    
+    // Handle different line break patterns that AI might use
+    cleanText = cleanText
+      // Normalize various line break patterns
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      // Handle multiple consecutive line breaks (more than 2)
+      .replace(/\n{3,}/g, '\n\n')
+      // Clean up any trailing whitespace on lines
+      .replace(/[ \t]+$/gm, '');
+
+    // Split into paragraphs based on double line breaks
+    const paragraphs = cleanText.split(/\n\n+/);
+    
+    // Process each paragraph
+    const formattedParagraphs = paragraphs
+      .filter(paragraph => paragraph.trim().length > 0)
+      .map(paragraph => {
+        // Handle single line breaks within paragraphs as soft breaks
+        const formattedParagraph = paragraph
+          .trim()
+          .replace(/\n/g, '<br>')
+          // Handle common email elements
+          .replace(/^(Best regards|Best,|Sincerely,|Thanks,|Thank you,|Regards,)/i, '<br><br>$1')
+          // Handle signature separators
+          .replace(/^--$/gm, '<br>--<br>')
+          // Handle bullet points or numbered lists
+          .replace(/^[\s]*[-*•]\s+/gm, '&nbsp;&nbsp;• ')
+          .replace(/^[\s]*(\d+\.)\s+/gm, '&nbsp;&nbsp;$1 ')
+          // Handle email addresses and URLs (make them clickable)
+          .replace(/(https?:\/\/[^\s<>"{}|\\^`[\]]+)/gi, '<a href="$1" style="color: #0066cc; text-decoration: underline;">$1</a>')
+          .replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi, '<a href="mailto:$1" style="color: #0066cc; text-decoration: underline;">$1</a>');
+
+        return `<p style="margin: 0 0 16px 0; line-height: 1.5;">${formattedParagraph}</p>`;
+      });
+
+    // Wrap in a container with proper email styling
+    const emailBody = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #333333; max-width: 600px; margin: 0; padding: 0;">
+        ${formattedParagraphs.join('')}
+      </div>
+    `.trim();
+
+    return emailBody;
+  }
+
+  /**
+   * Generate a preview of how the email will look when formatted as HTML
+   */
+  previewEmailHtml(plainText: string): string {
+    const formattedHtml = this.formatAsHtml(plainText);
+    
+    // Add additional styling for preview purposes
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Email Preview</title>
+        <style>
+          body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+          }
+          .email-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 0;
+            margin: 0 auto;
+            max-width: 600px;
+          }
+          .email-header {
+            background-color: #f8f9fa;
+            padding: 16px 24px;
+            border-bottom: 1px solid #e9ecef;
+            border-radius: 8px 8px 0 0;
+            font-weight: 600;
+            color: #495057;
+          }
+          .email-body {
+            padding: 24px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="email-container">
+          <div class="email-header">Email Preview</div>
+          <div class="email-body">
+            ${formattedHtml}
+          </div>
+        </div>
+      </body>
+      </html>
+    `.trim();
+  }
+
+  /**
+   * Get properly formatted email content for sending
+   */
+  getFormattedEmailContent(plainTextBody: string): string {
+    return this.formatAsHtml(plainTextBody);
   }
 }
 
