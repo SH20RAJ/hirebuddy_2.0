@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { PremiumBadge } from "@/components/ui/premium-badge";
+import { CashfreePaymentButton } from "@/components/ui/cashfree-payment-button";
 import { usePremiumUser } from "@/hooks/usePremiumUser";
 import {
   LayoutDashboard,
@@ -19,7 +20,8 @@ import {
   X,
   LogOut,
   ChevronRight,
-  Home
+  Home,
+  Crown
 } from "lucide-react";
 
 interface NavItem {
@@ -276,7 +278,12 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose }) => {
             </div>
 
             {/* Footer */}
-            <div className="p-3 border-t border-border bg-card/30">
+            <div className="p-3 border-t border-border bg-card/30 space-y-3">
+              {/* Payment Button for Non-Premium Users */}
+              {!isPremium && (
+                <CashfreePaymentButton className="w-full" variant="sidebar" />
+              )}
+              
               <Button
                 variant="outline"
                 onClick={handleSignOut}

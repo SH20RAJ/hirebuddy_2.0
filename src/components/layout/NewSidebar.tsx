@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { PremiumBadge } from "@/components/ui/premium-badge";
+import { CashfreePaymentButton } from "@/components/ui/cashfree-payment-button";
 import { usePremiumUser } from "@/hooks/usePremiumUser";
 import MobileSidebar from "./MobileSidebar";
 import MobileHeader from "./MobileHeader";
@@ -23,7 +24,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  LogOut
+  LogOut,
+  Crown
 } from "lucide-react";
 
 interface SidebarContextType {
@@ -261,7 +263,44 @@ const DesktopSidebar: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border space-y-3">
+        {/* Payment Button for Non-Premium Users */}
+        {!isPremium && (
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <CashfreePaymentButton className="w-full" variant="sidebar" />
+              </motion.div>
+            )}
+            {!isExpanded && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex justify-center"
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => window.open('https://payments.cashfree.com/forms/hirebuddy_premium_subscription', '_parent')}
+                  className="h-8 w-8 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white shadow-lg hover:shadow-xl hover:scale-105 border border-yellow-400/50 hover:border-yellow-300"
+                  title="Upgrade to Premium"
+                >
+                  <Crown className="h-4 w-4" />
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
+
+        {/* User Info */}
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
             <AvatarImage src={user?.user_metadata?.avatar_url} />
