@@ -53,7 +53,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Processing campaign ${campaignId} for ${contactIds.length} contacts`);
 
     // Check email limits before proceeding
-    // First get the email limit from totalemailcounttable
+    // Get email count and limit from totalemailcounttable
     const { data: emailCountRecord, error: emailCountError } = await supabaseClient
       .from("totalemailcounttable")
       .select("*")
@@ -61,9 +61,12 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     let emailLimit = 125;
+    let currentEmailCount = 0;
 
     if (emailCountRecord && !emailCountError) {
       emailLimit = emailCountRecord.email_limit || 125;
+      currentEmailCount = emailCountRecord.total_count || 0;
+      console.log(`User has sent ${currentEmailCount} emails from totalemailcounttable`);
     } else {
       // Create email count record if it doesn't exist
       const { data: newEmailRecord, error: createError } = await supabaseClient
@@ -78,22 +81,10 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (createError) {
         console.error("Error creating email count record:", createError);
+      } else {
+        emailLimit = 125;
+        currentEmailCount = 0;
       }
-    }
-
-    // Count actual emails sent from useremaillog table
-    const { data: emailLogs, error: emailLogError } = await supabaseClient
-      .from("useremaillog")
-      .select("id")
-      .eq("user_id", user.email); // useremaillog uses email as user_id
-
-    let currentEmailCount = 0;
-    if (!emailLogError && emailLogs) {
-      currentEmailCount = emailLogs.length;
-      console.log(`User has sent ${currentEmailCount} emails from useremaillog`);
-    } else {
-      console.warn("Could not count from useremaillog, using stored count:", emailLogError);
-      currentEmailCount = emailCountRecord?.total_count || 0;
     }
 
     // Check if user can send the requested number of emails
@@ -243,24 +234,7 @@ const handler = async (req: Request): Promise<Response> => {
 
           console.log(`Email sent successfully to ${contact.email}:`, emailResponse.data?.id);
 
-          // Log to useremaillog table for email counting
-          try {
-            await supabaseClient
-              .from("useremaillog")
-              .insert({
-                sent_at: new Date().toISOString(),
-                to: contact.email,
-                user_id: user.email, // useremaillog uses email as user_id
-                messageId: emailResponse.data?.id,
-                threadId: emailResponse.data?.id, // Use the same ID for thread initially
-                reference: `campaign-${campaign.id}`,
-                subject: personalizedSubject
-              });
-            console.log(`Logged email to useremaillog for ${contact.email}`);
-          } catch (logError) {
-            console.error(`Failed to log email to useremaillog for ${contact.email}:`, logError);
-            // Don't fail the entire process if logging fails
-          }
+          // Email count will be updated at the end of the batch processing
 
           // Update campaign_contacts with sent status
           if (campaignContact) {
@@ -340,20 +314,24 @@ const handler = async (req: Request): Promise<Response> => {
       message += `\n\nNote: Some emails failed due to domain verification. To send emails to any address, please verify your domain at https://resend.com/domains and update your profile email to use that domain.`;
     }
 
-    // Get updated email count from useremaillog after sending
+    // Update the email count in totalemailcounttable after sending
     let finalEmailCount = currentEmailCount + successful;
     try {
-      const { data: updatedEmailLogs, error: countError } = await supabaseClient
-        .from("useremaillog")
-        .select("id")
-        .eq("user_id", user.email);
-      
-      if (!countError && updatedEmailLogs) {
-        finalEmailCount = updatedEmailLogs.length;
-        console.log(`Updated email count from useremaillog: ${finalEmailCount}`);
+      if (successful > 0) {
+        const { data: updatedRecord, error: updateError } = await supabaseClient
+          .from("totalemailcounttable")
+          .update({ total_count: finalEmailCount })
+          .eq("user_id", user.id)
+          .select()
+          .single();
+        
+        if (!updateError && updatedRecord) {
+          finalEmailCount = updatedRecord.total_count;
+          console.log(`Updated email count in totalemailcounttable: ${finalEmailCount}`);
+        }
       }
     } catch (countError) {
-      console.warn("Could not get updated count from useremaillog:", countError);
+      console.warn("Could not update count in totalemailcounttable:", countError);
     }
 
     return new Response(

@@ -60,54 +60,14 @@ export class EmailCountService {
    */
   static async getEmailUsageStats(userId: string): Promise<EmailUsageStats> {
     try {
-      // Get the email limit from totalemailcounttable (or create record if needed)
+      // Get the email count and limit from totalemailcounttable (or create record if needed)
       const emailCountRecord = await this.getEmailCount(userId);
+      const used = emailCountRecord.total_count;
       const limit = emailCountRecord.email_limit;
 
-      // Count actual emails sent from useremaillog table
-      // Note: useremaillog uses email as user_id, but our service uses Supabase user ID
-      // We need to get the user's email first
-      const { data: userData } = await supabase.auth.getUser();
-      const userEmail = userData.user?.email;
-
-      if (!userEmail) {
-        throw new Error('User email not found');
-      }
-
-      const { data: emailLogs, error } = await supabase
-        .from('useremaillog')
-        .select('id')
-        .eq('user_id', userEmail); // useremaillog uses email as user_id
-
-      if (error) {
-        console.error('Error counting emails from useremaillog:', error);
-        // Fallback to stored count if useremaillog query fails
-        const used = emailCountRecord.total_count;
-        const remaining = Math.max(0, limit - used);
-        const percentage = Math.min(100, (used / limit) * 100);
-        const canSendEmail = used < limit;
-
-        return {
-          used,
-          limit,
-          remaining,
-          percentage,
-          canSendEmail
-        };
-      }
-
-      const used = emailLogs ? emailLogs.length : 0;
       const remaining = Math.max(0, limit - used);
       const percentage = Math.min(100, (used / limit) * 100);
       const canSendEmail = used < limit;
-
-      // Sync the count in totalemailcounttable for consistency
-      if (emailCountRecord.total_count !== used) {
-        await supabase
-          .from('totalemailcounttable')
-          .update({ total_count: used })
-          .eq('user_id', userId);
-      }
 
       return {
         used,
@@ -131,62 +91,23 @@ export class EmailCountService {
 
   /**
    * Increment email count by specified amount
-   * Note: This is now primarily used for manual count updates.
-   * In most cases, emails are automatically logged to useremaillog table.
    */
   static async incrementEmailCount(userId: string, emailsSent: number = 1): Promise<EmailCountData> {
     try {
-      // Since we now count from useremaillog table, we don't need to manually increment
-      // But we'll keep this method for backward compatibility and manual adjustments
       const currentRecord = await this.getEmailCount(userId);
+      const newCount = currentRecord.total_count + emailsSent;
       
-      // Get actual count from useremaillog
-      const { data: userData } = await supabase.auth.getUser();
-      const userEmail = userData.user?.email;
-
-      if (!userEmail) {
-        throw new Error('User email not found');
-      }
-
-      const { data: emailLogs, error: emailError } = await supabase
-        .from('useremaillog')
-        .select('id')
-        .eq('user_id', userEmail);
-
-      if (emailError) {
-        console.warn('Could not count from useremaillog, using manual increment:', emailError);
-        // Fallback to manual increment
-        const newCount = currentRecord.total_count + emailsSent;
-        
-        const { data: updatedRecord, error } = await supabase
-          .from('totalemailcounttable')
-          .update({ 
-            total_count: newCount,
-          })
-          .eq('user_id', userId)
-          .select()
-          .single();
-
-        if (error) {
-          throw new Error(`Failed to increment email count: ${error.message}`);
-        }
-
-        return updatedRecord;
-      }
-
-      // Sync the actual count from useremaillog
-      const actualCount = emailLogs ? emailLogs.length : 0;
       const { data: updatedRecord, error } = await supabase
         .from('totalemailcounttable')
         .update({ 
-          total_count: actualCount,
+          total_count: newCount,
         })
         .eq('user_id', userId)
         .select()
         .single();
 
       if (error) {
-        throw new Error(`Failed to sync email count: ${error.message}`);
+        throw new Error(`Failed to increment email count: ${error.message}`);
       }
 
       return updatedRecord;
