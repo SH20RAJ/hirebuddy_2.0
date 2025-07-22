@@ -20,8 +20,7 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				mabry: ['Inter', 'var(--font-mabry-pro)', 'sans-serif'],
-				sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+				mabry: ['var(--font-mabry-pro)', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
