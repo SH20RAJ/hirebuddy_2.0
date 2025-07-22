@@ -563,7 +563,7 @@ CRITICAL DATA USAGE RULES FOR FOLLOW-UPS:
 - NEVER make up names, companies, titles, or achievements
 - Use the exact recipient and sender names as provided
 - Reference only real achievements and experience from the provided data
-- Include the sender's LinkedIn profile URL exactly as provided in the data
+- Include the sender's phone number and LinkedIn profile URL exactly as provided in the data
 - If information is missing, do not invent it
 
 FOLLOW-UP SPECIFIC GUIDELINES:
@@ -581,7 +581,7 @@ EMAIL STRUCTURE FOR FOLLOW-UPS:
 - Value reminder: ONE brief sentence about real value/benefit from provided data
 - Call to action: Simple, specific request
 - Closing: Use sender's actual name from the data
-- Include LinkedIn if provided in the data
+- Include phone number and LinkedIn in signature if provided in the data
 
 RESPONSE FORMAT:
 You must respond in this exact JSON format:
@@ -611,6 +611,8 @@ RECIPIENT:
     if (userProfile.full_name) prompt += `\n- Name: ${userProfile.full_name}`;
     if (userProfile.title) prompt += `\n- Title: ${userProfile.title}`;
     if (userProfile.company) prompt += `\n- Company: ${userProfile.company}`;
+    if (userProfile.phone) prompt += `\n- Phone: ${userProfile.phone}`;
+    if (userProfile.linkedin) prompt += `\n- LinkedIn: ${userProfile.linkedin}`;
 
     // Only include the most impressive achievement for follow-ups
     if (userProfile.experiences && userProfile.experiences.length > 0) {
@@ -624,13 +626,18 @@ RECIPIENT:
       prompt += `\n\nCUSTOM INSTRUCTIONS: ${customInstructions}`;
     }
 
+    // Build signature components
+    let signatureComponents = [];
+    if (userProfile.phone) signatureComponents.push(`Phone: ${userProfile.phone}`);
+    if (userProfile.linkedin) signatureComponents.push(`LinkedIn: ${userProfile.linkedin}`);
+
     prompt += `\n\nCRITICAL FOLLOW-UP INSTRUCTIONS - MUST FOLLOW EXACTLY:
 
 DATA USAGE REQUIREMENTS:
 1. Use ONLY the real information provided above - NO fake data
 2. Use the recipient's exact name: "${contact.name}"
 3. ${userProfile.full_name ? `Use the sender's exact name: "${userProfile.full_name}"` : 'Use a generic closing if sender name not provided'}
-4. ${userProfile.linkedin ? `Include the sender's LinkedIn profile: "${userProfile.linkedin}"` : 'Do not include LinkedIn if not provided'}
+4. Include signature with: ${signatureComponents.length > 0 ? signatureComponents.join(' and ') : 'no additional contact info if not provided'}
 5. Use only the real achievements and experience data provided above
 6. If any information is missing, do not make it up
 
@@ -640,12 +647,13 @@ FOLLOW-UP EMAIL REQUIREMENTS:
 3. Includes a simple, non-pushy call to action
 4. Stays under 50 words for the main content (excluding greeting/closing)
 5. Uses understanding tone - they're busy people
-6. Structure: Greeting → Follow-up context → Brief real value reminder → Simple CTA → Closing
+6. Structure: Greeting → Follow-up context → Brief real value reminder → Simple CTA → Closing with signature
 
 FORMATTING REQUIREMENTS:
 - Start with "Hi ${contact.name},"
 - Maximum 3 short sentences for main content
 - End with "Best regards,\\n${userProfile.full_name || '[Your name]'}"
+- ${userProfile.phone ? `Include in signature: "Phone: ${userProfile.phone}"` : ''}
 - ${userProfile.linkedin ? `Include in signature: "LinkedIn: ${userProfile.linkedin}"` : ''}
 - NO placeholder text like [Name], [title], [achievement] - use only real data
 
@@ -674,14 +682,14 @@ CRITICAL DATA USAGE RULES:
 - NEVER make up or assume information not explicitly provided
 - If a field is missing or empty, DO NOT create fake information
 - Use the exact names, companies, titles, and achievements as provided
-- Include the sender's LinkedIn profile URL exactly as provided in the data
+- Include the sender's phone number and LinkedIn profile URL exactly as provided in the data
 - Focus on 1-2 most relevant real achievements or skills only
 - Use the recipient's actual name and company naturally
 
 EMAIL FORMATTING REQUIREMENTS:
 - Use \\n\\n to separate paragraphs (this creates proper spacing)
 - Start with a brief greeting using the recipient's actual name
-- Structure: Greeting → One sentence context → Key value proposition from real data → Call to action → Brief closing with sender's actual name
+- Structure: Greeting → One sentence context → Key value proposition from real data → Call to action → Brief closing with sender's actual name and contact info
 - Maximum 2-3 paragraphs total
 - Each paragraph should be 1-2 sentences maximum
 - Eliminate unnecessary transitional phrases
@@ -759,7 +767,6 @@ RECIPIENT INFORMATION:
         const topAchievement = topExperience.achievements[0];
         prompt += `\n  Top Achievement: ${topAchievement}`;
       }
-      
       if (topExperience.skills_used && topExperience.skills_used.length > 0) {
         // Include top 3 skills only
         const topSkills = topExperience.skills_used.slice(0, 3);
@@ -807,6 +814,7 @@ STRICT FORMATTING REQUIREMENTS:
 - NO placeholder text like [Name], [Company], [Title] - use only real data
 - Get straight to the point immediately
 - End with "Best regards,\\n${userProfile.full_name || '[Your name]'}"
+- ${userProfile.phone ? `Include in signature: "Phone: ${userProfile.phone}"` : ''}
 - ${userProfile.linkedin ? `Include LinkedIn in signature: "LinkedIn: ${userProfile.linkedin}"` : ''}
 
 CONTENT FOCUS:
