@@ -75,18 +75,19 @@ export const Hero = () => {
       {/* What's new badge */}
       <div className="mb-8">
         <div className="inline-flex items-center rounded-full border border-[#ffe0e0] bg-[#ffe0e0] px-4 py-1.5">
-          <span className="text-sm font-medium text-[#3e3233]">Finding Job</span>
+          <span className="text-sm font-bold text-[#3e3233]">Finding Job</span>
           <div className="mx-2 h-4 w-[1px] bg-[#b16368]" />
-          <span className="text-sm font-semibold text-[#b16368]">
+          <span className="text-sm font-bold text-[#b16368]">
             is easier like never before
           </span>
         </div>
       </div>
 
       {/* Main heading */}
-      <h1 className="text-4xl md:text-5xl lg:text-6xl text-center font-mabry font-semibold text-[#403334] max-w-4xl mb-6">
-        Land your <span className="text-[#b24e55]">next opportunity</span>{" "}
-        without lifting a finger.
+      <h1 className="text-4xl md:text-5xl lg:text-6xl text-center font-mabry max-w-4xl mb-6 leading-tight">
+        <span className="font-bold text-[#403334]">Land your </span>
+        <span className="font-bold text-[#b24e55]">next opportunity</span>
+        <span className="font-bold text-[#403334]"> without lifting a finger.</span>
       </h1>
 
       {/* Subheading */}
