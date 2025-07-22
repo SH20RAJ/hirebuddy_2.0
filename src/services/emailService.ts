@@ -801,7 +801,6 @@ EMAIL GENERATION REQUIREMENTS:
 2. References "${contact.name}" and ${contact.company ? `"${contact.company}"` : 'their role'} naturally
 3. Highlights ONE specific real achievement or skill from the provided data
 4. Sounds natural and conversational, not like a template
-5. Includes ONE clear value proposition based on real sender data
 6. Ends with a specific, actionable call to action
 7. Keeps the total length under 100-120 words maximum
 8. ${targetRoles && targetRoles.length > 0 ? `Focus on alignment with these target roles: ${targetRoles.join(', ')}` : 'Focus on general professional value'}

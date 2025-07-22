@@ -267,7 +267,7 @@ REQUIREMENTS:
 - Ensure the letter flows naturally and tells a compelling story
 
 STRUCTURE:
-1. Opening paragraph: Strong hook + position interest + brief value proposition
+1. Opening paragraph: Strong hook + position interest
 2. Body paragraph(s): Relevant experience + specific achievements + job requirement matches + key points
 3. Closing paragraph: Company interest + next steps + professional call to action
 
