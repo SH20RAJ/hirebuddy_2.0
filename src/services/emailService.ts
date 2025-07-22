@@ -677,7 +677,6 @@ CRITICAL DATA USAGE RULES:
 - Include the sender's LinkedIn profile URL exactly as provided in the data
 - Focus on 1-2 most relevant real achievements or skills only
 - Use the recipient's actual name and company naturally
-- Include one specific value proposition based on real sender data
 
 EMAIL FORMATTING REQUIREMENTS:
 - Use \\n\\n to separate paragraphs (this creates proper spacing)
