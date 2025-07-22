@@ -83,11 +83,10 @@ export const Hero = () => {
         </div>
       </div>
 
-      {/* Main heading */}
-      <h1 className="text-4xl md:text-5xl lg:text-6xl text-center font-mabry max-w-4xl mb-6 leading-tight">
-        <span className="font-bold text-[#403334]">Land your </span>
-        <span className="font-bold text-[#b24e55]">next opportunity</span>
-        <span className="font-bold text-[#403334]"> without lifting a finger.</span>
+       {/* Main heading */}
+       <h1 className="text-4xl md:text-5xl lg:text-6xl text-center font-semibold text-[#403334] max-w-4xl mb-6">
+        Land your <span className="text-[#b24e55]">next opportunity</span>{" "}
+        without lifting a finger.
       </h1>
 
       {/* Subheading */}
