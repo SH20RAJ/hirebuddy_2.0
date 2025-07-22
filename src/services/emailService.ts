@@ -552,27 +552,36 @@ class EmailService {
 
 1. EXTREMELY BRIEF - 30-50 words maximum (not including greeting/closing)
 2. GENTLE REMINDER - Don't be pushy or aggressive
-3. VALUE-FOCUSED - Quickly remind them of your value
+3. VALUE-FOCUSED - Quickly remind them of your real value using only provided data
 4. ACTION-ORIENTED - Clear, simple call to action
 5. RESPECTFUL - Acknowledge they're busy
 
 TONE: ${tone}
+
+CRITICAL DATA USAGE RULES FOR FOLLOW-UPS:
+- Use ONLY the real data provided about the sender and recipient
+- NEVER make up names, companies, titles, or achievements
+- Use the exact recipient and sender names as provided
+- Reference only real achievements and experience from the provided data
+- Include the sender's LinkedIn profile URL exactly as provided in the data
+- If information is missing, do not invent it
 
 FOLLOW-UP SPECIFIC GUIDELINES:
 - This is a FOLLOW-UP to a previous email, not a first introduction
 - Keep it shorter than a text message
 - Reference the previous email briefly
 - Don't repeat all your qualifications again
-- Just a gentle reminder with one reason to respond
+- Just a gentle reminder with one real reason to respond from the provided data
 - Be understanding that they're busy
 - Maximum 2-3 sentences for the main content
 
 EMAIL STRUCTURE FOR FOLLOW-UPS:
-- Greeting: "Hi [Name],"
+- Greeting: Use recipient's actual name from the data
 - Context: "I wanted to follow up on my previous email."
-- Value reminder: ONE brief sentence about value/benefit
+- Value reminder: ONE brief sentence about real value/benefit from provided data
 - Call to action: Simple, specific request
-- Closing: "Best regards,\\n[Name]"
+- Closing: Use sender's actual name from the data
+- Include LinkedIn if provided in the data
 
 RESPONSE FORMAT:
 You must respond in this exact JSON format:
@@ -615,27 +624,32 @@ RECIPIENT:
       prompt += `\n\nCUSTOM INSTRUCTIONS: ${customInstructions}`;
     }
 
-    prompt += `\n\nGenerate a VERY SHORT follow-up email that:
+    prompt += `\n\nCRITICAL FOLLOW-UP INSTRUCTIONS - MUST FOLLOW EXACTLY:
+
+DATA USAGE REQUIREMENTS:
+1. Use ONLY the real information provided above - NO fake data
+2. Use the recipient's exact name: "${contact.name}"
+3. ${userProfile.full_name ? `Use the sender's exact name: "${userProfile.full_name}"` : 'Use a generic closing if sender name not provided'}
+4. ${userProfile.linkedin ? `Include the sender's LinkedIn profile: "${userProfile.linkedin}"` : 'Do not include LinkedIn if not provided'}
+5. Use only the real achievements and experience data provided above
+6. If any information is missing, do not make it up
+
+FOLLOW-UP EMAIL REQUIREMENTS:
 1. Acknowledges this is a follow-up to a previous email
-2. Briefly reminds them of ONE key value you offer
+2. Briefly reminds them of ONE real key value from the provided data
 3. Includes a simple, non-pushy call to action
 4. Stays under 50 words for the main content (excluding greeting/closing)
 5. Uses understanding tone - they're busy people
-6. Structure: Greeting → Follow-up context → Brief value reminder → Simple CTA → Closing
+6. Structure: Greeting → Follow-up context → Brief real value reminder → Simple CTA → Closing
 
-EXAMPLE STRUCTURE:
-"Hi [Name],
+FORMATTING REQUIREMENTS:
+- Start with "Hi ${contact.name},"
+- Maximum 3 short sentences for main content
+- End with "Best regards,\\n${userProfile.full_name || '[Your name]'}"
+- ${userProfile.linkedin ? `Include in signature: "LinkedIn: ${userProfile.linkedin}"` : ''}
+- NO placeholder text like [Name], [title], [achievement] - use only real data
 
-I wanted to follow up on my previous email.
-
-I'm the [title] who helped [achievement/value in one sentence].
-
-Would you have 10 minutes for a quick call this week?
-
-Best regards,
-[Name]"
-
-Keep it SHORT, RESPECTFUL, and VALUE-FOCUSED. This should feel like a gentle reminder, not a sales pitch.`;
+Keep it SHORT, RESPECTFUL, and VALUE-FOCUSED using only real information. This should feel like a gentle reminder, not a sales pitch.`;
 
     return prompt;
   }
@@ -646,7 +660,7 @@ Keep it SHORT, RESPECTFUL, and VALUE-FOCUSED. This should feel like a gentle rem
   private buildSystemPrompt(emailType: string, tone: string): string {
     const basePrompt = `You are a professional email writing assistant specializing in creating personalized, effective emails for job seekers and professionals. Your emails should be:
 
-1. PERSONALIZED - Use specific details about the recipient and sender
+1. PERSONALIZED - Use ONLY the specific details provided about the recipient and sender - NO FAKE DATA
 2. CONCISE - Keep it very brief and to the point (100-150 words max)
 3. PROFESSIONAL - Maintain appropriate business tone
 4. ACTION-ORIENTED - Include a clear call to action
@@ -655,21 +669,21 @@ Keep it SHORT, RESPECTFUL, and VALUE-FOCUSED. This should feel like a gentle rem
 TONE: ${tone}
 EMAIL TYPE: ${emailType}
 
-IMPORTANT GUIDELINES:
-- Focus on 1-2 most relevant achievements or skills only
-- Use the recipient's name and company naturally
-- Avoid generic templates - make each email feel personal
-- Include one specific value proposition relevant to the recipient
-- Keep subject lines compelling but professional (4-6 words max)
-- End with a clear, specific call to action
-- Eliminate unnecessary words and filler content
-- Every sentence must add value
+CRITICAL DATA USAGE RULES:
+- Use ONLY the real data provided in the user prompt
+- NEVER make up or assume information not explicitly provided
+- If a field is missing or empty, DO NOT create fake information
+- Use the exact names, companies, titles, and achievements as provided
+- Include the sender's LinkedIn profile URL exactly as provided in the data
+- Focus on 1-2 most relevant real achievements or skills only
+- Use the recipient's actual name and company naturally
+- Include one specific value proposition based on real sender data
 
 EMAIL FORMATTING REQUIREMENTS:
 - Use \\n\\n to separate paragraphs (this creates proper spacing)
-- Start with a brief greeting: "Hi [Name],"
-- Structure: Greeting → One sentence context → Key value proposition → Call to action → Brief closing
-- Maximum 3-4 paragraphs total
+- Start with a brief greeting using the recipient's actual name
+- Structure: Greeting → One sentence context → Key value proposition from real data → Call to action → Brief closing with sender's actual name
+- Maximum 2-3 paragraphs total
 - Each paragraph should be 1-2 sentences maximum
 - Eliminate unnecessary transitional phrases
 - Get straight to the point
@@ -683,7 +697,7 @@ You must respond in this exact JSON format:
 }`;
 
     const typeSpecificGuidelines = {
-      'cold_outreach': 'Lead with ONE impressive achievement that would interest them. Skip small talk.',
+      'cold_outreach': 'Lead with ONE real impressive achievement from the provided data that would interest them. Skip small talk.',
       'follow_up': 'Brief reference to previous contact. Add ONE new piece of value.',
       'job_application': 'State the role. Highlight ONE relevant achievement with numbers. Show enthusiasm briefly.',
       'networking': 'Mention ONE mutual connection or shared interest. Keep extremely conversational.',
@@ -717,6 +731,7 @@ RECIPIENT INFORMATION:
     if (userProfile.college) prompt += `\n- Education: ${userProfile.college}`;
     if (userProfile.experience_years) prompt += `\n- Years of Experience: ${userProfile.experience_years}`;
     if (userProfile.phone) prompt += `\n- Phone: ${userProfile.phone}`;
+    if (userProfile.linkedin) prompt += `\n- LinkedIn: ${userProfile.linkedin}`;
     if (userProfile.available_for_work !== undefined) {
       prompt += `\n- Available for Work: ${userProfile.available_for_work ? 'Yes' : 'No'}`;
     }
@@ -753,7 +768,6 @@ RECIPIENT INFORMATION:
       }
     }
 
-    if (userProfile.linkedin) prompt += `\n- LinkedIn: ${userProfile.linkedin}`;
     if (userProfile.github) prompt += `\n- GitHub: ${userProfile.github}`;
     if (userProfile.website) prompt += `\n- Website: ${userProfile.website}`;
 
@@ -765,31 +779,43 @@ RECIPIENT INFORMATION:
       prompt += `\n\nCUSTOM INSTRUCTIONS:\n${customInstructions}`;
     }
 
-    prompt += `\n\nPlease generate a very concise, impactful email that:
-1. Uses ONLY the most relevant and impressive information (1-2 key points maximum)
-2. References the recipient's name and company naturally
-3. Highlights ONE specific achievement or skill that would interest the recipient
+    prompt += `\n\nCRITICAL INSTRUCTIONS - MUST FOLLOW EXACTLY:
+
+DATA USAGE REQUIREMENTS:
+1. Use ONLY the real information provided above - NO fake data, names, companies, or achievements
+2. Use the recipient's exact name: "${contact.name}"
+3. ${contact.company ? `Use the recipient's exact company: "${contact.company}"` : 'Do not mention a company name if not provided'}
+4. ${userProfile.full_name ? `Use the sender's exact name: "${userProfile.full_name}"` : 'Use a generic closing if sender name not provided'}
+5. ${userProfile.linkedin ? `Include the sender's LinkedIn profile: "${userProfile.linkedin}"` : 'Do not include LinkedIn if not provided'}
+6. Use only the real achievements, skills, and experience data provided above
+7. If any information is missing, do not make it up - work with what is available
+
+EMAIL GENERATION REQUIREMENTS:
+1. Uses ONLY the real data provided above (1-2 key points maximum from actual achievements)
+2. References "${contact.name}" and ${contact.company ? `"${contact.company}"` : 'their role'} naturally
+3. Highlights ONE specific real achievement or skill from the provided data
 4. Sounds natural and conversational, not like a template
-5. Includes ONE clear value proposition
+5. Includes ONE clear value proposition based on real sender data
 6. Ends with a specific, actionable call to action
 7. Keeps the total length under 100-120 words maximum
-8. If target roles are specified, focus on the most relevant alignment only
+8. ${targetRoles && targetRoles.length > 0 ? `Focus on alignment with these target roles: ${targetRoles.join(', ')}` : 'Focus on general professional value'}
 
-STRICT CONCISENESS REQUIREMENTS:
-- Start with "Hi [Name],"
-- Use \\n\\n to separate paragraphs (maximum 3-4 paragraphs)
-- Structure: Greeting → One context sentence → Key value/achievement → Call to action → Brief closing
+STRICT FORMATTING REQUIREMENTS:
+- Start with "Hi ${contact.name},"
+- Use \\n\\n to separate paragraphs (maximum 2-3 paragraphs)
+- Structure: Greeting → One context sentence → Key real value/achievement → Call to action → Brief closing
 - Each paragraph: 1-2 sentences maximum
-- NO unnecessary words, transitions, or filler content
+- NO placeholder text like [Name], [Company], [Title] - use only real data
 - Get straight to the point immediately
-- End with "Best regards,\\n[Name]"
+- End with "Best regards,\\n${userProfile.full_name || '[Your name]'}"
+- ${userProfile.linkedin ? `Include LinkedIn in signature: "LinkedIn: ${userProfile.linkedin}"` : ''}
 
 CONTENT FOCUS:
-- Choose the SINGLE most impressive achievement or skill that matches the recipient's interests
-- Include ONE specific number, percentage, or measurable result if available
-- Mention the recipient's company or role briefly for personalization
-- Focus on value you can provide, not what you want
+- Choose the SINGLE most impressive real achievement or skill from the provided data
+- Mention "${contact.company || 'their company'}" naturally for personalization
+- Focus on actual value you can provide based on real experience
 - Make every word count - eliminate redundancy
+- Never invent or assume information not explicitly provided
 
 Remember to respond in the exact JSON format specified in the system prompt.`;
 
@@ -840,6 +866,8 @@ Remember to respond in the exact JSON format specified in the system prompt.`;
 
   /**
    * Legacy method for backward compatibility
+   * WARNING: This method uses static template data and hardcoded information.
+   * For AI-generated personalized emails using real user data, use generateAIEmail() instead.
    */
   async generateEmailContent(companyName: string, founderName: string): Promise<{ subject: string; body: string }> {
     const template = {
