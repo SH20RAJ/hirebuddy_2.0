@@ -75,10 +75,10 @@ export const Hero = () => {
       {/* What's new badge */}
       <div className="mb-8">
         <div className="inline-flex items-center rounded-full border border-[#ffe0e0] bg-[#ffe0e0] px-4 py-1.5">
-          <span className="text-sm font-bold text-[#3e3233]">Finding Job</span>
+          <span className="text-sm font-bold text-[#3e3233]">What's new</span>
           <div className="mx-2 h-4 w-[1px] bg-[#b16368]" />
           <span className="text-sm font-bold text-[#b16368]">
-            is easier like never before
+            Coming soon to mobile
           </span>
         </div>
       </div>

@@ -147,25 +147,25 @@ export const Header = ({ openSignIn }: HeaderProps = {}) => {
         >
           <Link
             to="/blogs"
-            className="text-[#b24e55] hover:text-[#E75A82] transition-colors"
+            className="text-[#b24e55] font-bold hover:text-[#E75A82] transition-colors"
           >
             Blogs
           </Link>
           <Link
             to="/community"
-            className="text-[#b24e55] hover:text-[#E75A82] transition-colors"
+            className="text-[#b24e55] font-bold hover:text-[#E75A82] transition-colors"
           >
             Community
           </Link>
           <Link
             to="/blogs?post=4"
-            className="text-[#b24e55] hover:text-[#E75A82] transition-colors"
+            className="text-[#b24e55] font-bold hover:text-[#E75A82] transition-colors"
           >
             About
           </Link>
           <Link
             to="/pricing"
-            className="text-[#b24e55] hover:text-[#E75A82] transition-colors"
+            className="text-[#b24e55] font-bold hover:text-[#E75A82] transition-colors"
           >
             Pricing
           </Link>
