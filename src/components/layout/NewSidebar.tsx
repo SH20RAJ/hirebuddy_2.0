@@ -263,74 +263,79 @@ const DesktopSidebar: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-border space-y-3">
-        {/* Payment Button for Non-Premium Users */}
-        {!isPremium && (
+      <div className="p-4 border-t border-border">
+        {/* When expanded - show full premium button above user info */}
+        <AnimatePresence>
+          {!isPremium && isExpanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden mb-3"
+            >
+              <CashfreePaymentButton className="w-full" variant="sidebar" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* User Info Section */}
+        <div className="relative">
+          {/* When collapsed - show premium button positioned right above user avatar */}
           <AnimatePresence>
-            {isExpanded && (
+            {!isPremium && !isExpanded && (
               <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <CashfreePaymentButton className="w-full" variant="sidebar" />
-              </motion.div>
-            )}
-            {!isExpanded && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="flex justify-center"
+                initial={{ opacity: 0, scale: 0.8, y: 5 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8, y: 5 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="absolute -top-12 left-1 flex justify-center z-10 w-8"
               >
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => window.open('https://payments.cashfree.com/forms/hirebuddy_premium_subscription', '_parent')}
-                  className="h-8 w-8 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white shadow-lg hover:shadow-xl hover:scale-105 border border-yellow-400/50 hover:border-yellow-300"
+                  className="h-6 w-6 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white shadow-md hover:shadow-lg hover:scale-110 border border-yellow-400/50 hover:border-yellow-300 rounded-md transition-all duration-200"
                   title="Upgrade to Premium"
                 >
-                  <Crown className="h-4 w-4" />
+                  <Crown className="h-3 w-3" />
                 </Button>
               </motion.div>
             )}
           </AnimatePresence>
-        )}
 
-        {/* User Info */}
-        <div className="flex items-center gap-3">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={user?.user_metadata?.avatar_url} />
-            <AvatarFallback>{userInitials}</AvatarFallback>
-          </Avatar>
-          <AnimatePresence>
-            {isExpanded && (
-              <motion.div
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: "auto" }}
-                exit={{ opacity: 0, width: 0 }}
-                transition={{ duration: 0.2 }}
-                className="flex-1 min-w-0"
-              >
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium truncate">{userName}</p>
-                  {isPremium && <PremiumBadge variant="compact" />}
-                </div>
-                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => signOut?.()}
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
+          {/* User Info */}
+          <div className="flex items-center gap-3">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={user?.user_metadata?.avatar_url} />
+              <AvatarFallback>{userInitials}</AvatarFallback>
+            </Avatar>
+            <AnimatePresence>
+              {isExpanded && (
+                <motion.div
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: "auto" }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex-1 min-w-0"
+                >
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium truncate">{userName}</p>
+                    {isPremium && <PremiumBadge variant="compact" />}
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => signOut?.()}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </motion.div>
