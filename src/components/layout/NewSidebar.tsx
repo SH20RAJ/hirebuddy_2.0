@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -193,6 +193,7 @@ const DesktopSidebar: React.FC = () => {
   const { isCollapsed, setIsCollapsed, isHovered, setIsHovered } = useSidebar();
   const { user, signOut } = useAuth();
   const { isPremium } = usePremiumUser();
+  const navigate = useNavigate();
 
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "User";
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -212,7 +213,10 @@ const DesktopSidebar: React.FC = () => {
       <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between">
           {/* Always show logo, but expand with text when not collapsed */}
-          <div className="flex items-center gap-3">
+          <div 
+            className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity duration-200"
+            onClick={() => navigate('/')}
+          >
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">
               H
             </div>
