@@ -755,7 +755,7 @@ const AWSEmailComposer = ({
   const selectedContact = selectedContacts.length > 0 ? contacts.find(c => c.id === selectedContacts[0]) : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 md:space-y-6">
       {/* API Status */}
       <Alert className={apiStatus?.connected ? "border-green-200 bg-green-50" : "border-yellow-200 bg-yellow-50"}>
         <div className="flex items-center space-x-2">
@@ -774,36 +774,48 @@ const AWSEmailComposer = ({
 
       {/* Tab Navigation */}
       <div className="flex space-x-0.5 md:space-x-1 bg-gray-100 p-0.5 md:p-1 rounded-lg">
-        <Button
-          variant={activeTab === 'compose' ? 'default' : 'ghost'}
-          size="sm"
+        <button
           onClick={() => setActiveTab('compose')}
-          className="flex-1 h-8 md:h-9 px-2 md:px-3 text-xs md:text-sm"
+          className={`flex-1 h-8 md:h-9 px-1.5 md:px-3 text-xs md:text-sm font-medium rounded-md transition-colors ${
+            activeTab === 'compose' 
+              ? 'bg-white text-gray-900 shadow-sm' 
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+          }`}
         >
-          <Mail className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-          <span className="hidden sm:inline">Compose</span>
-          <span className="sm:hidden">Comp</span>
-        </Button>
-        <Button
-          variant={activeTab === 'followup' ? 'default' : 'ghost'}
-          size="sm"
+          <div className="flex items-center justify-center gap-1 md:gap-2">
+            <Mail className="h-3 w-3 md:h-4 md:w-4" />
+            <span className="hidden sm:inline">Compose</span>
+            <span className="sm:hidden">Comp</span>
+          </div>
+        </button>
+        <button
           onClick={() => setActiveTab('followup')}
-          className="flex-1 h-8 md:h-9 px-2 md:px-3 text-xs md:text-sm"
+          className={`flex-1 h-8 md:h-9 px-1.5 md:px-3 text-xs md:text-sm font-medium rounded-md transition-colors ${
+            activeTab === 'followup' 
+              ? 'bg-white text-gray-900 shadow-sm' 
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+          }`}
         >
-          <MessageSquare className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-          <span className="hidden sm:inline">Follow-up</span>
-          <span className="sm:hidden">Follow</span>
-        </Button>
-        <Button
-          variant={activeTab === 'conversation' ? 'default' : 'ghost'}
-          size="sm"
+          <div className="flex items-center justify-center gap-1 md:gap-2">
+            <MessageSquare className="h-3 w-3 md:h-4 md:w-4" />
+            <span className="hidden sm:inline">Follow-up</span>
+            <span className="sm:hidden">Follow</span>
+          </div>
+        </button>
+        <button
           onClick={() => setActiveTab('conversation')}
-          className="flex-1 h-8 md:h-9 px-2 md:px-3 text-xs md:text-sm"
+          className={`flex-1 h-8 md:h-9 px-1.5 md:px-3 text-xs md:text-sm font-medium rounded-md transition-colors ${
+            activeTab === 'conversation' 
+              ? 'bg-white text-gray-900 shadow-sm' 
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+          }`}
         >
-          <User className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-          <span className="hidden sm:inline">Conversation</span>
-          <span className="sm:hidden">Chat</span>
-        </Button>
+          <div className="flex items-center justify-center gap-1 md:gap-2">
+            <User className="h-3 w-3 md:h-4 md:w-4" />
+            <span className="hidden sm:inline">Conversation</span>
+            <span className="sm:hidden">Chat</span>
+          </div>
+        </button>
       </div>
 
       {/* Sender Email Configuration */}
@@ -1060,16 +1072,16 @@ const AWSEmailComposer = ({
 
               {/* Resume Link Section */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium">Resume Link</Label>
+                <Label className="text-sm md:text-base font-medium">Resume Link</Label>
                 {userProfileComplete?.resume_url ? (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <FileText className="w-4 h-4 text-blue-600" />
+                    <div className="flex items-center justify-between p-2 md:p-3 bg-gray-50 rounded-lg border">
+                      <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
+                        <div className="w-6 h-6 md:w-8 md:h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <FileText className="w-3 h-3 md:w-4 md:h-4 text-blue-600" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
+                          <p className="text-xs md:text-sm font-medium text-gray-900 truncate">
                             {userProfileComplete.resume_filename || 'Resume.pdf'}
                           </p>
                           <p className="text-xs text-gray-500">
@@ -1079,16 +1091,14 @@ const AWSEmailComposer = ({
                             }
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => window.open(userProfileComplete.resume_url, '_blank')}
-                            className="text-gray-500 hover:text-gray-700"
-                          >
-                            <Download className="w-4 h-4" />
-                          </Button>
-                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 md:gap-2 flex-shrink-0 ml-2">
+                        <button
+                          onClick={() => window.open(userProfileComplete.resume_url, '_blank')}
+                          className="p-1.5 md:p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+                        >
+                          <Download className="w-3 h-3 md:w-4 md:h-4" />
+                        </button>
                       </div>
                     </div>
                     
@@ -1098,19 +1108,19 @@ const AWSEmailComposer = ({
                         id="attach-resume"
                         checked={emailData.attachResume}
                         onChange={(e) => setEmailData(prev => ({ ...prev, attachResume: e.target.checked }))}
-                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                        className="w-3 h-3 md:w-4 md:h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                       />
-                      <Label htmlFor="attach-resume" className="text-sm text-gray-700 cursor-pointer">
+                      <Label htmlFor="attach-resume" className="text-xs md:text-sm text-gray-700 cursor-pointer">
                         Include resume link in this email
                       </Label>
                     </div>
                     
                     {emailData.attachResume && (
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 p-3 rounded-lg border border-green-200">
-                          <Paperclip className="w-4 h-4" />
-                          <span>Resume link will be included in your email</span>
-                          <Badge variant="secondary" className="ml-auto bg-green-100 text-green-800">
+                        <div className="flex items-center gap-2 text-xs md:text-sm text-green-600 bg-green-50 p-2 md:p-3 rounded-lg border border-green-200">
+                          <Paperclip className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" />
+                          <span className="flex-1">Resume link will be included in your email</span>
+                          <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs px-1 py-0.5 md:px-2 md:py-1">
                             {userProfileComplete.resume_filename?.split('.').pop()?.toUpperCase() || 'PDF'}
                           </Badge>
                         </div>

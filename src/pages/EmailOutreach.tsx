@@ -676,26 +676,26 @@ const EmailOutreach = () => {
             <div className="p-4 md:p-6 space-y-4 md:space-y-6">
               {/* Re-authentication Section */}
               <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-                <CardContent className="p-4">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-blue-100 p-2 rounded-full">
-                        <Shield className="h-5 w-5 text-blue-600" />
+                <CardContent className="p-3 md:p-4">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
+                    <div className="flex items-start md:items-center gap-2 md:gap-3 min-w-0 flex-1">
+                      <div className="bg-blue-100 p-1.5 md:p-2 rounded-full flex-shrink-0">
+                        <Shield className="h-3 w-3 md:h-5 md:w-5 text-blue-600" />
                       </div>
-                      <div className="flex-1">
-                        <div className="flex flex-col md:flex-row md:items-center gap-2">
-                          <h3 className="font-semibold text-blue-900">Gmail Authentication</h3>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
+                          <h3 className="text-sm md:text-base font-medium md:font-semibold text-blue-900">Gmail Authentication</h3>
                           <Button
                             onClick={() => setShowLearnMoreDialog(true)}
                             variant="ghost"
                             size="sm"
-                            className="text-blue-600 hover:text-blue-800 hover:bg-blue-100 p-1 h-auto w-fit"
+                            className="text-blue-600 hover:text-blue-800 hover:bg-blue-100 p-0.5 md:p-1 h-auto w-fit text-xs"
                           >
-                            <Info className="h-4 w-4" />
+                            <Info className="h-3 w-3 md:h-4 md:w-4" />
                             <span className="text-xs ml-1">Learn More</span>
                           </Button>
                         </div>
-                        <p className="text-sm text-blue-700 mt-1">
+                        <p className="text-xs md:text-sm text-blue-700 mt-0.5 md:mt-1 break-words">
                           {googleUser 
                             ? `Connected as ${googleUser.email}. Use Re-authenticate if experiencing issues.` 
                             : 'Connect your Gmail account to send emails'
@@ -704,40 +704,69 @@ const EmailOutreach = () => {
                       </div>
                     </div>
                     
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 flex-shrink-0">
                       {googleUser && (
-                        <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 w-fit">
-                          <CheckCircle className="h-3 w-3 mr-1" />
+                        <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 w-fit text-xs px-2 py-1">
+                          <CheckCircle className="h-2 w-2 md:h-3 md:w-3 mr-1" />
                           Connected
                         </Badge>
                       )}
                       
                       {/* Mobile Action Buttons */}
-                      <div className="md:hidden space-y-2">
-                        <MobileButton
+                      <div className="md:hidden space-y-1.5">
+                        <button
                           onClick={googleUser ? checkAuthStatus : handleGmailAuth}
                           disabled={isGoogleAuthenticating}
-                          variant={googleUser ? "outline" : "primary"}
-                          icon={isGoogleAuthenticating ? Loader2 : (googleUser ? RefreshCw : Mail)}
-                          className="w-full"
+                          className={`w-full px-3 py-2 text-xs font-medium rounded-md transition-colors ${
+                            googleUser 
+                              ? 'border border-blue-300 text-blue-700 bg-white hover:bg-blue-50 disabled:opacity-50' 
+                              : 'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50'
+                          }`}
                         >
-                          {isGoogleAuthenticating ? (
-                            googleUser ? 'Verifying...' : 'Connecting...'
-                          ) : (
-                            googleUser ? 'Verify Connection' : 'Connect Gmail'
-                          )}
-                        </MobileButton>
+                          <div className="flex items-center justify-center gap-1.5">
+                            {isGoogleAuthenticating ? (
+                              <>
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                <span>{googleUser ? 'Verifying...' : 'Connecting...'}</span>
+                              </>
+                            ) : (
+                              <>
+                                {googleUser ? (
+                                  <>
+                                    <RefreshCw className="h-3 w-3" />
+                                    <span>Verify Connection</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Mail className="h-3 w-3" />
+                                    <span>Connect Gmail</span>
+                                  </>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </button>
                         
                         {googleUser && (
-                          <MobileButton
+                          <button
                             onClick={handleForceReauth}
                             disabled={isGoogleAuthenticating}
-                            variant="secondary"
-                            icon={isGoogleAuthenticating ? Loader2 : Shield}
-                            className="w-full"
+                            className="w-full px-3 py-2 text-xs font-medium rounded-md transition-colors border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
                           >
-                            {isGoogleAuthenticating ? 'Reauthenticating...' : 'Re-authenticate'}
-                          </MobileButton>
+                            <div className="flex items-center justify-center gap-1.5">
+                              {isGoogleAuthenticating ? (
+                                <>
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  <span>Reauthenticating...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Shield className="h-3 w-3" />
+                                  <span>Re-authenticate</span>
+                                </>
+                              )}
+                            </div>
+                          </button>
                         )}
                       </div>
                       
@@ -748,7 +777,7 @@ const EmailOutreach = () => {
                           disabled={isGoogleAuthenticating}
                           variant={googleUser ? "outline" : "default"}
                           size="sm"
-                          className="flex items-center gap-2"
+                          className={`flex items-center gap-2 ${googleUser ? 'text-gray-700' : 'text-white'}`}
                         >
                           {isGoogleAuthenticating ? (
                             <>
@@ -931,86 +960,94 @@ const EmailOutreach = () => {
 
               {/* Stats Dashboard */}
               {/* Mobile Stats */}
-              <div className="md:hidden space-y-3">
-                <MobileCard variant="elevated" padding="sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Users className="h-5 w-5 text-blue-600" />
+              <div className="md:hidden space-y-2">
+                <Card className="border border-gray-200 shadow-sm">
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Users className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-medium text-gray-600">Total Contacts</div>
+                          <div className="text-lg font-bold text-gray-900">{totalContactsCount}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-xs font-medium text-gray-600 mb-1">Total Contacts</div>
-                        <div className="text-xl font-bold text-gray-900">{totalContactsCount}</div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-1 text-xs font-medium text-blue-600">
+                          <TrendingUp className="h-3 w-3" />
+                          <span className="text-xs">Active</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-1 text-xs font-medium text-blue-600">
-                        <TrendingUp className="h-3 w-3" />
-                        Active
-                      </div>
-                    </div>
-                  </div>
-                </MobileCard>
+                  </CardContent>
+                </Card>
 
-                <MobileCard variant="elevated" padding="sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                        <Mail className="h-5 w-5 text-green-600" />
+                <Card className="border border-gray-200 shadow-sm">
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <Mail className="h-4 w-4 text-green-600" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-medium text-gray-600">Emails Sent</div>
+                          <div className="text-lg font-bold text-gray-900">{emailsSentCount}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-xs font-medium text-gray-600 mb-1">Emails Sent</div>
-                        <div className="text-xl font-bold text-gray-900">{emailsSentCount}</div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-1 text-xs font-medium text-green-600">
+                          <Send className="h-3 w-3" />
+                          <span className="text-xs">Delivered</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-1 text-xs font-medium text-green-600">
-                        <Send className="h-3 w-3" />
-                        Delivered
-                      </div>
-                    </div>
-                  </div>
-                </MobileCard>
+                  </CardContent>
+                </Card>
 
-                <MobileCard variant="elevated" padding="sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                        <AlertCircle className="h-5 w-5 text-orange-600" />
+                <Card className="border border-gray-200 shadow-sm">
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                          <AlertCircle className="h-4 w-4 text-orange-600" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-medium text-gray-600">Follow Ups Needed</div>
+                          <div className="text-lg font-bold text-gray-900">{followupsNeededCount}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-xs font-medium text-gray-600 mb-1">Follow Ups Needed</div>
-                        <div className="text-xl font-bold text-gray-900">{followupsNeededCount}</div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-1 text-xs font-medium text-orange-600">
+                          <Calendar className="h-3 w-3" />
+                          <span className="text-xs">Pending</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-1 text-xs font-medium text-orange-600">
-                        <Calendar className="h-3 w-3" />
-                        Pending
-                      </div>
-                    </div>
-                  </div>
-                </MobileCard>
+                  </CardContent>
+                </Card>
 
-                <MobileCard variant="elevated" padding="sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                        <MessageSquare className="h-5 w-5 text-purple-600" />
+                <Card className="border border-gray-200 shadow-sm">
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                          <MessageSquare className="h-4 w-4 text-purple-600" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-medium text-gray-600">Replies Received</div>
+                          <div className="text-lg font-bold text-gray-900">{repliesReceivedCount}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-xs font-medium text-gray-600 mb-1">Replies Received</div>
-                        <div className="text-xl font-bold text-gray-900">{repliesReceivedCount}</div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-1 text-xs font-medium text-purple-600">
+                          <Eye className="h-3 w-3" />
+                          <span className="text-xs">{repliesReceivedCount > 0 ? `${Math.round((repliesReceivedCount / Math.max(emailsSentCount, 1)) * 100)}%` : '0%'}</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-1 text-xs font-medium text-purple-600">
-                        <Eye className="h-3 w-3" />
-                        {repliesReceivedCount > 0 ? `${Math.round((repliesReceivedCount / Math.max(emailsSentCount, 1)) * 100)}%` : '0%'}
-                      </div>
-                    </div>
-                  </div>
-                </MobileCard>
+                  </CardContent>
+                </Card>
               </div>
 
               {/* Email Usage Progress (Premium Users Only) */}
@@ -1085,27 +1122,36 @@ const EmailOutreach = () => {
               </div>
 
               {/* Email Composer Section */}
-              <div className="space-y-6">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="space-y-4 md:space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
                   <div>
-                    <h2 className="text-xl font-semibold text-gray-900">Email Composer</h2>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <h2 className="text-lg md:text-xl font-medium md:font-semibold text-gray-900">Email Composer</h2>
+                    <p className="text-xs md:text-sm text-gray-600 mt-0.5 md:mt-1">
                       Showing contacts who haven't been emailed in the last 7 days
                     </p>
                   </div>
                   
                   {/* Mobile Action Button */}
                   <div className="md:hidden">
-                    <MobileButton
+                    <button
                       onClick={handleRefreshContacts}
-                      variant="outline"
                       disabled={isLoadingContacts}
-                      icon={isLoadingContacts ? Loader2 : RefreshCw}
-                      className="w-full"
-                      size="sm"
+                      className="w-full px-3 py-2 text-xs font-medium rounded-md transition-colors border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
                     >
-                      {isLoadingContacts ? 'Refreshing...' : 'Refresh Contacts'}
-                    </MobileButton>
+                      <div className="flex items-center justify-center gap-1.5">
+                        {isLoadingContacts ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            <span>Refreshing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="h-3 w-3" />
+                            <span>Refresh Contacts</span>
+                          </>
+                        )}
+                      </div>
+                    </button>
                   </div>
                   
                   {/* Desktop Action Button */}
