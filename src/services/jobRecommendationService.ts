@@ -19,7 +19,7 @@ interface OpenAIJobMatchResponse {
 }
 
 export class JobRecommendationService {
-  private static apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+  // Remove direct API key access - use Supabase Edge Function proxy instead
 
   static async getRecommendedJobs(userId: string, limit = 5): Promise<JobRecommendation[]> {
     try {
@@ -100,37 +100,27 @@ export class JobRecommendationService {
     experiences: UserExperience[],
     jobs: Job[]
   ): Promise<JobRecommendation[]> {
-    if (!this.apiKey) {
-      console.warn('OpenAI API key not found, using fallback matching');
-      return this.getFallbackMatching(profile, experiences, jobs);
-    }
-
+    // Remove direct API key access - use Supabase Edge Function proxy instead
     try {
       const userContext = this.buildUserContext(profile, experiences);
-      const jobsContext = this.buildJobsContext(jobs);
+      
+      const prompt = `Analyze the following user profile and job listings. Provide job recommendations with match scores (0-100) and reasons.
 
-      const prompt = `
-You are an expert job matching AI. Analyze the user's profile and recommend the best matching jobs.
-
-USER PROFILE:
+User Profile:
 ${userContext}
 
-AVAILABLE JOBS:
-${jobsContext}
+Available Jobs:
+${jobs.map(job => `
+Job ID: ${job.id}
+Title: ${job.title}
+Company: ${job.company}
+Location: ${job.location}
+Experience Required: ${job.experienceRequired || 'Not specified'}
+Type: ${job.type || 'Not specified'}
+Description: ${job.description?.substring(0, 500) || 'No description'}
+`).join('\n')}
 
-Please analyze each job and provide recommendations based on:
-1. Skills alignment (technical and soft skills)
-2. Experience level match
-3. Industry/domain relevance
-4. Location preferences
-5. Career progression potential
-
-For each job, provide:
-- Match score (0-100)
-- Top 3 reasons why it's a good match
-- Missing skills that would improve the match
-
-Return ONLY a valid JSON response in this format:
+Return JSON in this exact format:
 {
   "recommendations": [
     {
@@ -145,13 +135,8 @@ Return ONLY a valid JSON response in this format:
 Focus on jobs with match scores above 70. Limit to top 10 recommendations.
 `;
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('openai-proxy', {
+        body: {
           model: 'gpt-4o-mini',
           messages: [
             { role: 'system', content: 'You are an expert job matching AI that provides accurate job recommendations based on user profiles.' },
@@ -159,14 +144,14 @@ Focus on jobs with match scores above 70. Limit to top 10 recommendations.
           ],
           temperature: 0.3,
           max_tokens: 2000,
-        }),
+        },
       });
 
-      if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
+      if (error) {
+        console.error('OpenAI proxy error:', error);
+        throw new Error('Failed to get AI recommendations');
       }
 
-      const data = await response.json();
       const aiResponse: OpenAIJobMatchResponse = JSON.parse(data.choices[0]?.message?.content || '{"recommendations":[]}');
 
       // Map AI recommendations to job objects

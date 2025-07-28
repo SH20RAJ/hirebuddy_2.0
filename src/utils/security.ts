@@ -11,18 +11,50 @@ export class EnvironmentValidator {
     'VITE_GOOGLE_CLIENT_ID'
   ];
 
-  static validateEnvironment(): { isValid: boolean; missingVars: string[] } {
+  // Sensitive variables that should NEVER have VITE_ prefix
+  private static forbiddenViteVars = [
+    'VITE_GOOGLE_CLIENT_SECRET',
+    'VITE_OPENAI_API_KEY',
+    'VITE_SUPABASE_SERVICE_ROLE_KEY',
+    'VITE_GITHUB_CLIENT_SECRET',
+    'VITE_AWS_SECRET_ACCESS_KEY',
+    'VITE_STRIPE_SECRET_KEY',
+  ];
+
+  static validateEnvironment(): { isValid: boolean; missingVars: string[]; exposedSecrets: string[] } {
     const missingVars: string[] = [];
+    const exposedSecrets: string[] = [];
     
+    // Check for required variables
     this.requiredVars.forEach(varName => {
       if (!import.meta.env[varName]) {
         missingVars.push(varName);
       }
     });
 
+    // Check for exposed secrets
+    this.forbiddenViteVars.forEach(varName => {
+      if (import.meta.env[varName]) {
+        exposedSecrets.push(varName);
+        console.error(`🚨 SECURITY RISK: ${varName} is exposed to the client! Remove VITE_ prefix and move to server-side.`);
+      }
+    });
+
+    // Log security warnings in development
+    if (import.meta.env.DEV && exposedSecrets.length > 0) {
+      console.warn(`
+🔒 SECURITY WARNING: The following sensitive variables are exposed to the client:
+${exposedSecrets.map(v => `- ${v}`).join('\n')}
+
+These should be moved to server-side environment (.env.server) without the VITE_ prefix.
+Client-side code should use Supabase Edge Functions for secure API calls.
+      `);
+    }
+
     return {
-      isValid: missingVars.length === 0,
-      missingVars
+      isValid: missingVars.length === 0 && exposedSecrets.length === 0,
+      missingVars,
+      exposedSecrets
     };
   }
 
@@ -32,6 +64,22 @@ export class EnvironmentValidator {
       throw new Error(`Required environment variable ${key} is not configured`);
     }
     return value;
+  }
+
+  static logEnvironmentStatus(): void {
+    console.log('🔍 Environment Security Check:');
+    const { isValid, missingVars, exposedSecrets } = this.validateEnvironment();
+    
+    if (isValid) {
+      console.log('✅ Environment configuration is secure');
+    } else {
+      if (missingVars.length > 0) {
+        console.warn('⚠️ Missing required variables:', missingVars);
+      }
+      if (exposedSecrets.length > 0) {
+        console.error('🚨 Security issues found:', exposedSecrets);
+      }
+    }
   }
 }
 

@@ -70,30 +70,28 @@ class GoogleAuthService {
   // Handle OAuth callback and exchange code for tokens
   async handleCallback(code: string): Promise<GoogleUser | null> {
     try {
-      const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          client_id: this.clientId,
-          client_secret: import.meta.env.VITE_GOOGLE_CLIENT_SECRET || '',
+      // Use Supabase Edge Function for secure token exchange
+      const { data, error } = await supabase.functions.invoke('google-auth-proxy', {
+        body: {
           code,
-          grant_type: 'authorization_code',
           redirect_uri: this.redirectUri,
-        }),
+        },
       });
 
-      if (!tokenResponse.ok) {
+      if (error) {
+        console.error('Auth proxy error:', error);
         throw new Error('Failed to exchange code for tokens');
       }
 
-      const tokens = await tokenResponse.json();
+      const tokenData = data;
+      if (!tokenData.access_token) {
+        throw new Error('No access token received');
+      }
       
       // Get user info from Google
       const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
         headers: {
-          Authorization: `Bearer ${tokens.access_token}`,
+          Authorization: `Bearer ${tokenData.access_token}`,
         },
       });
 
@@ -109,8 +107,8 @@ class GoogleAuthService {
         email: userInfo.email,
         name: userInfo.name,
         profile_picture: userInfo.picture,
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
+        access_token: tokenData.access_token,
+        refresh_token: tokenData.refresh_token,
       });
 
       return googleUser;
@@ -279,25 +277,20 @@ class GoogleAuthService {
   // Refresh access token if needed
   async refreshAccessToken(refreshToken: string): Promise<string | null> {
     try {
-      const response = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          client_id: this.clientId,
-          client_secret: import.meta.env.VITE_GOOGLE_CLIENT_SECRET || '',
+      // Use Supabase Edge Function for secure token refresh
+      const { data, error } = await supabase.functions.invoke('google-auth-proxy', {
+        body: {
           refresh_token: refreshToken,
           grant_type: 'refresh_token',
-        }),
+        },
       });
 
-      if (!response.ok) {
+      if (error) {
+        console.error('Token refresh proxy error:', error);
         throw new Error('Failed to refresh token');
       }
 
-      const tokens = await response.json();
-      return tokens.access_token;
+      return data.access_token;
     } catch (error) {
       console.error('Error refreshing access token:', error);
       return null;
