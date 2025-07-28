@@ -220,7 +220,7 @@ const EmailAPITester = () => {
           <div className="mt-4 p-4 bg-gray-50 rounded-lg">
             <h4 className="font-medium mb-2">API Endpoint Information</h4>
             <div className="space-y-1 text-sm">
-              <p><strong>Base URL:</strong> https://a2wzu306xj.execute-api.us-east-1.amazonaws.com</p>
+              <p><strong>Base URL:</strong> {import.meta.env.VITE_AWS_API_BASE_URL ? 'Configured' : 'Not configured'}</p>
               <p><strong>Available Endpoints:</strong></p>
               <ul className="list-disc list-inside ml-4 space-y-1">
                 <li><Badge variant="outline">GET /</Badge> - Health check</li>

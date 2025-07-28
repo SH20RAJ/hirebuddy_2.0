@@ -108,12 +108,6 @@ const DatabaseTest: React.FC = () => {
                 </Badge>
               </div>
             </div>
-            
-            {import.meta.env.VITE_SUPABASE_URL && (
-              <div className="mt-4 p-2 bg-gray-100 rounded text-sm">
-                <strong>URL:</strong> {import.meta.env.VITE_SUPABASE_URL}
-              </div>
-            )}
           </CardContent>
         </Card>
 

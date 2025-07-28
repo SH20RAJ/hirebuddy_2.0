@@ -12,7 +12,7 @@ export async function testDatabaseConnection(): Promise<DatabaseTestResult> {
     console.log('🔍 Testing database connection...');
     console.log('Environment check:');
     console.log('- VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL ? '✓ Present' : '❌ Missing');
-    console.log('- VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY ? '✓ Present (length: ' + (import.meta.env.VITE_SUPABASE_ANON_KEY?.length || 0) + ')' : '❌ Missing');
+    console.log('- VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY ? '✓ Present' : '❌ Missing');
 
     // Test basic connection
     const { data, error, count } = await supabase
