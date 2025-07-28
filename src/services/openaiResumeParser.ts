@@ -1,116 +1,91 @@
-import { openaiService } from './openaiService';
-import type { Resume } from '../types/resume';
-import * as pdfjs from 'pdfjs-dist';
+import * as pdfjsLib from 'pdfjs-dist';
+import { Resume, ResumeWorkExperience, ResumeEducation, ResumeSkills } from '../types/resume';
+import { supabase } from '../lib/supabase';
 
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+// Set the worker source for PDF.js
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 
-interface OpenAIResumeParseResponse {
-  profile: {
-    name: string;
-    email: string;
-    phone: string;
-    location: string;
-    url: string;
-    linkedin: string;
-    github: string;
-    summary: string;
-  };
-  workExperiences: Array<{
-    company: string;
-    jobTitle: string;
-    date: string;
-    jobDescription: string;
-    achievements: string[];
-  }>;
-  educations: Array<{
-    school: string;
-    degree: string;
-    date: string;
-    gpa: string;
-    coursework: string[];
-    honors: string[];
-    activities: string[];
-  }>;
-  skills: {
-    programmingLanguages: string[];
-    frameworks: string[];
-    technicalSkills: string[];
-    softSkills: string[];
-    tools: string[];
-  };
-  projects: Array<{
-    project: string;
-    date: string;
-    descriptions: string[];
-  }>;
-  certifications: Array<{
-    name: string;
-    issuer: string;
-    date: string;
-    expiryDate: string;
-    credentialId: string;
-  }>;
-  languages: Array<{
-    language: string;
-    proficiency: string;
-  }>;
-  volunteers: Array<{
-    organization: string;
-    role: string;
-    date: string;
-    descriptions: string[];
-  }>;
-  awards: Array<{
-    title: string;
-    issuer: string;
-    date: string;
-    description: string;
-  }>;
-}
-
-class OpenAIResumeParser {
-  private apiKey: string;
-  private baseUrl = 'https://api.openai.com/v1/chat/completions';
+export class OpenAIResumeParser {
+  private baseUrl: string;
 
   constructor() {
-    this.apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-    if (!this.apiKey) {
-      throw new Error('OpenAI API key not found in environment variables');
-    }
+    // Use the Supabase Edge Function for secure OpenAI proxy
+    this.baseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/openai-proxy`;
   }
 
   /**
    * Extract text content from PDF file
    */
-  private async extractTextFromPdf(fileUrl: string): Promise<string> {
+  private async extractTextFromPDF(file: File): Promise<string> {
     try {
-      const pdfFile = await pdfjs.getDocument(fileUrl).promise;
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
       let fullText = '';
 
-      for (let i = 1; i <= pdfFile.numPages; i++) {
-        const page = await pdfFile.getPage(i);
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
-        
-        // Extract text items and join them
         const pageText = textContent.items
           .map((item: any) => item.str)
           .join(' ');
-        
         fullText += pageText + '\n';
       }
 
       return fullText.trim();
     } catch (error) {
       console.error('Error extracting text from PDF:', error);
-      throw new Error('Failed to extract text from PDF. Please ensure the PDF is readable.');
+      throw new Error('Failed to extract text from PDF');
+    }
+  }
+
+  /**
+   * Make request to OpenAI via Supabase proxy
+   */
+  private async makeOpenAIRequest(messages: any[], temperature = 0.1): Promise<string> {
+    try {
+      // Get the current session token for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('Authentication required. Please sign in to parse resumes.');
+      }
+
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages,
+          temperature,
+          max_tokens: 2000,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        throw new Error('Invalid response format from OpenAI API');
+      }
+
+      return data.choices[0].message.content;
+    } catch (error) {
+      console.error('Error making OpenAI request:', error);
+      throw error;
     }
   }
 
   /**
    * Parse resume text using OpenAI
    */
-  private async parseResumeWithAI(resumeText: string): Promise<OpenAIResumeParseResponse> {
+  private async parseResumeWithAI(resumeText: string): Promise<any> {
     const prompt = `
 You are an expert resume parser. Extract and structure the following resume text into a comprehensive JSON format.
 
@@ -238,29 +213,11 @@ Return ONLY the JSON object, no additional text or explanation.
 `;
 
     try {
-      const response = await fetch(this.baseUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            { role: 'system', content: 'You are an expert resume parser. Always respond with valid JSON only.' },
-            { role: 'user', content: prompt }
-          ],
-          temperature: 0.1, // Low temperature for consistent parsing
-          max_tokens: 4000,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      const aiResponse = data.choices[0]?.message?.content || '';
+      const messages = [
+        { role: 'system', content: 'You are an expert resume parser. Always respond with valid JSON only.' },
+        { role: 'user', content: prompt }
+      ];
+      const aiResponse = await this.makeOpenAIRequest(messages);
       
       // Clean and parse the JSON response
       const cleanedResponse = aiResponse.trim();
@@ -277,7 +234,7 @@ Return ONLY the JSON object, no additional text or explanation.
   /**
    * Convert OpenAI response to Resume type
    */
-  private convertToResumeType(aiResponse: OpenAIResumeParseResponse): Resume {
+     private convertToResumeType(aiResponse: any): Resume {
     return {
       profile: {
         name: aiResponse.profile.name || '',
@@ -289,7 +246,7 @@ Return ONLY the JSON object, no additional text or explanation.
         summary: aiResponse.profile.summary || '',
         location: aiResponse.profile.location || ''
       },
-      workExperiences: aiResponse.workExperiences.map(exp => ({
+      workExperiences: aiResponse.workExperiences.map((exp: any) => ({
         company: exp.company || '',
         jobTitle: exp.jobTitle || '',
         date: exp.date || '',
@@ -297,7 +254,7 @@ Return ONLY the JSON object, no additional text or explanation.
         achievements: exp.achievements || [],
         descriptions: exp.achievements || [] // Backward compatibility
       })),
-      educations: aiResponse.educations.map(edu => ({
+      educations: aiResponse.educations.map((edu: any) => ({
         school: edu.school || '',
         degree: edu.degree || '',
         date: edu.date || '',
@@ -307,7 +264,7 @@ Return ONLY the JSON object, no additional text or explanation.
         activities: edu.activities || [],
         descriptions: [...(edu.coursework || []), ...(edu.honors || []), ...(edu.activities || [])] // Backward compatibility
       })),
-      projects: aiResponse.projects.map(proj => ({
+      projects: aiResponse.projects.map((proj: any) => ({
         project: proj.project || '',
         date: proj.date || '',
         descriptions: proj.descriptions || []
@@ -327,26 +284,26 @@ Return ONLY the JSON object, no additional text or explanation.
           ...(aiResponse.skills.tools || [])
         ] // Backward compatibility
       },
-      awards: aiResponse.awards.map(award => ({
+      awards: aiResponse.awards.map((award: any) => ({
         title: award.title || '',
         issuer: award.issuer || '',
         date: award.date || '',
         description: award.description || ''
       })),
-      volunteers: aiResponse.volunteers.map(vol => ({
+      volunteers: aiResponse.volunteers.map((vol: any) => ({
         organization: vol.organization || '',
         role: vol.role || '',
         date: vol.date || '',
         descriptions: vol.descriptions || []
       })),
-      certifications: aiResponse.certifications.map(cert => ({
+      certifications: aiResponse.certifications.map((cert: any) => ({
         name: cert.name || '',
         issuer: cert.issuer || '',
         date: cert.date || '',
         expiryDate: cert.expiryDate || '',
         credentialId: cert.credentialId || ''
       })),
-      languages: aiResponse.languages.map(lang => ({
+      languages: aiResponse.languages.map((lang: any) => ({
         language: lang.language || '',
         proficiency: lang.proficiency || ''
       })),
@@ -359,13 +316,13 @@ Return ONLY the JSON object, no additional text or explanation.
   /**
    * Main method to parse resume from PDF using OpenAI
    */
-  async parseResumeFromPdf(fileUrl: string): Promise<Resume> {
+     async parseResumeFromPdf(file: File): Promise<Resume> {
     try {
       console.log('Starting OpenAI-based resume parsing...');
       
       // Step 1: Extract text from PDF
       console.log('Extracting text from PDF...');
-      const resumeText = await this.extractTextFromPdf(fileUrl);
+      const resumeText = await this.extractTextFromPDF(file);
       
       if (!resumeText.trim()) {
         throw new Error('No text could be extracted from the PDF. Please ensure the PDF contains readable text.');
@@ -395,6 +352,6 @@ Return ONLY the JSON object, no additional text or explanation.
 export const openaiResumeParser = new OpenAIResumeParser();
 
 // Export the main parsing function for backward compatibility
-export const parseResumeFromPdf = (fileUrl: string): Promise<Resume> => {
-  return openaiResumeParser.parseResumeFromPdf(fileUrl);
+export const parseResumeFromPdf = (file: File): Promise<Resume> => {
+  return openaiResumeParser.parseResumeFromPdf(file);
 }; 

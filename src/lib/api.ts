@@ -173,12 +173,40 @@ class ApiClient {
     return this.get(`/jobs/${id}`);
   }
 
+  async getJobById(id: string) {
+    return this.get(`/jobs/${id}`);
+  }
+
   async getRemoteJobs(params?: Record<string, string>) {
     return this.get('/jobs/remote', params);
   }
 
   async getExclusiveJobs(params?: Record<string, string>) {
     return this.get('/jobs/exclusive', params);
+  }
+
+  async createJob(jobData: any) {
+    return this.post('/jobs', jobData);
+  }
+
+  async updateJob(jobData: any) {
+    return this.put('/jobs', jobData);
+  }
+
+  async deleteJob(id: string) {
+    return this.delete(`/jobs/${id}`);
+  }
+
+  async getJobsStats() {
+    return this.get('/jobs/stats');
+  }
+
+  async searchCompanies(query: string, limit: number = 10) {
+    return this.get('/jobs/companies', { query, limit: limit.toString() });
+  }
+
+  async searchLocations(query: string, limit: number = 10) {
+    return this.get('/jobs/locations', { query, limit: limit.toString() });
   }
 
   // Job Applications methods

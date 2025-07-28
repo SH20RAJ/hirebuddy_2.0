@@ -1,79 +1,66 @@
-interface CoverLetterRequest {
-  resumeData: any;
+import { supabase } from '../lib/supabase';
+
+interface CoverLetterData {
+  jobTitle: string;
+  companyName: string;
   jobDescription: string;
-  keyPoints: string[];
-  companyName?: string;
-  positionTitle?: string;
-  userPreferences?: {
-    tone?: 'professional' | 'enthusiastic' | 'conversational';
-    length?: 'short' | 'medium' | 'long';
-    focusAreas?: string[];
-  };
+  applicantName: string;
+  applicantSkills: string[];
+  applicantExperience: string;
+  tone?: 'professional' | 'enthusiastic' | 'casual';
 }
 
 interface CoverLetterResponse {
-  coverLetter: string;
-  suggestions: string[];
-  keywordsUsed: string[];
+  success: boolean;
+  letter?: string;
+  error?: string;
 }
 
 class CoverLetterService {
-  private apiKey: string;
-  private baseUrl = 'https://api.openai.com/v1/chat/completions';
+  private baseUrl: string;
 
   constructor() {
-    this.apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-    if (!this.apiKey) {
-      console.warn('OpenAI API key not found in environment variables. Cover letter generation will not work.');
-    }
+    // Use the Supabase Edge Function for secure OpenAI proxy
+    this.baseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/openai-proxy`;
   }
 
   private async makeRequest(messages: Array<{ role: string; content: string }>, temperature = 0.7): Promise<string> {
-    if (!this.apiKey) {
-      throw new Error('OpenAI API key not configured. Please add VITE_OPENAI_API_KEY to your environment variables.');
-    }
-
     try {
-      console.log('Making OpenAI API request...');
+      // Get the current session token for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('Authentication required. Please sign in to generate cover letters.');
+      }
+
       const response = await fetch(this.baseUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'gpt-3.5-turbo',
           messages,
           temperature,
-          max_tokens: 2000, // Increased token limit
+          max_tokens: 1500,
         }),
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('OpenAI API error:', response.status, response.statusText, errorText);
-        
-        if (response.status === 401) {
-          throw new Error('Invalid OpenAI API key. Please check your API key configuration.');
-        } else if (response.status === 429) {
-          throw new Error('OpenAI API rate limit exceeded. Please try again later.');
-        } else if (response.status === 500) {
-          throw new Error('OpenAI API server error. Please try again later.');
-        } else {
-          throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
-        }
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('OpenAI API response received successfully');
       
       if (!data.choices || !data.choices[0] || !data.choices[0].message) {
         throw new Error('Invalid response format from OpenAI API');
       }
-      
-      return data.choices[0].message.content || '';
+
+      return data.choices[0].message.content;
     } catch (error) {
-      console.error('OpenAI API request failed:', error);
+      console.error('Error making OpenAI request:', error);
       throw error;
     }
   }
@@ -215,16 +202,10 @@ class CoverLetterService {
     return resumeText.trim() || 'Resume data is incomplete. Please ensure your resume has basic information filled out.';
   }
 
-  async generateCoverLetter(request: CoverLetterRequest): Promise<CoverLetterResponse> {
-    const resumeText = this.extractResumeText(request.resumeData);
-    const { tone = 'professional', length = 'medium' } = request.userPreferences || {};
+  async generateCoverLetter(request: CoverLetterData): Promise<CoverLetterResponse> {
+    const resumeText = this.extractResumeText(request);
+    const { tone = 'professional' } = request;
     
-    const lengthGuidance = {
-      short: '2-3 paragraphs, concise and to the point (250-350 words)',
-      medium: '3-4 paragraphs, balanced detail (350-500 words)',
-      long: '4-5 paragraphs, comprehensive and detailed (500-700 words)'
-    };
-
     const toneGuidance = {
       professional: 'formal, business-appropriate language with a confident tone',
       enthusiastic: 'energetic and passionate while maintaining professionalism',
@@ -236,10 +217,6 @@ class CoverLetterService {
       throw new Error('Job description is too short. Please provide a more detailed job description.');
     }
 
-    const validKeyPoints = request.keyPoints.filter(point => point.trim());
-    // If no key points provided, use a default one
-    const keyPointsToUse = validKeyPoints.length > 0 ? validKeyPoints : ['Highlight relevant experience and skills that match the job requirements'];
-
     const prompt = `You are an expert cover letter writer with 10+ years of experience helping job seekers land interviews at top companies. Create a compelling, personalized cover letter that will make the candidate stand out.
 
 CANDIDATE'S RESUME DATA:
@@ -249,13 +226,9 @@ JOB DESCRIPTION:
 ${request.jobDescription.trim()}
 
 ${request.companyName ? `COMPANY NAME: ${request.companyName}` : ''}
-${request.positionTitle ? `POSITION TITLE: ${request.positionTitle}` : ''}
-
-KEY POINTS TO EMPHASIZE:
-${keyPointsToUse.map(point => `• ${point.trim()}`).join('\n')}
+${request.jobTitle ? `POSITION TITLE: ${request.jobTitle}` : ''}
 
 REQUIREMENTS:
-- Length: ${lengthGuidance[length]}
 - Tone: ${toneGuidance[tone]}
 - Use specific examples from the resume that directly match job requirements
 - Incorporate relevant keywords from the job description naturally (don't force them)
@@ -280,9 +253,9 @@ IMPORTANT:
 
 Please provide your response in this exact JSON format (ensure valid JSON):
 {
-  "coverLetter": "The complete cover letter text here...",
-  "suggestions": ["suggestion 1", "suggestion 2", "suggestion 3", "suggestion 4", "suggestion 5"],
-  "keywordsUsed": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"]
+  "success": true,
+  "letter": "The complete cover letter text here...",
+  "error": null
 }`;
 
     const messages = [
@@ -293,50 +266,54 @@ Please provide your response in this exact JSON format (ensure valid JSON):
       { role: 'user', content: prompt }
     ];
 
-    const response = await this.makeRequest(messages, 0.8);
-    
     try {
-      // Clean the response to ensure it's valid JSON
-      const cleanedResponse = response.trim();
-      let jsonResponse = cleanedResponse;
+      const response = await this.makeRequest(messages, 0.8);
       
-      // Remove any markdown code blocks if present
-      if (cleanedResponse.startsWith('```json')) {
-        jsonResponse = cleanedResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-      } else if (cleanedResponse.startsWith('```')) {
-        jsonResponse = cleanedResponse.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      try {
+        // Clean the response to ensure it's valid JSON
+        const cleanedResponse = response.trim();
+        let jsonResponse = cleanedResponse;
+        
+        // Remove any markdown code blocks if present
+        if (cleanedResponse.startsWith('```json')) {
+          jsonResponse = cleanedResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+        } else if (cleanedResponse.startsWith('```')) {
+          jsonResponse = cleanedResponse.replace(/^```\s*/, '').replace(/\s*```$/, '');
+        }
+        
+        const parsed = JSON.parse(jsonResponse);
+        
+        // Validate the response structure
+        if (!parsed.success || typeof parsed.success !== 'boolean') {
+          throw new Error('Invalid success status in response');
+        }
+
+        if (!parsed.letter || typeof parsed.letter !== 'string') {
+          throw new Error('Invalid cover letter content in response');
+        }
+        
+        return parsed as CoverLetterResponse;
+      } catch (error) {
+        console.error('Failed to parse cover letter response:', error);
+        console.error('Raw response:', response);
+        
+        // Fallback: try to extract just the cover letter text
+        if (response && response.trim()) {
+          return {
+            success: true,
+            letter: response.trim(),
+            error: null
+          };
+        }
+        
+        throw new Error('Failed to generate cover letter. Please try again with a more detailed job description.');
       }
-      
-      const parsed = JSON.parse(jsonResponse);
-      
-      // Validate the response structure
-      if (!parsed.coverLetter || typeof parsed.coverLetter !== 'string') {
-        throw new Error('Invalid cover letter content in response');
-      }
-      
-      if (!parsed.suggestions || !Array.isArray(parsed.suggestions)) {
-        parsed.suggestions = ['Consider adding more specific examples', 'Tailor the letter further to the company culture', 'Add more quantifiable achievements'];
-      }
-      
-      if (!parsed.keywordsUsed || !Array.isArray(parsed.keywordsUsed)) {
-        parsed.keywordsUsed = [];
-      }
-      
-      return parsed as CoverLetterResponse;
     } catch (error) {
-      console.error('Failed to parse cover letter response:', error);
-      console.error('Raw response:', response);
-      
-      // Fallback: try to extract just the cover letter text
-      if (response && response.trim()) {
-        return {
-          coverLetter: response.trim(),
-          suggestions: ['Review the generated content for accuracy', 'Consider customizing further for the specific role', 'Add more company-specific details'],
-          keywordsUsed: []
-        };
-      }
-      
-      throw new Error('Failed to generate cover letter. Please try again with a more detailed job description.');
+      console.error('Failed to generate cover letter:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to generate cover letter. Please try again.'
+      };
     }
   }
 
@@ -389,15 +366,20 @@ Please provide ONLY the improved cover letter text (no JSON, no explanations, ju
       { role: 'user', content: prompt }
     ];
 
-    const response = await this.makeRequest(messages, 0.7);
-    
-    if (!response || response.trim().length < 100) {
+    try {
+      const response = await this.makeRequest(messages, 0.7);
+      
+      if (!response || response.trim().length < 100) {
+        throw new Error('Failed to generate improved cover letter. Please try again with a different improvement request.');
+      }
+
+      return response.trim();
+    } catch (error) {
+      console.error('Failed to generate improved cover letter:', error);
       throw new Error('Failed to generate improved cover letter. Please try again with a different improvement request.');
     }
-
-    return response.trim();
   }
 }
 
 export const coverLetterService = new CoverLetterService();
-export type { CoverLetterRequest, CoverLetterResponse }; 
+export type { CoverLetterData, CoverLetterResponse }; 

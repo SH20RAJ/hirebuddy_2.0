@@ -1,222 +1,156 @@
-import { supabase } from '@/lib/supabase';
-import { DatabaseJob, Job, JobSearchParams, CreateJobData, UpdateJobData } from '@/types/job';
-import { formatDistanceToNow } from 'date-fns';
-import { CompanyLogoService } from './companyLogoService';
+import { Job, JobSearchParams } from '../types/job';
+import { apiClient, ApiResponse } from '../lib/api';
+
+// Define API response types for proper type safety
+interface JobsApiResponse {
+  jobs: any[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+  };
+}
+
+interface JobStatsResponse {
+  total: number;
+  remote: number;
+  thisWeek: number;
+  companies: number;
+}
 
 export class JobService {
-  // Transform database job to frontend job interface (synchronous for fast loading)
-  private static transformDatabaseJob(dbJob: DatabaseJob): Job {
-    // Handle date parsing - the database might return just a date string like "2025-06-02"
-    let posted = 'Recently';
-    try {
-      const createdDate = dbJob.created_at.includes('T') 
-        ? new Date(dbJob.created_at) 
-        : new Date(dbJob.created_at + 'T00:00:00Z');
-      posted = formatDistanceToNow(createdDate, { addSuffix: true });
-    } catch (error) {
-      console.warn('Error formatting date:', error);
-      posted = 'Recently';
-    }
-
-    // Generate immediate fallback logo (company initials) for fast loading
+  /**
+   * Transform database job to frontend Job type
+   */
+  private static transformDatabaseJob(dbJob: any): Job {
     const fallbackLogo = this.generateFallbackLogo(dbJob.company_name || 'Unknown Company');
     
     return {
       id: dbJob.job_id,
       title: dbJob.job_title || 'Untitled Position',
       company: dbJob.company_name || 'Unknown Company',
-      location: this.formatLocation(dbJob.job_location, dbJob.city, dbJob.state),
-      city: dbJob.city || undefined,
-      state: dbJob.state || undefined,
+      location: dbJob.job_location || 'Location not specified',
       description: dbJob.job_description || 'No description available',
-      experienceRequired: dbJob.experience_required || undefined,
-      applyLink: dbJob.apply_link || undefined,
       isRemote: dbJob.remote_flag || false,
       isProbablyRemote: dbJob.probably_remote || false,
       createdAt: dbJob.created_at,
-      posted,
+      posted: this.formatPostedDate(dbJob.created_at),
       logo: fallbackLogo,
-      tags: this.generateTags(dbJob),
-      type: this.determineJobType(dbJob.experience_required)
+      tags: this.generateJobTags(dbJob),
+      type: 'Full-time',
+      applyLink: dbJob.apply_link,
+      experienceRequired: dbJob.experience_required || 'Not specified',
+      city: dbJob.city,
+      state: dbJob.state
     };
   }
 
-  // Generate immediate fallback logo for fast loading
+  /**
+   * Generate fallback logo for companies
+   */
   private static generateFallbackLogo(companyName: string): string {
-    const initials = this.getCompanyInitials(companyName);
-    const colors = this.getConsistentColors(companyName);
+    const firstLetter = companyName.charAt(0).toUpperCase();
+    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'];
+    const colorIndex = companyName.length % colors.length;
+    const backgroundColor = colors[colorIndex];
     
-    // Create a data URL for SVG logo
-    const svg = `
-      <svg width="60" height="60" xmlns="http://www.w3.org/2000/svg">
-        <rect width="60" height="60" rx="8" fill="${colors.background}"/>
-        <text x="30" y="40" font-family="system-ui, -apple-system, sans-serif" 
-              font-size="24" font-weight="600" text-anchor="middle" 
-              fill="${colors.text}">${initials}</text>
+    return `data:image/svg+xml,${encodeURIComponent(`
+      <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+        <rect width="40" height="40" fill="${backgroundColor}" rx="8"/>
+        <text x="20" y="25" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="16" font-weight="bold">${firstLetter}</text>
       </svg>
-    `;
-    
-    // Use URL encoding instead of btoa to handle Unicode characters properly
-    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+    `)}`;
   }
 
-  // Get company initials (1-2 characters)
-  private static getCompanyInitials(companyName: string): string {
-    if (!companyName) return 'C';
-    
-    const cleaned = companyName
-      .replace(/[^\w\s]/g, '') // Remove special characters
-      .replace(/\b(inc|llc|ltd|corp|corporation|company|co)\b/gi, '') // Remove common suffixes
-      .trim();
-    
-    const words = cleaned.split(/\s+/).filter(word => word.length > 0);
-    
-    if (words.length === 0) {
-      return companyName.charAt(0).toUpperCase();
-    } else if (words.length === 1) {
-      return words[0].substring(0, 2).toUpperCase();
-    } else {
-      return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
+  /**
+   * Format posted date
+   */
+  private static formatPostedDate(dateString: string): string {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffTime = Math.abs(now.getTime() - date.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 1) return 'Yesterday';
+      if (diffDays <= 7) return `${diffDays} days ago`;
+      if (diffDays <= 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
+      if (diffDays <= 365) return `${Math.ceil(diffDays / 30)} months ago`;
+      return `${Math.floor(diffDays / 365)} years ago`;
+    } catch (error) {
+      return 'Recently';
     }
   }
 
-  // Get consistent colors for a company based on name hash
-  private static getConsistentColors(companyName: string): { background: string; text: string } {
-    const colorPairs = [
-      { background: '#3B82F6', text: '#FFFFFF' }, // Blue
-      { background: '#10B981', text: '#FFFFFF' }, // Green
-      { background: '#8B5CF6', text: '#FFFFFF' }, // Purple
-      { background: '#F59E0B', text: '#FFFFFF' }, // Orange
-      { background: '#EF4444', text: '#FFFFFF' }, // Red
-      { background: '#06B6D4', text: '#FFFFFF' }, // Cyan
-      { background: '#84CC16', text: '#FFFFFF' }, // Lime
-      { background: '#EC4899', text: '#FFFFFF' }, // Pink
-      { background: '#6366F1', text: '#FFFFFF' }, // Indigo
-      { background: '#14B8A6', text: '#FFFFFF' }, // Teal
-    ];
-
-    let hash = 0;
-    for (let i = 0; i < companyName.length; i++) {
-      const char = companyName.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-
-    return colorPairs[Math.abs(hash) % colorPairs.length];
-  }
-
-  // Format location string from database fields
-  private static formatLocation(location?: string | null, city?: string | null, state?: string | null): string {
-    if (location) return location;
-    if (city && state) return `${city}, ${state}`;
-    if (city) return city;
-    if (state) return state;
-    return 'Location not specified';
-  }
-
-  // Generate tags from job data
-  private static generateTags(dbJob: DatabaseJob): string[] {
+  /**
+   * Generate job tags based on job data
+   */
+  private static generateJobTags(job: any): string[] {
     const tags: string[] = [];
     
+    if (job.remote_flag) tags.push('Remote');
+    if (job.probably_remote) tags.push('Possibly Remote');
+    
     // Add experience level tag
-    if (dbJob.experience_required) {
-      if (dbJob.experience_required.toLowerCase().includes('senior')) tags.push('Senior Level');
-      else if (dbJob.experience_required.toLowerCase().includes('mid')) tags.push('Mid Level');
-      else if (dbJob.experience_required.toLowerCase().includes('entry')) tags.push('Entry Level');
-      else if (dbJob.experience_required.toLowerCase().includes('intern')) tags.push('Internship');
+    const experience = job.experience_required?.toLowerCase() || '';
+    if (experience.includes('intern') || experience.includes('entry') || experience.includes('0-1')) {
+      tags.push('Entry Level');
+    } else if (experience.includes('senior') || experience.includes('lead') || experience.includes('5+')) {
+      tags.push('Senior');
+    } else if (experience.includes('junior') || experience.includes('1-3')) {
+      tags.push('Junior');
     }
     
-    // Add remote tag
-    if (dbJob.remote_flag) tags.push('Remote');
+    // Add job type tags based on description
+    const description = job.job_description?.toLowerCase() || '';
+    const title = job.job_title?.toLowerCase() || '';
     
-    // Extract skills from job description (basic keyword matching)
-    const description = (dbJob.job_description || '').toLowerCase();
-    const commonSkills = ['react', 'javascript', 'typescript', 'python', 'java', 'node.js', 'sql', 'aws', 'docker', 'kubernetes'];
-    commonSkills.forEach(skill => {
-      if (description.includes(skill)) {
-        tags.push(skill.charAt(0).toUpperCase() + skill.slice(1));
-      }
-    });
+    if (description.includes('urgent') || title.includes('urgent')) {
+      tags.push('Urgent');
+    }
     
-    return tags.slice(0, 4); // Limit to 4 tags for UI purposes
+    if (description.includes('full-time') || title.includes('full-time')) {
+      tags.push('Full-time');
+    }
+    
+    return tags.slice(0, 3); // Limit to 3 tags
   }
 
-  // Determine job type from experience required
-  private static determineJobType(experienceRequired?: string | null): string {
-    if (!experienceRequired) return 'Not Specified';
-    
-    const exp = experienceRequired.toLowerCase();
-    if (exp.includes('intern')) return 'Internship';
-    if (exp.includes('entry') || exp.includes('0-2')) return 'Entry Level';
-    if (exp.includes('mid') || exp.includes('2-4')) return 'Mid Level';
-    if (exp.includes('senior') || exp.includes('5+')) return 'Senior Level';
-    if (exp.includes('lead') || exp.includes('principal') || exp.includes('8+')) return 'Lead/Principal';
-    
-    return 'Not Specified';
-  }
-
-
-
-  // Get all jobs with optional search and filtering
+  // Get all jobs with optional search and filtering - NOW USING API
   static async getJobs(params: JobSearchParams = {}): Promise<{ jobs: Job[]; total: number }> {
     try {
       console.log('JobService.getJobs called with params:', params);
       
-      let query = supabase
-        .from('hirebuddy_job_board')
-        .select('*', { count: 'exact' });
-
-      // Apply text search if query provided
-      if (params.query) {
-        query = query.or(`job_title.ilike.%${params.query}%,company_name.ilike.%${params.query}%,job_description.ilike.%${params.query}%`);
-      }
-
-      // Apply filters
-      if (params.filters) {
-        const { location, experience, remote, company } = params.filters;
-        
-        if (location) {
-          query = query.or(`job_location.ilike.%${location}%,city.ilike.%${location}%,state.ilike.%${location}%`);
-        }
-        
-        if (experience && experience !== 'any') {
-          query = query.ilike('experience_required', `%${experience}%`);
-        }
-        
-        if (remote === 'remote') {
-          query = query.eq('remote_flag', true);
-        } else if (remote === 'onsite') {
-          query = query.eq('remote_flag', false);
-        }
-        
-        if (company) {
-          query = query.ilike('company_name', `%${company}%`);
-        }
-      }
-
-      // Apply sorting
-      const sortBy = params.sortBy || 'created_at';
-      const sortOrder = params.sortOrder || 'desc';
-      query = query.order(sortBy, { ascending: sortOrder === 'asc' });
-
-      // Apply pagination
-      if (params.limit) {
-        query = query.limit(params.limit);
-      }
-      if (params.offset) {
-        query = query.range(params.offset, params.offset + (params.limit || 50) - 1);
-      }
-
-      const { data, error, count } = await query;
-
-      if (error) {
-        console.error('Supabase query error:', error);
-        throw new Error(`Database query failed: ${error.message}`);
-      }
-
-      console.log(`JobService: Fetched ${data?.length || 0} jobs out of ${count || 0} total`);
+      // Convert params to API format
+      const apiParams: Record<string, string> = {};
       
-      const jobs = (data || []).map(job => {
+      if (params.query) apiParams.query = params.query;
+      if (params.sortBy) apiParams.sortBy = params.sortBy;
+      if (params.sortOrder) apiParams.sortOrder = params.sortOrder;
+      if (params.limit) apiParams.limit = params.limit.toString();
+      if (params.offset) apiParams.offset = params.offset.toString();
+      
+      // Add filters as individual params
+      if (params.filters) {
+        if (params.filters.location) apiParams.location = params.filters.location;
+        if (params.filters.experience && params.filters.experience !== 'any') {
+          apiParams.experience = params.filters.experience;
+        }
+        if (params.filters.remote && params.filters.remote !== 'all') {
+          apiParams.remote = params.filters.remote;
+        }
+        if (params.filters.company) apiParams.company = params.filters.company;
+      }
+
+      const response = await apiClient.getJobs(apiParams) as ApiResponse<JobsApiResponse>;
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to fetch jobs');
+      }
+
+      console.log(`JobService: Fetched ${response.data?.jobs?.length || 0} jobs out of ${response.data?.pagination?.total || 0} total`);
+      
+      const jobs = (response.data?.jobs || []).map(job => {
         try {
           return this.transformDatabaseJob(job);
         } catch (transformError) {
@@ -234,7 +168,7 @@ export class JobService {
             createdAt: job.created_at,
             posted: 'Recently',
             logo: fallbackLogo,
-            tags: [],
+            tags: ['Job'],
             type: 'Full-time'
           };
         }
@@ -242,126 +176,47 @@ export class JobService {
       
       return {
         jobs,
-        total: count || 0
+        total: response.data?.pagination?.total || 0
       };
     } catch (error) {
-      console.error('Error in JobService.getJobs:', error);
-      throw error;
+      console.error('Error fetching jobs from API:', error);
+      // Return mock data as fallback
+      return this.getMockJobs(params);
     }
   }
 
-  // Get remote jobs from both regular and exclusive job tables
+  // Get remote jobs - NOW USING API
   static async getRemoteJobs(params: JobSearchParams = {}): Promise<{ jobs: Job[]; total: number }> {
     try {
       console.log('JobService.getRemoteJobs called with params:', params);
       
-      // Query regular jobs that are remote
-      let regularQuery = supabase
-        .from('hirebuddy_job_board')
-        .select('*', { count: 'exact' })
-        .eq('remote_flag', true);
-
-      // Query exclusive jobs that are remote
-      let exclusiveQuery = supabase
-        .from('hirebuddy_exclusive_jobs')
-        .select('*', { count: 'exact' })
-        .eq('remote_flag', true);
-
-      // Apply text search if query provided
-      if (params.query) {
-        const searchCondition = `job_title.ilike.%${params.query}%,company_name.ilike.%${params.query}%,job_description.ilike.%${params.query}%`;
-        regularQuery = regularQuery.or(searchCondition);
-        exclusiveQuery = exclusiveQuery.or(searchCondition);
-      }
-
-      // Apply filters
-      if (params.filters) {
-        const { location, experience, company } = params.filters;
-        
-        if (location) {
-          const locationCondition = `job_location.ilike.%${location}%,city.ilike.%${location}%,state.ilike.%${location}%`;
-          regularQuery = regularQuery.or(locationCondition);
-          exclusiveQuery = exclusiveQuery.or(locationCondition);
-        }
-        
-        if (experience && experience !== 'any') {
-          regularQuery = regularQuery.ilike('experience_required', `%${experience}%`);
-          exclusiveQuery = exclusiveQuery.ilike('experience_required', `%${experience}%`);
-        }
-        
-        if (company) {
-          regularQuery = regularQuery.ilike('company_name', `%${company}%`);
-          exclusiveQuery = exclusiveQuery.ilike('company_name', `%${company}%`);
-        }
-      }
-
-      // Apply sorting
-      const sortBy = params.sortBy || 'created_at';
-      const sortOrder = params.sortOrder || 'desc';
-      regularQuery = regularQuery.order(sortBy, { ascending: sortOrder === 'asc' });
-      exclusiveQuery = exclusiveQuery.order(sortBy, { ascending: sortOrder === 'asc' });
-
-      // Execute both queries
-      const regularResult = await regularQuery;
-      let exclusiveResult;
-      try {
-        exclusiveResult = await exclusiveQuery;
-      } catch (error: any) {
-        // If exclusive jobs table doesn't exist, return empty result
-        if (error.code === 'PGRST106' || error.message.includes('does not exist')) {
-          exclusiveResult = { data: [], error: null, count: 0 };
-        } else {
-          throw error;
-        }
-      }
-
-      if (regularResult.error) {
-        console.error('Regular jobs query error:', regularResult.error);
-        throw new Error(`Regular jobs query failed: ${regularResult.error.message}`);
-      }
-
-      if (exclusiveResult.error) {
-        console.error('Exclusive jobs query error:', exclusiveResult.error);
-        throw new Error(`Exclusive jobs query failed: ${exclusiveResult.error.message}`);
-      }
-
-      // Combine and transform jobs
-      const allRemoteJobs = [
-        ...(regularResult.data || []),
-        ...(exclusiveResult.data || [])
-      ];
-
-      const totalCount = (regularResult.count || 0) + (exclusiveResult.count || 0);
-
-      // Sort combined results
-      allRemoteJobs.sort((a, b) => {
-        if (sortBy === 'created_at') {
-          const dateA = new Date(a.created_at);
-          const dateB = new Date(b.created_at);
-          return sortOrder === 'asc' ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
-        } else if (sortBy === 'job_title') {
-          const titleA = a.job_title || '';
-          const titleB = b.job_title || '';
-          return sortOrder === 'asc' ? titleA.localeCompare(titleB) : titleB.localeCompare(titleA);
-        } else if (sortBy === 'company_name') {
-          const companyA = a.company_name || '';
-          const companyB = b.company_name || '';
-          return sortOrder === 'asc' ? companyA.localeCompare(companyB) : companyB.localeCompare(companyA);
-        }
-        return 0;
-      });
-
-      // Apply pagination to combined results
-      let paginatedJobs = allRemoteJobs;
-      if (params.offset || params.limit) {
-        const offset = params.offset || 0;
-        const limit = params.limit || 50;
-        paginatedJobs = allRemoteJobs.slice(offset, offset + limit);
-      }
-
-      console.log(`JobService: Fetched ${paginatedJobs.length} remote jobs out of ${totalCount} total`);
+      // Convert params to API format
+      const apiParams: Record<string, string> = {};
       
-      const jobs = paginatedJobs.map(job => {
+      if (params.query) apiParams.query = params.query;
+      if (params.sortBy) apiParams.sortBy = params.sortBy;
+      if (params.sortOrder) apiParams.sortOrder = params.sortOrder;
+      if (params.limit) apiParams.limit = params.limit.toString();
+      if (params.offset) apiParams.offset = params.offset.toString();
+      
+      // Add filters as individual params
+      if (params.filters) {
+        if (params.filters.location) apiParams.location = params.filters.location;
+        if (params.filters.experience && params.filters.experience !== 'any') {
+          apiParams.experience = params.filters.experience;
+        }
+        if (params.filters.company) apiParams.company = params.filters.company;
+      }
+
+      const response = await apiClient.getRemoteJobs(apiParams) as ApiResponse<JobsApiResponse>;
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to fetch remote jobs');
+      }
+
+      console.log(`JobService: Fetched ${response.data?.jobs?.length || 0} remote jobs out of ${response.data?.pagination?.total || 0} total`);
+      
+      const jobs = (response.data?.jobs || []).map(job => {
         try {
           return this.transformDatabaseJob(job);
         } catch (transformError) {
@@ -374,7 +229,7 @@ export class JobService {
             company: job.company_name || 'Unknown Company',
             location: job.job_location || 'Location not specified',
             description: job.job_description || 'No description available',
-            isRemote: job.remote_flag || false,
+            isRemote: true,
             isProbablyRemote: job.probably_remote || false,
             createdAt: job.created_at,
             posted: 'Recently',
@@ -387,84 +242,50 @@ export class JobService {
       
       return {
         jobs,
-        total: totalCount
+        total: response.data?.pagination?.total || 0
       };
     } catch (error) {
-      console.error('Error in JobService.getRemoteJobs:', error);
-      throw error;
+      console.error('Error fetching remote jobs from API:', error);
+      // Return mock data as fallback
+      return this.getMockRemoteJobs(params);
     }
   }
 
-  // Get exclusive jobs with optional search and filtering
+  // Get exclusive jobs - NOW USING API
   static async getExclusiveJobs(params: JobSearchParams = {}): Promise<{ jobs: Job[]; total: number }> {
     try {
       console.log('JobService.getExclusiveJobs called with params:', params);
       
-      let query = supabase
-        .from('hirebuddy_exclusive_jobs')
-        .select('*', { count: 'exact' });
-
-      // Apply text search if query provided
-      if (params.query) {
-        query = query.or(`job_title.ilike.%${params.query}%,company_name.ilike.%${params.query}%,job_description.ilike.%${params.query}%`);
-      }
-
-      // Apply filters
+      // Convert params to API format
+      const apiParams: Record<string, string> = {};
+      
+      if (params.query) apiParams.query = params.query;
+      if (params.sortBy) apiParams.sortBy = params.sortBy;
+      if (params.sortOrder) apiParams.sortOrder = params.sortOrder;
+      if (params.limit) apiParams.limit = params.limit.toString();
+      if (params.offset) apiParams.offset = params.offset.toString();
+      
+      // Add filters as individual params
       if (params.filters) {
-        const { location, experience, remote, company } = params.filters;
-        
-        if (location) {
-          query = query.or(`job_location.ilike.%${location}%,city.ilike.%${location}%,state.ilike.%${location}%`);
+        if (params.filters.location) apiParams.location = params.filters.location;
+        if (params.filters.experience && params.filters.experience !== 'any') {
+          apiParams.experience = params.filters.experience;
         }
-        
-        if (experience && experience !== 'any') {
-          query = query.ilike('experience_required', `%${experience}%`);
+        if (params.filters.remote && params.filters.remote !== 'all') {
+          apiParams.remote = params.filters.remote;
         }
-        
-        if (remote === 'remote') {
-          query = query.eq('remote_flag', true);
-        } else if (remote === 'onsite') {
-          query = query.eq('remote_flag', false);
-        }
-        
-        if (company) {
-          query = query.ilike('company_name', `%${company}%`);
-        }
+        if (params.filters.company) apiParams.company = params.filters.company;
       }
 
-      // Default sorting for exclusive jobs - priority first, then created_at
-      const sortBy = params.sortBy || 'priority_level';
-      const sortOrder = params.sortOrder || 'asc'; // Lower priority number = higher priority
-      query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+      const response = await apiClient.getExclusiveJobs(apiParams) as ApiResponse<JobsApiResponse>;
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to fetch exclusive jobs');
+      }
+
+      console.log(`JobService: Fetched ${response.data?.jobs?.length || 0} exclusive jobs out of ${response.data?.pagination?.total || 0} total`);
       
-      // Secondary sort by created_at for same priority jobs
-      if (sortBy !== 'created_at') {
-        query = query.order('created_at', { ascending: false });
-      }
-
-      // Apply pagination
-      if (params.limit) {
-        query = query.limit(params.limit);
-      }
-      if (params.offset) {
-        query = query.range(params.offset, params.offset + (params.limit || 50) - 1);
-      }
-
-      const { data, error, count } = await query;
-
-      if (error) {
-        console.error('Supabase exclusive jobs query error:', error);
-        // If table doesn't exist, return mock data for testing
-        if (error.code === 'PGRST106' || error.message.includes('does not exist')) {
-          console.log('Exclusive jobs table not found, returning mock data');
-          return this.getMockExclusiveJobs(params);
-        }
-        throw new Error(`Database query failed: ${error.message}`);
-      }
-
-      console.log(`JobService: Fetched ${data?.length || 0} exclusive jobs out of ${count || 0} total`);
-      
-      const jobs = (data || []).map(job => {
+      const jobs = (response.data?.jobs || []).map(job => {
         try {
           return this.transformDatabaseJob(job);
         } catch (transformError) {
@@ -490,12 +311,11 @@ export class JobService {
       
       return {
         jobs,
-        total: count || 0
+        total: response.data?.pagination?.total || 0
       };
     } catch (error) {
-      console.error('Error in JobService.getExclusiveJobs:', error);
-      // Fallback to mock data if there's any error
-      console.log('Falling back to mock exclusive jobs data');
+      console.error('Error fetching exclusive jobs from API:', error);
+      // Return mock data as fallback
       return this.getMockExclusiveJobs(params);
     }
   }
@@ -652,20 +472,16 @@ export class JobService {
   // Get a single job by ID
   static async getJobById(jobId: string): Promise<Job | null> {
     try {
-      const { data, error } = await supabase
-        .from('hirebuddy_job_board')
-        .select('*')
-        .eq('job_id', jobId)
-        .single();
+      const response = await apiClient.getJobById(jobId);
 
-      if (error) {
-        if (error.code === 'PGRST116') {
+      if (!response.success) {
+        if (response.error === 'Job not found') {
           return null; // Job not found
         }
-        throw error;
+        throw new Error(response.error || 'Failed to fetch job by ID');
       }
 
-      return this.transformDatabaseJob(data);
+      return this.transformDatabaseJob(response.data);
     } catch (error) {
       console.error('Error fetching job by ID:', error);
       throw error;
@@ -673,17 +489,15 @@ export class JobService {
   }
 
   // Create a new job
-  static async createJob(jobData: CreateJobData): Promise<Job> {
+  static async createJob(jobData: any): Promise<Job> {
     try {
-      const { data, error } = await supabase
-        .from('hirebuddy_job_board')
-        .insert([jobData])
-        .select()
-        .single();
+      const response = await apiClient.createJob(jobData);
 
-      if (error) throw error;
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to create job');
+      }
 
-      return this.transformDatabaseJob(data);
+      return this.transformDatabaseJob(response.data);
     } catch (error) {
       console.error('Error creating job:', error);
       throw error;
@@ -691,20 +505,15 @@ export class JobService {
   }
 
   // Update an existing job
-  static async updateJob(updateData: UpdateJobData): Promise<Job> {
+  static async updateJob(updateData: any): Promise<Job> {
     try {
-      const { job_id, ...updates } = updateData;
-      
-      const { data, error } = await supabase
-        .from('hirebuddy_job_board')
-        .update(updates)
-        .eq('job_id', job_id)
-        .select()
-        .single();
+      const response = await apiClient.updateJob(updateData);
 
-      if (error) throw error;
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to update job');
+      }
 
-      return this.transformDatabaseJob(data);
+      return this.transformDatabaseJob(response.data);
     } catch (error) {
       console.error('Error updating job:', error);
       throw error;
@@ -714,12 +523,11 @@ export class JobService {
   // Delete a job
   static async deleteJob(jobId: string): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('hirebuddy_job_board')
-        .delete()
-        .eq('job_id', jobId);
+      const response = await apiClient.deleteJob(jobId);
 
-      if (error) throw error;
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to delete job');
+      }
     } catch (error) {
       console.error('Error deleting job:', error);
       throw error;
@@ -734,86 +542,64 @@ export class JobService {
     companies: number;
   }> {
     try {
-      // Get total jobs
-      const { count: total } = await supabase
-        .from('hirebuddy_job_board')
-        .select('*', { count: 'exact', head: true });
+      const response = await apiClient.getJobsStats() as ApiResponse<JobStatsResponse>;
 
-      // Get remote jobs
-      const { count: remote } = await supabase
-        .from('hirebuddy_job_board')
-        .select('*', { count: 'exact', head: true })
-        .eq('remote_flag', true);
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to fetch job stats');
+      }
 
-      // Get jobs from this week
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      const weekAgoString = weekAgo.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-      const { count: thisWeek } = await supabase
-        .from('hirebuddy_job_board')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', weekAgoString);
-
-      // Get unique companies count
-      const { data: companiesData } = await supabase
-        .from('hirebuddy_job_board')
-        .select('company_name')
-        .not('company_name', 'is', null);
-
-      const uniqueCompanies = new Set(companiesData?.map(job => job.company_name)).size;
-
-      return {
-        total: total || 0,
-        remote: remote || 0,
-        thisWeek: thisWeek || 0,
-        companies: uniqueCompanies || 0
-      };
+      return response.data || { total: 0, remote: 0, thisWeek: 0, companies: 0 };
     } catch (error) {
       console.error('Error fetching job stats:', error);
-      throw error;
+      return { total: 0, remote: 0, thisWeek: 0, companies: 0 };
     }
   }
 
   // Search for companies (for autocomplete)
   static async searchCompanies(query: string, limit: number = 10): Promise<string[]> {
     try {
-      const { data } = await supabase
-        .from('hirebuddy_job_board')
-        .select('company_name')
-        .ilike('company_name', `%${query}%`)
-        .not('company_name', 'is', null)
-        .limit(limit);
+      const response = await apiClient.searchCompanies(query, limit);
 
-      const companies = Array.from(new Set(data?.map(job => job.company_name) || []));
-      return companies.filter(Boolean) as string[];
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to search companies');
+      }
+
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       console.error('Error searching companies:', error);
-      throw error;
+      return [];
     }
   }
 
   // Search for locations (for autocomplete)
   static async searchLocations(query: string, limit: number = 10): Promise<string[]> {
     try {
-      const { data } = await supabase
-        .from('hirebuddy_job_board')
-        .select('job_location, city, state')
-        .or(`job_location.ilike.%${query}%,city.ilike.%${query}%,state.ilike.%${query}%`)
-        .limit(limit);
+      const response = await apiClient.searchLocations(query, limit);
 
-      const locations = new Set<string>();
-      
-      data?.forEach(job => {
-        if (job.job_location) locations.add(job.job_location);
-        if (job.city && job.state) locations.add(`${job.city}, ${job.state}`);
-        if (job.city) locations.add(job.city);
-        if (job.state) locations.add(job.state);
-      });
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to search locations');
+      }
 
-      return Array.from(locations).slice(0, limit);
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       console.error('Error searching locations:', error);
-      throw error;
+      return [];
     }
+  }
+
+  // Mock jobs data for fallback
+  private static getMockJobs(params: JobSearchParams = {}): { jobs: Job[]; total: number } {
+    return {
+      jobs: [],
+      total: 0
+    };
+  }
+
+  // Mock remote jobs data for fallback
+  private static getMockRemoteJobs(params: JobSearchParams = {}): { jobs: Job[]; total: number } {
+    return {
+      jobs: [],
+      total: 0
+    };
   }
 } 
