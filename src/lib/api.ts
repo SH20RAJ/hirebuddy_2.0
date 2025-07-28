@@ -1,5 +1,6 @@
 // API client for HireBuddy backend
 // This replaces direct Supabase calls with secure API requests
+import { getConfig } from '@/config/environment';
 
 interface ApiResponse<T = any> {
   success: boolean;
@@ -14,7 +15,7 @@ class ApiClient {
 
   constructor() {
     // Use environment variable for API URL, fallback to local development
-    this.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    this.baseURL = getConfig().api.baseUrl;
     
     // Load token from localStorage on initialization
     this.token = localStorage.getItem('auth_token');

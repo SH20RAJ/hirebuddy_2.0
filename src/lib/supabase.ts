@@ -1,19 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
+import { getConfig } from '../config/environment';
 
-// Initialize the Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const config = getConfig();
+const supabaseUrl = config.supabase.url;
+const supabaseAnonKey = config.supabase.anonKey;
 
-console.log('🔧 Supabase Configuration Check:');
-console.log('- Environment Mode:', import.meta.env.MODE);
-console.log('- VITE_SUPABASE_URL:', supabaseUrl ? '✓ Present' : '❌ Missing');
-console.log('- VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✓ Present' : '❌ Missing');
+// Debug logging for development
+if (config.isDevelopment) {
+  console.log('🔧 Supabase Configuration:', {
+    url: supabaseUrl ? '✓ Present' : '❌ Missing',
+    anonKey: supabaseAnonKey ? '✓ Present' : '❌ Missing',
+  });
+}
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('❌ Supabase URL or Anon Key is missing. Please check your environment variables.');
-  console.error('VITE_SUPABASE_URL:', supabaseUrl ? 'Present' : 'Missing');
-  console.error('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Present' : 'Missing');
-  console.error('Available environment variables:', Object.keys(import.meta.env));
+  throw new Error('Missing required Supabase configuration. Please check your environment variables.');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {

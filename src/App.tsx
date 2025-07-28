@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { OnboardingWrapper } from "./components/onboarding/OnboardingWrapper";
+import { getConfig } from "./config/environment";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import ResumeBuilder from "./pages/ResumeBuilder";
@@ -39,7 +40,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
   // In development, bypass authentication
-  if (import.meta.env.MODE === 'development') {
+  if (getConfig().isDevelopment) {
     return <OnboardingWrapper>{children}</OnboardingWrapper>;
   }
 

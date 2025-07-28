@@ -40,6 +40,7 @@ import { toast } from "sonner";
 // Import our hooks and services
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminApplications, useUpdateApplicationStatus, useApplicationStats } from "@/hooks/useJobApplications";
+import { getConfig } from "@/config/environment";
 import { JobApplication } from "@/types/job";
 import { NewSidebar } from "@/components/layout/NewSidebar";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
@@ -55,7 +56,7 @@ const JobApplicationsAdmin = () => {
   const { user } = useAuth();
   
   // Check if user is admin - strict admin-only access
-  const isAdmin = import.meta.env.MODE === 'development' || (user?.email && ADMIN_EMAILS.includes(user.email));
+  const isAdmin = getConfig().isDevelopment || (user?.email && ADMIN_EMAILS.includes(user.email));
   
   // State management
   const [searchQuery, setSearchQuery] = useState("");
@@ -181,7 +182,7 @@ const JobApplicationsAdmin = () => {
               <p className="text-sm text-muted-foreground">
                 Only authorized admin users can view job applications.
               </p>
-              {import.meta.env.MODE === 'development' && (
+              {getConfig().isDevelopment && (
                 <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
                   <p className="text-xs text-yellow-700">
                     <strong>Dev Mode:</strong> Admin emails: {ADMIN_EMAILS.join(', ')}
@@ -356,7 +357,7 @@ const JobApplicationsAdmin = () => {
           </div>
 
           {/* Debug Info - Remove in production */}
-          {import.meta.env.MODE === 'development' && (
+          {getConfig().isDevelopment && (
             <div className="bg-white border-b border-gray-200 p-6">
               <AdminDebugInfo />
             </div>

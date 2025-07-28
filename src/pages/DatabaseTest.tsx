@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { testDatabaseConnection, addSampleContact, DatabaseTestResult } from '@/utils/databaseTest';
 import { contactsService } from '@/services/contactsService';
+import { getConfig } from '@/config/environment';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -95,17 +96,17 @@ const DatabaseTest: React.FC = () => {
           <CardContent className="space-y-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Badge variant="outline">Mode: {import.meta.env.MODE}</Badge>
+                <Badge variant="outline">Mode: {getConfig().isDevelopment ? 'development' : 'production'}</Badge>
               </div>
               <div>
-                <Badge variant={import.meta.env.VITE_SUPABASE_URL ? "default" : "destructive"}>
-                  Supabase URL: {import.meta.env.VITE_SUPABASE_URL ? 'Present' : 'Missing'}
-                </Badge>
+                            <Badge variant={getConfig().supabase.url ? "default" : "destructive"}>
+              Supabase URL: {getConfig().supabase.url ? 'Present' : 'Missing'}
+            </Badge>
               </div>
               <div>
-                <Badge variant={import.meta.env.VITE_SUPABASE_ANON_KEY ? "default" : "destructive"}>
-                  Supabase Key: {import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Present' : 'Missing'}
-                </Badge>
+                            <Badge variant={getConfig().supabase.anonKey ? "default" : "destructive"}>
+              Supabase Key: {getConfig().supabase.anonKey ? 'Present' : 'Missing'}
+            </Badge>
               </div>
             </div>
           </CardContent>

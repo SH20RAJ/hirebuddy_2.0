@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { getConfig } from '@/config/environment';
 
 export interface GoogleUser {
   id: string;
@@ -28,7 +29,7 @@ class GoogleAuthService {
   private scope: string;
 
   constructor() {
-    this.clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+    this.clientId = getConfig().google.clientId;
     this.redirectUri = `${window.location.origin}/auth/google/callback`;
     this.scope = [
       'https://www.googleapis.com/auth/gmail.send',

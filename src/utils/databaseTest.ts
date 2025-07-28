@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { getConfig } from '@/config/environment';
 
 export interface DatabaseTestResult {
   success: boolean;
@@ -11,8 +12,8 @@ export async function testDatabaseConnection(): Promise<DatabaseTestResult> {
   try {
     console.log('🔍 Testing database connection...');
     console.log('Environment check:');
-    console.log('- VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL ? '✓ Present' : '❌ Missing');
-    console.log('- VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY ? '✓ Present' : '❌ Missing');
+      console.log('- VITE_SUPABASE_URL:', getConfig().supabase.url ? '✓ Present' : '❌ Missing');
+  console.log('- VITE_SUPABASE_ANON_KEY:', getConfig().supabase.anonKey ? '✓ Present' : '❌ Missing');
 
     // Test basic connection
     const { data, error, count } = await supabase

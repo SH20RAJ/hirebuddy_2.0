@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { EnvironmentValidator, SecureErrorHandler } from '../utils/security';
+import { getConfig } from '@/config/environment';
 
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -49,7 +50,7 @@ class OpenAIService {
 
   constructor() {
     // Use Supabase Edge Function instead of direct OpenAI API
-    this.baseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/openai-proxy`;
+    this.baseUrl = `${getConfig().supabase.url}/functions/v1/openai-proxy`;
   }
 
   private async makeSecureRequest(messages: ChatMessage[], options: {
@@ -70,7 +71,7 @@ class OpenAIService {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+          'apikey': getConfig().supabase.anonKey
         },
         body: JSON.stringify({
           model: options.model || 'gpt-4o-mini',

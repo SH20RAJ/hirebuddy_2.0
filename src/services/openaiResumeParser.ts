@@ -1,6 +1,7 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import { Resume, ResumeWorkExperience, ResumeEducation, ResumeSkills } from '../types/resume';
 import { supabase } from '../lib/supabase';
+import { getConfig } from '../config/environment';
 
 // Set the worker source for PDF.js
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
@@ -10,7 +11,7 @@ export class OpenAIResumeParser {
 
   constructor() {
     // Use the Supabase Edge Function for secure OpenAI proxy
-    this.baseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/openai-proxy`;
+    this.baseUrl = `${getConfig().supabase.url}/functions/v1/openai-proxy`;
   }
 
   /**

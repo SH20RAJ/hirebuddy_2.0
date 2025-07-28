@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { getConfig } from '../config/environment';
 
 interface CoverLetterData {
   jobTitle: string;
@@ -21,7 +22,7 @@ class CoverLetterService {
 
   constructor() {
     // Use the Supabase Edge Function for secure OpenAI proxy
-    this.baseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/openai-proxy`;
+    this.baseUrl = `${getConfig().supabase.url}/functions/v1/openai-proxy`;
   }
 
   private async makeRequest(messages: Array<{ role: string; content: string }>, temperature = 0.7): Promise<string> {
