@@ -1,60 +1,115 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import { Resume, ResumeWorkExperience, ResumeEducation, ResumeSkills } from '../types/resume';
-import { config } from '../config/environment';
 
 // Set the worker source for PDF.js
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 
 export class OpenAIResumeParser {
-  private baseUrl: string;
+  private openaiApiKey: string;
 
   constructor() {
-    // Use the AWS backend API for secure OpenAI proxy
-    this.baseUrl = `${config.api.baseUrl}/openai/proxy`;
-  }
-
-  /**
-   * Extract text content from PDF file
-   */
-  private async extractTextFromPDF(file: File): Promise<string> {
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-      let fullText = '';
-
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items
-          .map((item: any) => item.str)
-          .join(' ');
-        fullText += pageText + '\n';
-      }
-
-      return fullText.trim();
-    } catch (error) {
-      console.error('Error extracting text from PDF:', error);
-      throw new Error('Failed to extract text from PDF');
+    // Get OpenAI API key from environment variable (without VITE prefix)
+    this.openaiApiKey = import.meta.env.OPENAI_API_KEY || '';
+    
+    if (!this.openaiApiKey) {
+      console.warn('OpenAI API key not found. Resume parsing may not work.');
     }
   }
 
   /**
-   * Make request to OpenAI via backend proxy
+   * Extract text content from PDF file with better error handling
+   */
+  private async extractTextFromPDF(file: File): Promise<string> {
+    try {
+      console.log('Starting PDF text extraction...');
+      console.log('File type:', file.type);
+      console.log('File size:', file.size);
+
+      if (!file.type.includes('pdf')) {
+        throw new Error('File must be a PDF');
+      }
+
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        throw new Error('PDF file is too large (max 10MB)');
+      }
+
+      const arrayBuffer = await file.arrayBuffer();
+      console.log('ArrayBuffer created, size:', arrayBuffer.byteLength);
+
+      // Configure PDF.js with better error handling
+      const loadingTask = pdfjsLib.getDocument({
+        data: arrayBuffer,
+        verbosity: 0, // Reduce console noise
+        disableFontFace: true, // Helps with compatibility
+        useSystemFonts: true
+      });
+
+      const pdf = await loadingTask.promise;
+      console.log('PDF loaded successfully, pages:', pdf.numPages);
+
+      let fullText = '';
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        try {
+          console.log(`Processing page ${i}/${pdf.numPages}`);
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          
+          const pageText = textContent.items
+            .filter((item: any) => item.str && item.str.trim()) // Filter out empty strings
+            .map((item: any) => item.str.trim())
+            .join(' ');
+          
+          if (pageText.trim()) {
+            fullText += pageText + '\n\n';
+          }
+        } catch (pageError) {
+          console.warn(`Error processing page ${i}:`, pageError);
+          // Continue with other pages even if one fails
+        }
+      }
+
+      const result = fullText.trim();
+      console.log('Text extraction completed. Length:', result.length);
+      
+      if (!result) {
+        throw new Error('No readable text found in the PDF. The PDF might be image-based or corrupted.');
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Error extracting text from PDF:', error);
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Invalid PDF')) {
+          throw new Error('The uploaded file appears to be corrupted or not a valid PDF. Please try uploading a different PDF file.');
+        } else if (error.message.includes('password')) {
+          throw new Error('The PDF is password-protected. Please upload an unprotected PDF file.');
+        } else {
+          throw new Error(error.message);
+        }
+      }
+      
+      throw new Error('Failed to extract text from PDF. Please ensure the PDF is not corrupted and try again.');
+    }
+  }
+
+  /**
+   * Make request to OpenAI API directly
    */
   private async makeOpenAIRequest(messages: any[], temperature = 0.1): Promise<string> {
     try {
-      // Get the authentication token from localStorage
-      const token = localStorage.getItem('auth_token');
-      
-      if (!token) {
-        throw new Error('Authentication required. Please sign in to parse resumes.');
+      if (!this.openaiApiKey) {
+        throw new Error('OpenAI API key is not configured. Please check your environment variables.');
       }
 
-      const response = await fetch(this.baseUrl, {
+      console.log('Making request to OpenAI API...');
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${this.openaiApiKey}`,
         },
         body: JSON.stringify({
           model: 'gpt-3.5-turbo',
@@ -70,18 +125,28 @@ export class OpenAIResumeParser {
         try {
           errorData = JSON.parse(errorText);
         } catch {
-          errorData = { error: errorText };
+          errorData = { error: { message: errorText } };
         }
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        
+        if (response.status === 401) {
+          throw new Error('Invalid OpenAI API key. Please check your configuration.');
+        } else if (response.status === 429) {
+          throw new Error('OpenAI API rate limit exceeded. Please try again in a few minutes.');
+        } else if (response.status === 503) {
+          throw new Error('OpenAI API is currently unavailable. Please try again later.');
+        }
+        
+        throw new Error(errorData.error?.message || `OpenAI API error: ${response.status}`);
       }
 
       const data = await response.json();
       
-      if (!data.success || !data.data?.choices || !data.data.choices[0] || !data.data.choices[0].message) {
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
         throw new Error('Invalid response format from OpenAI API');
       }
 
-      return data.data.choices[0].message.content;
+      console.log('OpenAI API request completed successfully');
+      return data.choices[0].message.content;
     } catch (error) {
       console.error('Error making OpenAI request:', error);
       throw error;
@@ -240,19 +305,19 @@ Return ONLY the JSON object, no additional text or explanation.
   /**
    * Convert OpenAI response to Resume type
    */
-     private convertToResumeType(aiResponse: any): Resume {
+    private convertToResumeType(aiResponse: any): Resume {
     return {
       profile: {
-        name: aiResponse.profile.name || '',
-        email: aiResponse.profile.email || '',
-        phone: aiResponse.profile.phone || '',
-        url: aiResponse.profile.url || '',
-        linkedin: aiResponse.profile.linkedin || '',
-        github: aiResponse.profile.github || '',
-        summary: aiResponse.profile.summary || '',
-        location: aiResponse.profile.location || ''
+        name: aiResponse.profile?.name || '',
+        email: aiResponse.profile?.email || '',
+        phone: aiResponse.profile?.phone || '',
+        url: aiResponse.profile?.url || '',
+        linkedin: aiResponse.profile?.linkedin || '',
+        github: aiResponse.profile?.github || '',
+        summary: aiResponse.profile?.summary || '',
+        location: aiResponse.profile?.location || ''
       },
-      workExperiences: aiResponse.workExperiences.map((exp: any) => ({
+      workExperiences: (aiResponse.workExperiences || []).map((exp: any) => ({
         company: exp.company || '',
         jobTitle: exp.jobTitle || '',
         date: exp.date || '',
@@ -260,7 +325,7 @@ Return ONLY the JSON object, no additional text or explanation.
         achievements: exp.achievements || [],
         descriptions: exp.achievements || [] // Backward compatibility
       })),
-      educations: aiResponse.educations.map((edu: any) => ({
+      educations: (aiResponse.educations || []).map((edu: any) => ({
         school: edu.school || '',
         degree: edu.degree || '',
         date: edu.date || '',
@@ -270,46 +335,46 @@ Return ONLY the JSON object, no additional text or explanation.
         activities: edu.activities || [],
         descriptions: [...(edu.coursework || []), ...(edu.honors || []), ...(edu.activities || [])] // Backward compatibility
       })),
-      projects: aiResponse.projects.map((proj: any) => ({
+      projects: (aiResponse.projects || []).map((proj: any) => ({
         project: proj.project || '',
         date: proj.date || '',
         descriptions: proj.descriptions || []
       })),
       skills: {
-        programmingLanguages: aiResponse.skills.programmingLanguages || [],
-        frameworks: aiResponse.skills.frameworks || [],
-        technicalSkills: aiResponse.skills.technicalSkills || [],
-        softSkills: aiResponse.skills.softSkills || [],
-        tools: aiResponse.skills.tools || [],
+        programmingLanguages: aiResponse.skills?.programmingLanguages || [],
+        frameworks: aiResponse.skills?.frameworks || [],
+        technicalSkills: aiResponse.skills?.technicalSkills || [],
+        softSkills: aiResponse.skills?.softSkills || [],
+        tools: aiResponse.skills?.tools || [],
         featuredSkills: [], // Backward compatibility
         descriptions: [
-          ...(aiResponse.skills.programmingLanguages || []),
-          ...(aiResponse.skills.frameworks || []),
-          ...(aiResponse.skills.technicalSkills || []),
-          ...(aiResponse.skills.softSkills || []),
-          ...(aiResponse.skills.tools || [])
+          ...(aiResponse.skills?.programmingLanguages || []),
+          ...(aiResponse.skills?.frameworks || []),
+          ...(aiResponse.skills?.technicalSkills || []),
+          ...(aiResponse.skills?.softSkills || []),
+          ...(aiResponse.skills?.tools || [])
         ] // Backward compatibility
       },
-      awards: aiResponse.awards.map((award: any) => ({
+      awards: (aiResponse.awards || []).map((award: any) => ({
         title: award.title || '',
         issuer: award.issuer || '',
         date: award.date || '',
         description: award.description || ''
       })),
-      volunteers: aiResponse.volunteers.map((vol: any) => ({
+      volunteers: (aiResponse.volunteers || []).map((vol: any) => ({
         organization: vol.organization || '',
         role: vol.role || '',
         date: vol.date || '',
         descriptions: vol.descriptions || []
       })),
-      certifications: aiResponse.certifications.map((cert: any) => ({
+      certifications: (aiResponse.certifications || []).map((cert: any) => ({
         name: cert.name || '',
         issuer: cert.issuer || '',
         date: cert.date || '',
         expiryDate: cert.expiryDate || '',
         credentialId: cert.credentialId || ''
       })),
-      languages: aiResponse.languages.map((lang: any) => ({
+      languages: (aiResponse.languages || []).map((lang: any) => ({
         language: lang.language || '',
         proficiency: lang.proficiency || ''
       })),
