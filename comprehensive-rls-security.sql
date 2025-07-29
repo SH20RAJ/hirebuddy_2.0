@@ -136,13 +136,46 @@ CREATE POLICY "Admin can delete jobs" ON public.hirebuddy_job_board
     FOR DELETE USING (is_admin());
 
 -- =============================================================================
--- 7. PAID_USERS TABLE - Admin only access (contains payment data)
+-- 7. PAID_USERS TABLE - Secure access for subscription functionality
 -- =============================================================================
 ALTER TABLE public.paid_users ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies
 DROP POLICY IF EXISTS "Admin only access" ON public.paid_users;
-CREATE POLICY "Admin only access" ON public.paid_users
+DROP POLICY IF EXISTS "Users can view own premium status" ON public.paid_users;
+DROP POLICY IF EXISTS "Authenticated users can insert premium records" ON public.paid_users;
+DROP POLICY IF EXISTS "Admin full access to premium users" ON public.paid_users;
+
+-- Policy 1: Users can only view their own premium status
+CREATE POLICY "Users can view own premium status" ON public.paid_users
+    FOR SELECT USING (
+        auth.role() = 'authenticated' AND 
+        email = (auth.jwt() ->> 'email')
+    );
+
+-- Policy 2: Authenticated users can insert their own premium records (for payment processing)
+CREATE POLICY "Authenticated users can insert premium records" ON public.paid_users
+    FOR INSERT WITH CHECK (
+        auth.role() = 'authenticated' AND 
+        email = (auth.jwt() ->> 'email') AND
+        -- Additional security: ensure essential fields are present
+        email IS NOT NULL AND 
+        name IS NOT NULL AND 
+        order_id IS NOT NULL AND 
+        amount > 0
+    );
+
+-- Policy 3: Admin can access everything (for management and support)
+CREATE POLICY "Admin full access to premium users" ON public.paid_users
     FOR ALL USING (is_admin());
+
+-- Policy 4: Prevent unauthorized updates (only admins can modify existing records)
+CREATE POLICY "Admin can update premium records" ON public.paid_users
+    FOR UPDATE USING (is_admin());
+
+-- Policy 5: Prevent unauthorized deletions (only admins can delete)
+CREATE POLICY "Admin can delete premium records" ON public.paid_users
+    FOR DELETE USING (is_admin());
 
 -- =============================================================================
 -- 8. REPLIES_KPI TABLE - Users own data + Admin access (email analytics)
