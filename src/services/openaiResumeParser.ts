@@ -18,22 +18,66 @@ export class OpenAIResumeParser {
 
   /**
    * Extract text content from PDF file with better error handling
+   * Supports both File objects and file URLs (strings)
    */
-  private async extractTextFromPDF(file: File): Promise<string> {
+  private async extractTextFromPDF(fileInput: File | string): Promise<string> {
     try {
       console.log('Starting PDF text extraction...');
-      console.log('File type:', file.type);
-      console.log('File size:', file.size);
+      
+      let arrayBuffer: ArrayBuffer;
+      let fileType: string = '';
+      let fileSize: number = 0;
 
-      if (!file.type.includes('pdf')) {
-        throw new Error('File must be a PDF');
+      if (typeof fileInput === 'string') {
+        // Handle file URL
+        console.log('Loading PDF from URL:', fileInput);
+        
+        try {
+          const response = await fetch(fileInput);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch PDF from URL: ${response.status} ${response.statusText}`);
+          }
+          
+          arrayBuffer = await response.arrayBuffer();
+          fileType = response.headers.get('content-type') || '';
+          fileSize = arrayBuffer.byteLength;
+          
+          // For blob URLs, we need to check the actual content
+          if (!fileType || !fileType.includes('pdf')) {
+            // Try to detect PDF by checking the file header
+            const uint8Array = new Uint8Array(arrayBuffer.slice(0, 4));
+            const header = Array.from(uint8Array).map(b => String.fromCharCode(b)).join('');
+            if (header !== '%PDF') {
+              throw new Error('File does not appear to be a valid PDF');
+            }
+          }
+        } catch (fetchError) {
+          console.error('Error fetching file from URL:', fetchError);
+          throw new Error('Failed to load PDF file. Please try uploading the file again.');
+        }
+      } else {
+        // Handle File object
+        console.log('Processing File object:', fileInput.name);
+        console.log('File type:', fileInput.type);
+        console.log('File size:', fileInput.size);
+        
+        fileType = fileInput.type || '';
+        fileSize = fileInput.size;
+
+        if (fileType && !fileType.includes('pdf')) {
+          throw new Error('File must be a PDF');
+        }
+
+        arrayBuffer = await fileInput.arrayBuffer();
       }
 
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      console.log('File type:', fileType);
+      console.log('File size:', fileSize);
+
+      if (fileSize > 10 * 1024 * 1024) { // 10MB limit
         throw new Error('PDF file is too large (max 10MB)');
       }
 
-      const arrayBuffer = await file.arrayBuffer();
       console.log('ArrayBuffer created, size:', arrayBuffer.byteLength);
 
       // Configure PDF.js with better error handling
@@ -386,14 +430,15 @@ Return ONLY the JSON object, no additional text or explanation.
 
   /**
    * Main method to parse resume from PDF using OpenAI
+   * Supports both File objects and file URLs (strings) for backward compatibility
    */
-     async parseResumeFromPdf(file: File): Promise<Resume> {
+     async parseResumeFromPdf(fileInput: File | string): Promise<Resume> {
     try {
       console.log('Starting OpenAI-based resume parsing...');
       
       // Step 1: Extract text from PDF
       console.log('Extracting text from PDF...');
-      const resumeText = await this.extractTextFromPDF(file);
+      const resumeText = await this.extractTextFromPDF(fileInput);
       
       if (!resumeText.trim()) {
         throw new Error('No text could be extracted from the PDF. Please ensure the PDF contains readable text.');
@@ -423,6 +468,7 @@ Return ONLY the JSON object, no additional text or explanation.
 export const openaiResumeParser = new OpenAIResumeParser();
 
 // Export the main parsing function for backward compatibility
-export const parseResumeFromPdf = (file: File): Promise<Resume> => {
-  return openaiResumeParser.parseResumeFromPdf(file);
+// Now supports both File objects and file URLs (strings)
+export const parseResumeFromPdf = (fileInput: File | string): Promise<Resume> => {
+  return openaiResumeParser.parseResumeFromPdf(fileInput);
 }; 
