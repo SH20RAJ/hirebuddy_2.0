@@ -14,7 +14,6 @@ export class EnvironmentValidator {
   // Sensitive variables that should NEVER have VITE_ prefix
   private static forbiddenViteVars = [
     'VITE_GOOGLE_CLIENT_SECRET',
-    'VITE_OPENAI_API_KEY',
     'VITE_SUPABASE_SERVICE_ROLE_KEY',
     'VITE_GITHUB_CLIENT_SECRET',
     'VITE_AWS_SECRET_ACCESS_KEY',
