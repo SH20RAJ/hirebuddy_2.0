@@ -1,7 +1,6 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import { Resume, ResumeWorkExperience, ResumeEducation, ResumeSkills } from '../types/resume';
-import { supabase } from '../lib/supabase';
-import { getConfig } from '../config/environment';
+import { config } from '../config/environment';
 
 // Set the worker source for PDF.js
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
@@ -10,8 +9,8 @@ export class OpenAIResumeParser {
   private baseUrl: string;
 
   constructor() {
-    // Use the Supabase Edge Function for secure OpenAI proxy
-    this.baseUrl = `${getConfig().supabase.url}/functions/v1/openai-proxy`;
+    // Use the AWS backend API for secure OpenAI proxy
+    this.baseUrl = `${config.api.baseUrl}/openai/proxy`;
   }
 
   /**
@@ -40,14 +39,14 @@ export class OpenAIResumeParser {
   }
 
   /**
-   * Make request to OpenAI via Supabase proxy
+   * Make request to OpenAI via backend proxy
    */
   private async makeOpenAIRequest(messages: any[], temperature = 0.1): Promise<string> {
     try {
-      // Get the current session token for authentication
-      const { data: { session } } = await supabase.auth.getSession();
+      // Get the authentication token from localStorage
+      const token = localStorage.getItem('auth_token');
       
-      if (!session?.access_token) {
+      if (!token) {
         throw new Error('Authentication required. Please sign in to parse resumes.');
       }
 
@@ -55,7 +54,7 @@ export class OpenAIResumeParser {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           model: 'gpt-3.5-turbo',
@@ -66,17 +65,23 @@ export class OpenAIResumeParser {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText };
+        }
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
       
-      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      if (!data.success || !data.data?.choices || !data.data.choices[0] || !data.data.choices[0].message) {
         throw new Error('Invalid response format from OpenAI API');
       }
 
-      return data.choices[0].message.content;
+      return data.data.choices[0].message.content;
     } catch (error) {
       console.error('Error making OpenAI request:', error);
       throw error;
