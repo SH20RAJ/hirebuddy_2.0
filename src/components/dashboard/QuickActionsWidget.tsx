@@ -1,11 +1,11 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  Search, 
-  FileText, 
-  Mail, 
-  User, 
+import {
+  Search,
+  FileText,
+  Mail,
+  User,
   Calendar,
   Briefcase,
   Upload,
@@ -139,13 +139,13 @@ export const QuickActionsWidget: React.FC = () => {
           Common tasks to boost your job search
         </p>
       </CardHeader>
-      
+
       <CardContent>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {quickActions.map((action) => {
             const Icon = action.icon;
             const colors = getColorClasses(action.color);
-            
+
             const ActionCard = (
               <div
                 className={cn(
@@ -162,7 +162,7 @@ export const QuickActionsWidget: React.FC = () => {
                     <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
                   )}
                 </div>
-                
+
                 <div className="mb-3">
                   <h3 className={cn("font-semibold mb-1", colors.text)}>
                     {action.title}
@@ -171,9 +171,9 @@ export const QuickActionsWidget: React.FC = () => {
                     {action.description}
                   </p>
                 </div>
-                
-                <Button 
-                  size="sm" 
+
+                <Button
+                  size="sm"
                   className={cn("w-full text-white", colors.button)}
                 >
                   Get Started
@@ -198,19 +198,19 @@ export const QuickActionsWidget: React.FC = () => {
             );
           })}
         </div>
-        
+
         {/* Additional Quick Links */}
         <div className="mt-6 pt-4 border-t border-gray-100">
           <h4 className="font-medium text-gray-900 mb-3">More Actions</h4>
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" size="sm" asChild className="justify-start">
-              <Link to="/settings" className="flex items-center gap-2">
+              <Link href="/settings" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
                 Settings
               </Link>
             </Button>
             <Button variant="outline" size="sm" asChild className="justify-start">
-              <Link to="/email-outreach" className="flex items-center gap-2">
+              <Link href="/email-outreach" className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
                 Messages
               </Link>

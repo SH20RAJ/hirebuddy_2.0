@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -12,7 +13,7 @@ const SignUp = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [animateCard, setAnimateCard] = useState(false);
   const { signInWithGoogle, signInWithGithub } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -176,7 +177,7 @@ const SignUp = () => {
               <p className="text-gray-600">
                 Already have an account?{" "}
                 <Link
-                  to="/?signin=true"
+                  href="/?signin=true"
                   className="text-[#dc425d] font-medium hover:underline"
                 >
                   Sign in
@@ -471,7 +472,7 @@ const SignUp = () => {
                 <p className="text-gray-600">
                   Already have an account?{" "}
                   <Link
-                    to="/?signin=true"
+                    href="/?signin=true"
                     className="text-[#dc425d] font-medium hover:underline"
                   >
                     Sign in

@@ -29,30 +29,30 @@ interface PublicConfig {
 // NO sensitive keys should be here
 export const config: PublicConfig = {
   supabase: {
-    url: import.meta.env.VITE_SUPABASE_URL || '',
-    anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+    url: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
   },
   google: {
-    clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
+    clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
   },
   api: {
-    baseUrl: import.meta.env.VITE_API_URL || 'http://localhost:3001',
-    awsBaseUrl: import.meta.env.VITE_AWS_API_BASE_URL || '',
+    baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+    awsBaseUrl: process.env.NEXT_PUBLIC_AWS_API_BASE_URL || '',
   },
   stack: {
-    publishableKey: import.meta.env.VITE_STACK_PUBLISHABLE_KEY || '',
+    publishableKey: process.env.NEXT_PUBLIC_STACK_PUBLISHABLE_KEY || '',
   },
-  isDevelopment: import.meta.env.MODE === 'development',
-  isProduction: import.meta.env.PROD,
+  isDevelopment: process.env.NODE_ENV === 'development',
+  isProduction: process.env.NODE_ENV === 'production',
 };
 
 // Validation helper to ensure required public configs are present
 export function validatePublicConfig(): { isValid: boolean; missingVars: string[] } {
   const missingVars: string[] = [];
   
-  if (!config.supabase.url) missingVars.push('VITE_SUPABASE_URL');
-  if (!config.supabase.anonKey) missingVars.push('VITE_SUPABASE_ANON_KEY');
-  if (!config.google.clientId) missingVars.push('VITE_GOOGLE_CLIENT_ID');
+  if (!config.supabase.url) missingVars.push('NEXT_PUBLIC_SUPABASE_URL');
+  if (!config.supabase.anonKey) missingVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  if (!config.google.clientId) missingVars.push('NEXT_PUBLIC_GOOGLE_CLIENT_ID');
   
   return {
     isValid: missingVars.length === 0,

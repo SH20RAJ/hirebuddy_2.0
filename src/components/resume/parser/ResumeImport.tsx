@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from 'next/navigation';
 import { ResumeDropzone } from "./ResumeDropzone";
 import { Button } from "../../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../ui/card";
@@ -39,7 +39,7 @@ export const ResumeImport = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState(0);
   const [extractedData, setExtractedData] = useState<Resume | null>(null);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const processingSteps = [
     { label: "Uploading file", icon: Upload },
@@ -68,7 +68,7 @@ export const ResumeImport = ({
           setTimeout(() => {
             setIsProcessing(false);
             // Navigate to resume builder form after processing
-            navigate('/resume-builder-form');
+            router.push('/resume-builder-form');
           }, 1000);
           return prev;
         }
@@ -80,7 +80,7 @@ export const ResumeImport = ({
   const handleCreateFromScratch = () => {
     // Clear any existing parsed data
     localStorage.removeItem('parsedResumeData');
-    navigate('/resume-builder-form');
+    router.push('/resume-builder-form');
   };
 
   const handleTryAgain = () => {
@@ -91,7 +91,7 @@ export const ResumeImport = ({
   };
 
   const handleGoBack = () => {
-    navigate('/resume-builder');
+    router.push('/resume-builder');
   };
 
   return (
@@ -394,7 +394,7 @@ export const ResumeImport = ({
                       Try Another Resume
                     </Button>
                     <Button 
-                      onClick={() => navigate('/resume-builder-form')}
+                      onClick={() => router.push('/resume-builder-form')}
                       className="flex-1 bg-green-600 hover:bg-green-700"
                     >
                       Continue Building

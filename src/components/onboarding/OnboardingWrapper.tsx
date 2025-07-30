@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { OnboardingService } from '@/services/onboardingService';
 import { OnboardingFlow } from './OnboardingFlow';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
 interface OnboardingWrapperProps {
@@ -13,7 +13,7 @@ export const OnboardingWrapper: React.FC<OnboardingWrapperProps> = ({ children }
   const { user, loading: authLoading } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
@@ -40,7 +40,7 @@ export const OnboardingWrapper: React.FC<OnboardingWrapperProps> = ({ children }
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
-    navigate('/dashboard');
+    router.push('/dashboard');
   };
 
   // Show loading while checking onboarding status

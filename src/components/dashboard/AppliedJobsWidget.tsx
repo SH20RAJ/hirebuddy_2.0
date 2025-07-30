@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { JobApplicationService } from "@/services/jobApplicationService";
 import { JobApplication } from "@/types/job";
 import { useAuth } from "@/contexts/AuthContext";
-import { 
-  Briefcase, 
-  Calendar, 
+import {
+  Briefcase,
+  Calendar,
   Clock,
   CheckCircle,
   XCircle,
@@ -108,13 +108,13 @@ export const AppliedJobsWidget: React.FC<AppliedJobsWidgetProps> = ({ limit = 3 
     const date = new Date(dateString);
     const now = new Date();
     const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     if (diffInDays === 0) return 'Today';
     if (diffInDays === 1) return 'Yesterday';
     if (diffInDays < 7) return `${diffInDays} days ago`;
-    
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
+
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
       day: 'numeric',
       year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
     });
@@ -125,7 +125,7 @@ export const AppliedJobsWidget: React.FC<AppliedJobsWidgetProps> = ({ limit = 3 
       acc[app.status] = (acc[app.status] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-    
+
     return {
       total: applications.length,
       pending: stats.pending || 0,
@@ -201,7 +201,7 @@ export const AppliedJobsWidget: React.FC<AppliedJobsWidgetProps> = ({ limit = 3 
             <Briefcase className="h-12 w-12 mx-auto mb-4 text-gray-400" />
             <p className="text-gray-600 mb-4">Sign in to view your job applications</p>
             <Button asChild>
-              <Link to="/signin">Sign In</Link>
+              <Link href="/signin">Sign In</Link>
             </Button>
           </div>
         </CardContent>
@@ -219,7 +219,7 @@ export const AppliedJobsWidget: React.FC<AppliedJobsWidgetProps> = ({ limit = 3 
               Applied Jobs
             </CardTitle>
             <Button variant="outline" size="sm" asChild>
-              <Link to="/jobs" className="flex items-center gap-1">
+              <Link href="/jobs" className="flex items-center gap-1">
                 <Search className="h-4 w-4" />
                 Find Jobs
               </Link>
@@ -236,7 +236,7 @@ export const AppliedJobsWidget: React.FC<AppliedJobsWidgetProps> = ({ limit = 3 
               Start your job search journey by applying to positions that match your skills and interests.
             </p>
             <Button asChild>
-              <Link to="/jobs" className="flex items-center gap-2">
+              <Link href="/jobs" className="flex items-center gap-2">
                 <Search className="h-4 w-4" />
                 Browse Jobs
               </Link>
@@ -264,14 +264,14 @@ export const AppliedJobsWidget: React.FC<AppliedJobsWidgetProps> = ({ limit = 3 
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" asChild>
-              <Link to="/jobs" className="flex items-center gap-1">
+              <Link href="/jobs" className="flex items-center gap-1">
                 <Filter className="h-4 w-4" />
                 Manage
               </Link>
             </Button>
           </div>
         </div>
-        
+
         {/* Quick Stats */}
         <div className="grid grid-cols-5 gap-2 mt-4">
           <div className="text-center">
@@ -296,12 +296,12 @@ export const AppliedJobsWidget: React.FC<AppliedJobsWidgetProps> = ({ limit = 3 
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="p-0">
         <div className="space-y-1">
           {applications.map((application, index) => {
             const statusConfig = getStatusConfig(application.status);
-            
+
             return (
               <div
                 key={application.id}
@@ -322,7 +322,7 @@ export const AppliedJobsWidget: React.FC<AppliedJobsWidgetProps> = ({ limit = 3 
                         <span className="ml-1">{statusConfig.text}</span>
                       </Badge>
                     </div>
-                    
+
                     <div className="flex items-center gap-4 text-sm text-gray-600">
                       <div className="flex items-center gap-1">
                         <Building className="h-3 w-3" />
@@ -339,7 +339,7 @@ export const AppliedJobsWidget: React.FC<AppliedJobsWidgetProps> = ({ limit = 3 
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                       <ExternalLink className="h-4 w-4" />
@@ -353,7 +353,7 @@ export const AppliedJobsWidget: React.FC<AppliedJobsWidgetProps> = ({ limit = 3 
             );
           })}
         </div>
-        
+
         {applications.length > 0 && (
           <div className="p-4 bg-gray-50 border-t border-gray-100">
             <div className="flex items-center justify-between">
@@ -361,7 +361,7 @@ export const AppliedJobsWidget: React.FC<AppliedJobsWidgetProps> = ({ limit = 3 
                 Track your progress and follow up strategically
               </div>
               <Button variant="ghost" size="sm" asChild className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
-                <Link to="/jobs" className="flex items-center gap-1">
+                <Link href="/jobs" className="flex items-center gap-1">
                   <span>View All</span>
                   <ArrowRight className="h-3 w-3" />
                 </Link>

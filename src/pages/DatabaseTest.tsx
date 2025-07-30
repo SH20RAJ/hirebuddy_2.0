@@ -215,7 +215,7 @@ const DatabaseTest: React.FC = () => {
               <h4 className="font-semibold">If the test fails:</h4>
               <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
                 <li>Check that your environment variables are set in your deployment platform (Netlify, Vercel, etc.)</li>
-                <li>Verify that VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are correctly configured</li>
+                <li>Verify that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are correctly configured</li>
                 <li>Ensure the email_database table exists in your Supabase database</li>
                 <li>Check your Supabase project settings and RLS policies</li>
                 <li>Verify that your Supabase project is active and not paused</li>
@@ -225,8 +225,8 @@ const DatabaseTest: React.FC = () => {
             <div className="space-y-2">
               <h4 className="font-semibold">Environment Variables Needed:</h4>
               <div className="bg-gray-100 p-3 rounded text-sm font-mono">
-                VITE_SUPABASE_URL=your_supabase_url<br/>
-                VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+                NEXT_PUBLIC_SUPABASE_URL=your_supabase_url<br/>
+                NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
               </div>
             </div>
           </CardContent>

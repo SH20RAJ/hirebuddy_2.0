@@ -36,14 +36,14 @@ const BentoGrid = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4">
-            <Link to="/jobs">
+            <Link href="/jobs">
               <RainbowButton className="w-full h-16 flex flex-col gap-1">
                 <span className="font-medium">Find Jobs</span>
                 <span className="text-xs opacity-90">Browse 1,234 openings</span>
               </RainbowButton>
             </Link>
-                          <Link to="/resume-builder">
-              <ShimmerButton 
+            <Link href="/resume-builder">
+              <ShimmerButton
                 className="w-full h-16 flex flex-col gap-1"
                 background="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
                 borderRadius="8px"
@@ -52,13 +52,13 @@ const BentoGrid = () => {
                 <span className="text-xs opacity-90">AI-powered editor</span>
               </ShimmerButton>
             </Link>
-            <Link to="/interview-prep">
+            <Link href="/interview-prep">
               <ShinyButton className="w-full h-16 flex flex-col gap-1">
                 <span className="font-medium">Interview Prep</span>
                 <span className="text-xs opacity-90">Practice sessions</span>
               </ShinyButton>
             </Link>
-            <Link to="/skills">
+            <Link href="/skills">
               <InteractiveHoverButton className="w-full h-16 flex flex-col gap-1">
                 <span className="font-medium">Skill Test</span>
                 <span className="text-xs opacity-90">Assess abilities</span>
@@ -76,7 +76,7 @@ const BentoGrid = () => {
               <TrendingUp className="h-5 w-5 text-primary" />
               Profile Progress
             </span>
-            <Link to="/profile">
+            <Link href="/profile">
               <Button variant="ghost" size="sm">
                 View All <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
@@ -131,7 +131,7 @@ const BentoGrid = () => {
               <div className="text-xs text-muted-foreground">6:00 PM - 8:00 PM</div>
             </div>
           </div>
-          <Link to="/calendar">
+          <Link href="/calendar">
             <Button variant="outline" size="sm" className="w-full border-pink-200 hover:bg-pink-50 hover:text-primary">
               View Calendar
             </Button>
@@ -158,7 +158,7 @@ const BentoGrid = () => {
             <Progress value={30} className="h-1" />
             <div className="text-xs text-muted-foreground">30% complete</div>
           </div>
-          <Link to="/learning">
+          <Link href="/learning">
             <InteractiveHoverButton className="w-full h-8 text-sm">
               Browse Courses
             </InteractiveHoverButton>
@@ -227,7 +227,7 @@ const BentoGrid = () => {
               <div className="text-xs text-muted-foreground">5 new positions match your profile</div>
             </div>
           </div>
-          <Link to="/notifications">
+          <Link href="/notifications">
             <Button variant="outline" size="sm" className="w-full border-pink-200 hover:bg-pink-50 hover:text-primary">
               View All
             </Button>
@@ -243,7 +243,7 @@ const BentoGrid = () => {
               <Star className="h-5 w-5 text-primary" />
               Top Job Matches
             </span>
-            <Link to="/jobs">
+            <Link href="/jobs">
               <Button variant="ghost" size="sm">
                 View All <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
@@ -298,7 +298,7 @@ const BentoGrid = () => {
               <CheckCircle className="h-5 w-5 text-primary" />
               Skill Development
             </span>
-            <Link to="/skills">
+            <Link href="/skills">
               <Button variant="ghost" size="sm">
                 View All <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
@@ -337,11 +337,11 @@ const BentoGrid = () => {
             </div>
           </div>
           <div className="text-center pt-2">
-                      <Link to="/skills">
-            <RainbowButton variant="outline" size="sm" className="border-pink-200">
-              Take Skill Assessment
-            </RainbowButton>
-          </Link>
+            <Link href="/skills">
+              <RainbowButton variant="outline" size="sm" className="border-pink-200">
+                Take Skill Assessment
+              </RainbowButton>
+            </Link>
           </div>
         </CardContent>
       </Card>

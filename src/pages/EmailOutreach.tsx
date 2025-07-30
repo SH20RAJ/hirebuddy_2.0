@@ -18,12 +18,12 @@ import { PremiumBadge } from '@/components/ui/premium-badge';
 import { googleAuthService, GoogleUser, GoogleContact } from '@/services/googleAuthService';
 import emailService from '@/services/emailService';
 import { DashboardService } from '@/services/dashboardService';
-import { 
-  Mail, 
-  Users, 
-  CheckCircle, 
-  AlertCircle, 
-  Loader2, 
+import {
+  Mail,
+  Users,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
   RefreshCw,
   Database,
   Shield,
@@ -61,7 +61,7 @@ const EmailOutreach = () => {
   const [isSending, setIsSending] = useState(false);
   const [databaseConnected, setDatabaseConnected] = useState(false);
   const [awsApiStatus, setAwsApiStatus] = useState<{ connected: boolean; message: string } | null>(null);
-  
+
   // Gmail authentication states
   const [googleUser, setGoogleUser] = useState<GoogleUser | null>(null);
   const [isGoogleAuthenticating, setIsGoogleAuthenticating] = useState(false);
@@ -69,16 +69,16 @@ const EmailOutreach = () => {
   const [useGmailMode, setUseGmailMode] = useState(false);
   const [hasAttemptedAuth, setHasAttemptedAuth] = useState(false);
   const [showAuthOptions, setShowAuthOptions] = useState(false);
-  
+
   // Email stats
   const [emailsSentCount, setEmailsSentCount] = useState(0);
   const [followupsNeededCount, setFollowupsNeededCount] = useState(0);
   const [repliesReceivedCount, setRepliesReceivedCount] = useState(0);
   const [totalContactsCount, setTotalContactsCount] = useState(0);
-  
+
   // Learn More dialog state
   const [showLearnMoreDialog, setShowLearnMoreDialog] = useState(false);
-  
+
   // Email usage and renewal dialog state
   const [showRenewalDialog, setShowRenewalDialog] = useState(false);
   const { emailUsage, loading: emailUsageLoading, refreshUsage, checkCanSendEmails, incrementEmailCount } = useEmailUsage();
@@ -86,12 +86,12 @@ const EmailOutreach = () => {
   // Load Google contacts
   const loadGoogleContacts = async () => {
     if (!googleUser) return;
-    
+
     setIsLoadingContacts(true);
     try {
       const googleContactsData = await googleAuthService.getContacts(googleUser.access_token);
       setGoogleContacts(googleContactsData);
-      
+
       // Convert Google contacts to display format
       const displayContacts: ContactForDisplay[] = googleContactsData.map(contact => ({
         id: contact.id,
@@ -105,7 +105,7 @@ const EmailOutreach = () => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }));
-      
+
       setContacts(displayContacts);
       toast.success(`Loaded ${googleContactsData.length} contacts from Google`);
     } catch (error) {
@@ -134,9 +134,9 @@ const EmailOutreach = () => {
     setGoogleUser(user);
     setIsGoogleAuthenticating(false);
     setShowAuthOptions(false);
-    
+
     toast.success('Gmail authentication successful!');
-    
+
     console.log('Gmail authentication details:', {
       email: user.email,
       hasAccessToken: !!user.access_token,
@@ -148,11 +148,11 @@ const EmailOutreach = () => {
   // Check authentication status and refresh if needed
   const checkAuthStatus = async () => {
     if (!googleUser) return;
-    
+
     try {
       setIsGoogleAuthenticating(true);
       const refreshedUser = await googleAuthService.getStoredUser();
-      
+
       if (refreshedUser) {
         setGoogleUser(refreshedUser);
         toast.success('Authentication verified');
@@ -173,14 +173,14 @@ const EmailOutreach = () => {
   const handleForceReauth = async () => {
     try {
       setIsGoogleAuthenticating(true);
-      
+
       // Clear existing authentication data
       if (googleUser) {
         await googleAuthService.clearStoredAuth();
         setGoogleUser(null);
         toast.info('Previous authentication cleared');
       }
-      
+
       // Start fresh authentication with force reauth flag
       await googleAuthService.initiateAuth(true);
     } catch (error) {
@@ -212,7 +212,7 @@ const EmailOutreach = () => {
     setIsLoadingContacts(true);
     try {
       console.log('🔍 Loading contacts from database (available for email)...');
-      
+
       // First test the database connection
       const testResult = await testDatabaseConnection();
       if (!testResult.success) {
@@ -226,7 +226,7 @@ const EmailOutreach = () => {
       // Use the new method that filters contacts based on 7-day rule
       const contactsData = await contactsService.getContactsAvailableForEmail();
       setContacts(contactsData);
-      
+
       if (contactsData.length > 0) {
         toast.success(`Loaded ${contactsData.length} contacts available for email (no emails sent in last 7 days)`);
       } else {
@@ -266,7 +266,7 @@ const EmailOutreach = () => {
         DashboardService.getRepliesReceivedCount(),
         DashboardService.getTotalContactsCount()
       ]);
-      
+
       setEmailsSentCount(emailsSent);
       setFollowupsNeededCount(followupsNeeded);
       setRepliesReceivedCount(repliesReceived);
@@ -281,14 +281,14 @@ const EmailOutreach = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     const state = urlParams.get('state');
-    
+
     if (code && state === 'email_outreach') {
       setIsGoogleAuthenticating(true);
-      
+
       try {
         const user = await googleAuthService.handleCallback(code);
         handleAuthSuccess(user);
-        
+
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
       } catch (error) {
@@ -304,27 +304,27 @@ const EmailOutreach = () => {
   useEffect(() => {
     const initializePage = async () => {
       setIsLoading(true);
-      
+
       try {
         // Test AWS API connection
         await testAwsApiConnection();
-        
+
         // Check for existing Google authentication
         const existingUser = await googleAuthService.getStoredUser();
         if (existingUser) {
           setGoogleUser(existingUser);
           console.log('Found existing Google authentication');
         }
-        
+
         // Load database contacts by default
         await loadContactsFromDatabase();
-        
+
         // Load email stats
         await loadEmailStats();
-        
+
         // Check for OAuth callback
         await checkForCallbackAuth();
-        
+
       } catch (error) {
         console.error('Error initializing page:', error);
         toast.error('Failed to initialize email outreach');
@@ -337,8 +337,8 @@ const EmailOutreach = () => {
   }, [checkForCallbackAuth]);
 
   const handleContactSelect = (contactId: string) => {
-    setSelectedContacts(prev => 
-      prev.includes(contactId) 
+    setSelectedContacts(prev =>
+      prev.includes(contactId)
         ? prev.filter(id => id !== contactId)
         : [...prev, contactId]
     );
@@ -374,9 +374,9 @@ const EmailOutreach = () => {
     }
 
     setIsSending(true);
-    
+
     try {
-      const selectedContactsData = contacts.filter(contact => 
+      const selectedContactsData = contacts.filter(contact =>
         selectedContacts.includes(contact.id)
       );
 
@@ -401,18 +401,18 @@ const EmailOutreach = () => {
             // In simulation, we just log the email
             await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
           }
-          
+
           successCount++;
-          
-                     // Update contact status in database if using database mode
-           if (!useGmailMode) {
-             try {
-               await contactsService.markEmailSent(contact.id);
-             } catch (dbError) {
-               console.warn('Failed to update contact status in database:', dbError);
-             }
-           }
-          
+
+          // Update contact status in database if using database mode
+          if (!useGmailMode) {
+            try {
+              await contactsService.markEmailSent(contact.id);
+            } catch (dbError) {
+              console.warn('Failed to update contact status in database:', dbError);
+            }
+          }
+
         } catch (error) {
           console.error(`Failed to send email to ${contact.email}:`, error);
           failureCount++;
@@ -424,7 +424,7 @@ const EmailOutreach = () => {
         toast.success(
           `Successfully ${useGmailMode ? 'sent' : 'simulated'} ${successCount} email${successCount !== 1 ? 's' : ''}`
         );
-        
+
         // Update email count for premium users
         if (isPremium && useGmailMode) {
           try {
@@ -434,7 +434,7 @@ const EmailOutreach = () => {
           }
         }
       }
-      
+
       if (failureCount > 0) {
         toast.error(`Failed to send ${failureCount} email${failureCount !== 1 ? 's' : ''}`);
       }
@@ -443,10 +443,10 @@ const EmailOutreach = () => {
       if (!useGmailMode) {
         await loadContactsFromDatabase();
       }
-      
+
       // Refresh email stats
       await loadEmailStats();
-      
+
       // Close composer and clear selection
       setIsComposerOpen(false);
       setSelectedContacts([]);
@@ -506,8 +506,8 @@ const EmailOutreach = () => {
               </BreadcrumbList>
             </Breadcrumb>
           </div>
-          
-          
+
+
         </header>
 
         {/* Main Content */}
@@ -556,7 +556,7 @@ const EmailOutreach = () => {
                         </div>
                       </CardContent>
                     </Card>
-                    
+
                     <Card>
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between">
@@ -570,7 +570,7 @@ const EmailOutreach = () => {
                         </div>
                       </CardContent>
                     </Card>
-                    
+
                     <Card>
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between">
@@ -584,7 +584,7 @@ const EmailOutreach = () => {
                         </div>
                       </CardContent>
                     </Card>
-                    
+
                     <Card>
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between">
@@ -634,10 +634,10 @@ const EmailOutreach = () => {
                     Premium Email Outreach
                   </h2>
                   <p className="text-lg text-gray-600 mb-6">
-                    Unlock powerful email outreach tools to connect with recruiters and hiring managers. 
+                    Unlock powerful email outreach tools to connect with recruiters and hiring managers.
                     Send personalized campaigns, track responses, and land more interviews.
                   </p>
-                  
+
                   <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4 mb-6">
                     <h3 className="font-semibold text-yellow-800 mb-2">Premium Features Include:</h3>
                     <ul className="text-sm text-yellow-700 space-y-1">
@@ -649,10 +649,10 @@ const EmailOutreach = () => {
                       <li>• Follow-up automation</li>
                     </ul>
                   </div>
-                  
+
                   <div className="space-y-4">
-                    <a 
-                      href="https://payments.cashfree.com/forms/hirebuddy_premium_subscription" 
+                    <a
+                      href="https://payments.cashfree.com/forms/hirebuddy_premium_subscription"
                       target="_parent"
                       className="block w-full"
                       style={{ textDecoration: 'none' }}
@@ -696,14 +696,14 @@ const EmailOutreach = () => {
                           </Button>
                         </div>
                         <p className="text-xs md:text-sm text-blue-700 mt-0.5 md:mt-1 break-words">
-                          {googleUser 
-                            ? `Connected as ${googleUser.email}. Use Re-authenticate if experiencing issues.` 
+                          {googleUser
+                            ? `Connected as ${googleUser.email}. Use Re-authenticate if experiencing issues.`
                             : 'Connect your Gmail account to send emails'
                           }
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 flex-shrink-0">
                       {googleUser && (
                         <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 w-fit text-xs px-2 py-1">
@@ -711,17 +711,16 @@ const EmailOutreach = () => {
                           Connected
                         </Badge>
                       )}
-                      
+
                       {/* Mobile Action Buttons */}
                       <div className="md:hidden space-y-1.5">
                         <button
                           onClick={googleUser ? checkAuthStatus : handleGmailAuth}
                           disabled={isGoogleAuthenticating}
-                          className={`w-full px-3 py-2 text-xs font-medium rounded-md transition-colors ${
-                            googleUser 
-                              ? 'border border-blue-300 text-blue-700 bg-white hover:bg-blue-50 disabled:opacity-50' 
+                          className={`w-full px-3 py-2 text-xs font-medium rounded-md transition-colors ${googleUser
+                              ? 'border border-blue-300 text-blue-700 bg-white hover:bg-blue-50 disabled:opacity-50'
                               : 'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center justify-center gap-1.5">
                             {isGoogleAuthenticating ? (
@@ -746,7 +745,7 @@ const EmailOutreach = () => {
                             )}
                           </div>
                         </button>
-                        
+
                         {googleUser && (
                           <button
                             onClick={handleForceReauth}
@@ -769,7 +768,7 @@ const EmailOutreach = () => {
                           </button>
                         )}
                       </div>
-                      
+
                       {/* Desktop Action Buttons */}
                       <div className="hidden md:flex items-center gap-2">
                         <Button
@@ -800,7 +799,7 @@ const EmailOutreach = () => {
                             </>
                           )}
                         </Button>
-                        
+
                         {googleUser && (
                           <Button
                             onClick={handleForceReauth}
@@ -844,16 +843,16 @@ const EmailOutreach = () => {
                     <Alert className="border-blue-200 bg-blue-50">
                       <Info className="h-4 w-4 text-blue-600" />
                       <AlertDescription className="text-blue-800">
-                        <strong>When to reauthenticate:</strong> If you're getting permission errors, emails aren't sending, 
+                        <strong>When to reauthenticate:</strong> If you're getting permission errors, emails aren't sending,
                         or you've changed your Google account password, use the "Force Re-authenticate" option below.
                       </AlertDescription>
                     </Alert>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      
-                      
+
+
                     </div>
-                    
+
                     {!googleUser && (
                       <div className="pt-4 border-t">
                         <Button
@@ -875,7 +874,7 @@ const EmailOutreach = () => {
                         </Button>
                       </div>
                     )}
-                    
+
                     {googleUser && (
                       <div className="pt-4 border-t space-y-4">
                         <div className="flex items-center justify-between">
@@ -896,7 +895,7 @@ const EmailOutreach = () => {
                             )}
                           </Button>
                         </div>
-                        
+
                         {/* Reauthentication Options */}
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                           <h4 className="font-medium text-blue-900 mb-2">Having Issues?</h4>
@@ -952,7 +951,7 @@ const EmailOutreach = () => {
                 <Alert className="border-amber-200 bg-amber-50">
                   <AlertTriangle className="h-4 w-4 text-amber-600" />
                   <AlertDescription className="text-amber-800">
-                    <strong>Connection Issue:</strong> Unable to load contacts from the database. 
+                    <strong>Connection Issue:</strong> Unable to load contacts from the database.
                     Please check your connection and try refreshing.
                   </AlertDescription>
                 </Alert>
@@ -1077,7 +1076,7 @@ const EmailOutreach = () => {
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 <Card>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
@@ -1091,7 +1090,7 @@ const EmailOutreach = () => {
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 <Card>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
@@ -1105,7 +1104,7 @@ const EmailOutreach = () => {
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 <Card>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
@@ -1130,7 +1129,7 @@ const EmailOutreach = () => {
                       Showing contacts who haven't been emailed in the last 7 days
                     </p>
                   </div>
-                  
+
                   {/* Mobile Action Button */}
                   <div className="md:hidden">
                     <button
@@ -1153,7 +1152,7 @@ const EmailOutreach = () => {
                       </div>
                     </button>
                   </div>
-                  
+
                   {/* Desktop Action Button */}
                   <Button
                     onClick={handleRefreshContacts}
@@ -1169,7 +1168,7 @@ const EmailOutreach = () => {
                     Refresh
                   </Button>
                 </div>
-                
+
                 <AWSEmailComposer
                   contacts={contacts.map(c => ({
                     id: c.id,
@@ -1213,7 +1212,7 @@ const EmailOutreach = () => {
               Understanding our Gmail integration and your data security
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
@@ -1221,13 +1220,13 @@ const EmailOutreach = () => {
                 Your Security is Our Priority
               </h4>
               <p className="text-sm text-blue-800">
-                Your Gmail password is never shared with us, 
+                Your Gmail password is never shared with us,
                 and you can revoke access at any time through your Google Account settings.
               </p>
               <p className="text-sm text-blue-800 mt-2">
                 For more details about how we handle your data, please read our{' '}
-                <Link 
-                  to="/privacy-policy" 
+                <Link
+                  href="/privacy-policy"
                   className="underline hover:text-blue-900 font-medium"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -1238,7 +1237,7 @@ const EmailOutreach = () => {
               </p>
             </div>
 
-            
+
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <h4 className="font-semibold text-gray-900 mb-2">What we DON'T do:</h4>
               <ul className="text-sm text-gray-600 space-y-1">
@@ -1257,15 +1256,15 @@ const EmailOutreach = () => {
               </h4>
               <p className="text-sm text-green-800">
                 You can revoke our access at any time by visiting your{' '}
-                <a 
-                  href="https://myaccount.google.com/permissions" 
-                  target="_blank" 
+                <a
+                  href="https://myaccount.google.com/permissions"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="underline hover:text-green-900"
                 >
                   Google Account permissions page
                 </a>
-                . Your job search data will remain in your HireBuddy account, but we won't be able to send emails 
+                . Your job search data will remain in your HireBuddy account, but we won't be able to send emails
                 on your behalf until you re-authenticate.
               </p>
             </div>

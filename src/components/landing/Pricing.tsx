@@ -2,7 +2,7 @@ import { CashfreePaymentButton } from "@/components/ui/cashfree-payment-button";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, X, ArrowRight } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from 'next/navigation';
 import { useAuth } from "@/contexts/AuthContext";
 import SignInPopup from "@/components/SignInPopup";
 
@@ -60,11 +60,11 @@ const comparisonFeatures = [
 export const Pricing = () => {
   const [isSignInPopupOpen, setIsSignInPopupOpen] = useState(false);
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleFreeButtonClick = () => {
     if (user) {
-      navigate('/dashboard');
+      router.push('/dashboard');
     } else {
       setIsSignInPopupOpen(true);
     }

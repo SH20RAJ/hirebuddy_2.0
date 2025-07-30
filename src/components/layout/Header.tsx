@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Link } from "react-router-dom";
+import Link from 'next/link';
 import {
   Menu,
   X,
@@ -122,13 +122,13 @@ export const Header = ({ openSignIn }: HeaderProps = {}) => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
         >
-          <Link to="/" className="text-[#633b3d] font-sans text-2xl font-bold tracking-tighter">
+          <Link href="/" className="text-[#633b3d] font-sans text-2xl font-bold tracking-tighter">
             Hirebuddy
           </Link>
         </motion.div>
 
         {/* Hamburger Menu Button (Mobile) */}
-        <button 
+        <button
           className="md:hidden flex flex-col justify-center items-center w-8 h-8"
           onClick={toggleMobileMenu}
           aria-label="Toggle menu"
@@ -146,25 +146,25 @@ export const Header = ({ openSignIn }: HeaderProps = {}) => {
           transition={{ duration: 0.6, delay: 0.2 }}
         >
           <Link
-            to="/blogs"
+            href="/blogs"
             className="text-[#b24e55] font-bold hover:text-[#E75A82] transition-colors"
           >
             Blogs
           </Link>
           <Link
-            to="/community"
+            href="/community"
             className="text-[#b24e55] font-bold hover:text-[#E75A82] transition-colors"
           >
             Community
           </Link>
           <Link
-            to="/blogs?post=4"
+            href="/blogs?post=4"
             className="text-[#b24e55] font-bold hover:text-[#E75A82] transition-colors"
           >
             About
           </Link>
           <Link
-            to="/pricing"
+            href="/pricing"
             className="text-[#b24e55] font-bold hover:text-[#E75A82] transition-colors"
           >
             Pricing
@@ -176,14 +176,14 @@ export const Header = ({ openSignIn }: HeaderProps = {}) => {
           <div className="md:hidden absolute top-full left-0 right-0 bg-[#fff7f8] shadow-lg z-50 py-4 px-6">
             <div className="flex flex-col space-y-4">
               <Link
-                to="/blogs"
+                href="/blogs"
                 className="text-[#b24e55] hover:text-[#E75A82] transition-colors"
                 onClick={toggleMobileMenu}
               >
                 Blogs
               </Link>
               <Link
-                to="/community"
+                href="/community"
                 className="text-[#b24e55] hover:text-[#E75A82] transition-colors"
                 onClick={toggleMobileMenu}
               >
@@ -192,7 +192,7 @@ export const Header = ({ openSignIn }: HeaderProps = {}) => {
               {user ? (
                 <div className="pt-2 flex flex-col space-y-3">
                   <Link
-                    to="/dashboard"
+                    href="/dashboard"
                     className="w-full text-[#b24e55] hover:text-[#E75A82] transition-colors text-center py-2"
                     onClick={toggleMobileMenu}
                   >
@@ -222,7 +222,7 @@ export const Header = ({ openSignIn }: HeaderProps = {}) => {
                   >
                     Log in
                   </Button>
-                  <Link to="/signup">
+                  <Link href="/signup">
                     <Button
                       className="w-full bg-gradient-to-t from-[#b24e55] to-[#E3405F] text-white rounded-lg"
                       onClick={toggleMobileMenu}
@@ -245,7 +245,7 @@ export const Header = ({ openSignIn }: HeaderProps = {}) => {
         >
           {user ? (
             <>
-              <Link to="/dashboard">
+              <Link href="/dashboard">
                 <Button
                   variant="ghost"
                   className="text-[#b24e55] hover:text-[#fc6f78] border border-[#b24e55] hover:border-[#fc6f78] hover:bg-transparent rounded-lg"
@@ -253,7 +253,7 @@ export const Header = ({ openSignIn }: HeaderProps = {}) => {
                   Dashboard
                 </Button>
               </Link>
-              
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -274,13 +274,13 @@ export const Header = ({ openSignIn }: HeaderProps = {}) => {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link to="/dashboard" className="cursor-pointer">
+                    <Link href="/dashboard" className="cursor-pointer">
                       <User className="mr-2 h-4 w-4" />
                       <span>Dashboard</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/profile" className="cursor-pointer">
+                    <Link href="/profile" className="cursor-pointer">
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Profile</span>
                     </Link>
@@ -305,7 +305,7 @@ export const Header = ({ openSignIn }: HeaderProps = {}) => {
               >
                 Log in
               </Button>
-              <Link to="/signup">
+              <Link href="/signup">
                 <Button
                   className="bg-gradient-to-t from-[#b24e55] to-[#E3405F] text-white rounded-lg"
                 >

@@ -18,7 +18,7 @@ export const JobRecommendations = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [experiences, setExperiences] = useState<any[]>([]);
-  
+
   // Fetch a limited number of recent jobs as recommendations
   const { data: jobsData, isLoading, error } = useJobs({
     limit: 3,
@@ -32,7 +32,7 @@ export const JobRecommendations = () => {
   useEffect(() => {
     const loadProfile = async () => {
       if (!user?.id) return;
-      
+
       try {
         const [profileData, experienceData] = await Promise.all([
           ProfileService.getProfile(user.id),
@@ -44,7 +44,7 @@ export const JobRecommendations = () => {
         console.error('Error loading profile:', error);
       }
     };
-    
+
     loadProfile();
   }, [user?.id]);
 
@@ -108,7 +108,7 @@ export const JobRecommendations = () => {
             <p className="text-gray-600 mb-4">
               {error ? "Unable to load job recommendations" : "No job recommendations available"}
             </p>
-            <Link to="/jobs">
+            <Link href="/jobs">
               <Button variant="outline" className="border-pink-200 hover:bg-pink-50 text-primary">
                 Browse All Jobs
               </Button>
@@ -128,12 +128,12 @@ export const JobRecommendations = () => {
   // Mobile job card component
   const MobileJobRecommendationCard = ({ job, index }: { job: any; index: number }) => {
     const matchScore = getMatchScore(index);
-    
+
     const formatTimeAgo = (dateString: string) => {
       const date = new Date(dateString);
       const now = new Date();
       const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-      
+
       if (diffInHours < 24) {
         return `${diffInHours}h ago`;
       } else {
@@ -162,8 +162,8 @@ export const JobRecommendations = () => {
                   {matchScore}%
                 </span>
                 <div className="w-8 h-1.5 bg-pink-100 rounded-full">
-                  <div 
-                    className="h-1.5 bg-primary rounded-full" 
+                  <div
+                    className="h-1.5 bg-primary rounded-full"
                     style={{ width: `${matchScore}%` }}
                   ></div>
                 </div>
@@ -214,7 +214,7 @@ export const JobRecommendations = () => {
                   toast.error('Complete your profile to 85% before applying to jobs');
                   return;
                 }
-                
+
                 if (job.applyLink) {
                   window.open(job.applyLink, '_blank');
                 }
@@ -222,7 +222,7 @@ export const JobRecommendations = () => {
             >
               Apply Now
             </MobileButton>
-            <Link to={`/jobs`} className="flex-1">
+            <Link href={`/jobs`} className="flex-1">
               <MobileButton size="sm" variant="primary" className="w-full">
                 View Details
               </MobileButton>
@@ -246,15 +246,15 @@ export const JobRecommendations = () => {
           </div>
           <p className="text-sm text-gray-600">Jobs perfectly matched to your skills</p>
         </div>
-        
+
         <div className="space-y-2">
           {jobs.map((job, index) => (
             <MobileJobRecommendationCard key={job.id} job={job} index={index} />
           ))}
         </div>
-        
+
         <div className="mt-4">
-          <Link to="/jobs">
+          <Link href="/jobs">
             <MobileButton variant="primary" size="full" className="w-full">
               View All Job Recommendations
             </MobileButton>
@@ -278,7 +278,7 @@ export const JobRecommendations = () => {
         <CardContent className="space-y-4">
           {jobs.map((job, index) => {
             const matchScore = getMatchScore(index);
-            
+
             return (
               <div key={job.id} className="border border-pink-100 rounded-lg p-4 hover:shadow-md hover:bg-pink-50/30 transition-all">
                 <div className="flex items-start justify-between">
@@ -307,8 +307,8 @@ export const JobRecommendations = () => {
                         {matchScore}% match
                       </span>
                       <div className="w-12 h-2 bg-pink-100 rounded-full">
-                        <div 
-                          className="h-2 bg-primary rounded-full" 
+                        <div
+                          className="h-2 bg-primary rounded-full"
                           style={{ width: `${matchScore}%` }}
                         ></div>
                       </div>
@@ -317,8 +317,8 @@ export const JobRecommendations = () => {
                   </div>
                 </div>
                 <div className="flex gap-2 mt-4">
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     className="flex-1 bg-primary hover:bg-primary/90"
                     onClick={() => {
                       // Check profile completion before applying
@@ -327,7 +327,7 @@ export const JobRecommendations = () => {
                         toast.error('Complete your profile to 85% before applying to jobs');
                         return;
                       }
-                      
+
                       if (job.applyLink) {
                         window.open(job.applyLink, '_blank');
                       }
@@ -335,7 +335,7 @@ export const JobRecommendations = () => {
                   >
                     Auto Apply
                   </Button>
-                  <Link to={`/jobs`} className="flex-1">
+                  <Link href={`/jobs`} className="flex-1">
                     <Button size="sm" variant="outline" className="w-full border-pink-200 hover:bg-pink-50 text-primary">
                       View Details
                     </Button>
@@ -344,9 +344,9 @@ export const JobRecommendations = () => {
               </div>
             );
           })}
-          
+
           <div className="pt-2 border-t border-pink-100">
-            <Link to="/jobs" className="block">
+            <Link href="/jobs" className="block">
               <Button variant="ghost" className="w-full text-primary hover:bg-pink-50">
                 View All Job Recommendations
               </Button>

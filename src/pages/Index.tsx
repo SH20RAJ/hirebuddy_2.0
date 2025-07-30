@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useSearchParams } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { Hero } from "@/components/landing/Hero";
 import { Problem } from "@/components/landing/Problem";
@@ -16,15 +16,14 @@ import SignInPopup from "@/components/SignInPopup";
 
 const Index = () => {
   const [isSignInPopupOpen, setIsSignInPopupOpen] = useState(false);
-  const location = useLocation();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     // Check if the URL has the signin parameter
-    const params = new URLSearchParams(location.search);
-    if (params.get("signin") === "true") {
+    if (searchParams.get("signin") === "true") {
       setIsSignInPopupOpen(true);
     }
-  }, [location]);
+  }, [searchParams]);
 
   return (
     <main className="min-h-screen">

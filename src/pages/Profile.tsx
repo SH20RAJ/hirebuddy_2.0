@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from 'next/navigation';
 import { ProfileCompletionPopup } from "@/components/ui/profile-completion-warning";
 import { calculateProfileCompletion, checkEmailPermission } from "@/lib/utils";
 import { 

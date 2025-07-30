@@ -6,7 +6,7 @@ import { CompanyLogo } from "@/components/ui/company-logo";
 import { useProgressiveLogos } from "@/hooks/useProgressiveLogos";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -19,10 +19,10 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { BlurFade } from "../components/ui/blur-fade";
-import { 
-  DashboardService, 
-  DashboardStats, 
-  JobRecommendation, 
+import {
+  DashboardService,
+  DashboardStats,
+  JobRecommendation,
   RecentActivity,
   UserProfile,
   EmailOutreachStats
@@ -37,9 +37,9 @@ import { usePremiumUser } from "@/hooks/usePremiumUser";
 import { PremiumBadge } from "@/components/ui/premium-badge";
 import MobileCard from "@/components/mobile/MobileCard";
 import MobileButton from "@/components/mobile/MobileButton";
-import { 
-  Search, 
-  Settings, 
+import {
+  Search,
+  Settings,
   User,
   BriefcaseBusiness,
   FileText,
@@ -91,10 +91,10 @@ import {
 import { cn } from "@/lib/utils";
 
 // Enhanced Metric Card with better visual hierarchy
-const EnhancedMetricCard = ({ 
-  label, 
-  value, 
-  change, 
+const EnhancedMetricCard = ({
+  label,
+  value,
+  change,
   changeType = 'positive',
   icon: Icon,
   subtitle,
@@ -128,11 +128,10 @@ const EnhancedMetricCard = ({
             </div>
             <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{value}</div>
             {subtitle && <div className="text-xs text-gray-500 mb-2">{subtitle}</div>}
-            <div className={`flex items-center gap-1 text-xs md:text-sm font-medium ${
-              changeType === 'positive' ? 'text-green-600' : 'text-red-500'
-            }`}>
-              {changeType === 'positive' ? 
-                <TrendingUp className="h-3 w-3" /> : 
+            <div className={`flex items-center gap-1 text-xs md:text-sm font-medium ${changeType === 'positive' ? 'text-green-600' : 'text-red-500'
+              }`}>
+              {changeType === 'positive' ?
+                <TrendingUp className="h-3 w-3" /> :
                 <TrendingDown className="h-3 w-3" />
               }
               {change}
@@ -160,10 +159,10 @@ const EnhancedMetricCard = ({
 };
 
 // Mobile-specific metric card
-const MobileMetricCard = ({ 
-  label, 
-  value, 
-  change, 
+const MobileMetricCard = ({
+  label,
+  value,
+  change,
   changeType = 'positive',
   icon: Icon,
   subtitle,
@@ -185,8 +184,8 @@ const MobileMetricCard = ({
         <div className="flex items-center gap-2">
           <div className={cn(
             "w-8 h-8 rounded-lg flex items-center justify-center",
-            isPremium 
-              ? "bg-gradient-to-br from-yellow-100 to-amber-100" 
+            isPremium
+              ? "bg-gradient-to-br from-yellow-100 to-amber-100"
               : "bg-gradient-to-br from-[#b24e55]/10 to-[#d35c65]/10"
           )}>
             <Icon className={cn(
@@ -204,8 +203,8 @@ const MobileMetricCard = ({
             "flex items-center gap-1 mobile-body-xs font-medium",
             changeType === 'positive' ? 'text-green-600' : 'text-red-500'
           )}>
-            {changeType === 'positive' ? 
-              <TrendingUp className="h-3 w-3" /> : 
+            {changeType === 'positive' ?
+              <TrendingUp className="h-3 w-3" /> :
               <TrendingDown className="h-3 w-3" />
             }
             {change}
@@ -218,7 +217,7 @@ const MobileMetricCard = ({
 };
 
 // Enhanced Job Card with better visual design
-const EnhancedJobCard = ({ 
+const EnhancedJobCard = ({
   job
 }: {
   job: Job;
@@ -246,7 +245,7 @@ const EnhancedJobCard = ({
     const date = new Date(dateString);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 1) return 'Just posted';
     if (diffInHours < 24) return `${diffInHours} hours ago`;
     const diffInDays = Math.floor(diffInHours / 24);
@@ -267,7 +266,7 @@ const EnhancedJobCard = ({
         </div>
       )}
       <div className="flex items-start gap-4">
-        <CompanyLogo 
+        <CompanyLogo
           companyName={job.company}
           size="md"
           className="border-2 border-gray-100"
@@ -301,12 +300,12 @@ const EnhancedJobCard = ({
               <span className="text-xs text-gray-500">{job.posted}</span>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2 mb-3">
             <DollarSign className="h-3 w-3 text-gray-500" />
             <span className="text-sm font-medium" style={{ color: '#b24e55' }}>{formatSalary(job)}</span>
           </div>
-          
+
           <div className="flex flex-wrap gap-1 mb-3">
             {skills.slice(0, 4).map((skill, index) => (
               <Badge key={index} variant="outline" className="text-xs border-gray-300 text-gray-600">
@@ -319,7 +318,7 @@ const EnhancedJobCard = ({
               </Badge>
             )}
           </div>
-          
+
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
 
@@ -361,13 +360,12 @@ const ActivityTimeline = ({ activities }: { activities: RecentActivity[] }) => {
     <div className="space-y-4">
       {activities.map((activity, index) => (
         <div key={activity.id} className="flex items-start gap-3">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-            activity.color === 'blue' ? 'bg-blue-100' :
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activity.color === 'blue' ? 'bg-blue-100' :
             activity.color === 'green' ? 'bg-green-100' :
-            activity.color === 'purple' ? 'bg-purple-100' :
-            activity.color === 'orange' ? 'bg-orange-100' :
-            'bg-red-100'
-          }`}>
+              activity.color === 'purple' ? 'bg-purple-100' :
+                activity.color === 'orange' ? 'bg-orange-100' :
+                  'bg-red-100'
+            }`}>
             <span className="text-sm">{activity.icon}</span>
           </div>
           <div className="flex-1 min-w-0">
@@ -382,12 +380,12 @@ const ActivityTimeline = ({ activities }: { activities: RecentActivity[] }) => {
 };
 
 // Quick Action Button Component
-const QuickActionButton = ({ 
-  icon: Icon, 
-  label, 
-  description, 
-  to, 
-  color = 'default' 
+const QuickActionButton = ({
+  icon: Icon,
+  label,
+  description,
+  to,
+  color = 'default'
 }: {
   icon: React.ComponentType<any>;
   label: string;
@@ -403,7 +401,7 @@ const QuickActionButton = ({
   };
 
   return (
-    <Link to={to} className="block">
+    <Link href={to} className="block">
       <div className={`p-4 rounded-lg border transition-all duration-200 hover:shadow-sm group ${colorClasses[color]}`}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center group-hover:shadow-md transition-shadow">
@@ -609,7 +607,7 @@ const Dashboard = () => {
               </Badge>
             )}
           </div>
-          
+
           <div className="flex items-center gap-3 pr-2 md:pr-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -627,12 +625,12 @@ const Dashboard = () => {
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to="/profile" className="flex items-center cursor-pointer">
+                  <Link href="/profile" className="flex items-center cursor-pointer">
                     <User className="mr-2 h-4 w-4" />
                     <span>Profile</span>
                   </Link>
                 </DropdownMenuItem>
-                
+
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => signOut?.()}>
                   Log out
@@ -641,7 +639,7 @@ const Dashboard = () => {
             </DropdownMenu>
           </div>
         </header>
-        
+
         <div className="flex-1 mobile-app-content md:p-6 max-w-7xl mx-auto w-full">
           {(isLoading || jobsLoading) ? (
             <div className="flex items-center justify-center h-[80vh]">
@@ -656,8 +654,8 @@ const Dashboard = () => {
               <BlurFade delay={0.1}>
                 <div className={cn(
                   "mobile-card-compact mb-4 md:mb-8 rounded-xl md:rounded-2xl p-3 md:p-6 border shadow-sm",
-                  isPremium 
-                    ? "bg-gradient-to-r from-yellow-50 via-amber-50 to-yellow-100 border-yellow-200" 
+                  isPremium
+                    ? "bg-gradient-to-r from-yellow-50 via-amber-50 to-yellow-100 border-yellow-200"
                     : "bg-gradient-to-r from-white to-gray-50 border-gray-100"
                 )}>
                   <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 md:gap-4">
@@ -666,11 +664,11 @@ const Dashboard = () => {
                         <h1 className="mobile-heading-md sm:text-2xl md:text-3xl font-bold text-gray-900">
                           {getGreeting()}, {userName} 👋
                         </h1>
-                        
+
                       </div>
                       <p className="text-gray-600 mobile-body-sm sm:text-base md:text-lg mb-2 md:mb-3">
-                        {isPremium 
-                          ? "Welcome back to your premium dashboard experience!" 
+                        {isPremium
+                          ? "Welcome back to your premium dashboard experience!"
                           : "Here's your job search progress today"
                         }
                       </p>
@@ -695,7 +693,7 @@ const Dashboard = () => {
                     </div>
                     {/* Mobile Quick Actions */}
                     <div className="lg:hidden flex gap-1.5 mt-3">
-                      <Link to="/jobs" className="flex-1">
+                      <Link href="/jobs" className="flex-1">
                         <MobileButton
                           variant="primary"
                           size="sm"
@@ -706,7 +704,7 @@ const Dashboard = () => {
                           {isPremium ? "Premium Jobs" : "Find Jobs"}
                         </MobileButton>
                       </Link>
-                      <Link to="/resume-builder" className="flex-1">
+                      <Link href="/resume-builder" className="flex-1">
                         <MobileButton
                           variant="primary"
                           size="sm"
@@ -717,17 +715,17 @@ const Dashboard = () => {
                         </MobileButton>
                       </Link>
                     </div>
-                    
+
                     {/* Desktop Quick Actions */}
                     <div className="hidden lg:flex items-center gap-3">
                       <Button className={`text-white ${isPremium ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700' : ''}`} style={!isPremium ? { backgroundColor: '#b24e55' } : {}} asChild>
-                        <Link to="/jobs" className="flex items-center gap-2">
+                        <Link href="/jobs" className="flex items-center gap-2">
                           <Search className="h-4 w-4" />
                           {isPremium ? "Premium Jobs" : "Find Jobs"}
                         </Link>
                       </Button>
                       <Button variant="outline" asChild>
-                        <Link to="/resume-builder" className="flex items-center gap-2">
+                        <Link href="/resume-builder" className="flex items-center gap-2">
                           <FileText className="h-4 w-4" />
                           {isPremium ? "AI Resume Builder" : "Optimize Resume"}
                         </Link>
@@ -739,10 +737,10 @@ const Dashboard = () => {
 
               {/* Enhanced Grid Layout */}
               <div className="mobile-grid-stack lg:grid lg:grid-cols-12 lg:gap-6">
-                
+
                 {/* Left Column - Main Content */}
                 <div className="lg:col-span-8 space-y-4 md:space-y-6">
-                  
+
                   {/* Enhanced Metrics Row */}
                   <BlurFade delay={0.2}>
                     {/* Mobile Metrics */}
@@ -758,7 +756,7 @@ const Dashboard = () => {
                       <MobileMetricCard
                         label={isPremium ? "Premium Outreach" : "Emails Sent"}
                         value={formatNumber(emailStats?.emailsSent || 0)}
-                        change={emailStats?.emailsSent && emailStats.emailsSent > 0 
+                        change={emailStats?.emailsSent && emailStats.emailsSent > 0
                           ? `${emailStats.responseRate}% response rate`
                           : '+0% response rate'}
                         icon={Mail}
@@ -768,7 +766,7 @@ const Dashboard = () => {
                       <MobileMetricCard
                         label={isPremium ? "Exclusive Interviews" : "Interview Invites"}
                         value={formatNumber(dashboardStats?.interviewInvites || 0)}
-                        change={dashboardStats?.interviewInvites && dashboardStats.interviewInvites > 0 
+                        change={dashboardStats?.interviewInvites && dashboardStats.interviewInvites > 0
                           ? `${Math.round((dashboardStats.interviewInvites / (dashboardStats.totalApplications || 1)) * 100)}% conversion`
                           : '+0% conversion'}
                         icon={Calendar}
@@ -776,7 +774,7 @@ const Dashboard = () => {
                         isPremium={isPremium}
                       />
                     </div>
-                    
+
                     {/* Desktop Metrics */}
                     <div className="hidden md:grid grid-cols-1 md:grid-cols-3 gap-4">
                       <EnhancedMetricCard
@@ -791,7 +789,7 @@ const Dashboard = () => {
                       <EnhancedMetricCard
                         label={isPremium ? "Premium Outreach" : "Emails Sent"}
                         value={formatNumber(emailStats?.emailsSent || 0)}
-                        change={emailStats?.emailsSent && emailStats.emailsSent > 0 
+                        change={emailStats?.emailsSent && emailStats.emailsSent > 0
                           ? `${emailStats.responseRate}% response rate`
                           : '+0% response rate'}
                         icon={Mail}
@@ -802,7 +800,7 @@ const Dashboard = () => {
                       <EnhancedMetricCard
                         label={isPremium ? "Exclusive Interviews" : "Interview Invites"}
                         value={formatNumber(dashboardStats?.interviewInvites || 0)}
-                        change={dashboardStats?.interviewInvites && dashboardStats.interviewInvites > 0 
+                        change={dashboardStats?.interviewInvites && dashboardStats.interviewInvites > 0
                           ? `${Math.round((dashboardStats.interviewInvites / (dashboardStats.totalApplications || 1)) * 100)}% conversion`
                           : '+0% conversion'}
                         icon={Calendar}
@@ -827,7 +825,7 @@ const Dashboard = () => {
 
                 {/* Right Column - Sidebar Content */}
                 <div className="lg:col-span-4 space-y-4 md:space-y-6">
-                  
+
                   {/* Career Progress Widget */}
                   <BlurFade delay={0.5}>
                     <CareerProgressWidget />
@@ -847,14 +845,14 @@ const Dashboard = () => {
                           icon={FileText}
                           label="Optimize Resume"
                           description="AI-powered improvements"
-                          to="/resume-builder"
+                          href="/resume-builder"
                           color="primary"
                         />
                         <QuickActionButton
                           icon={Mail}
                           label="Email Campaign"
                           description="Connect with recruiters"
-                          to="/email-outreach"
+                          href="/email-outreach"
                           color="success"
                         />
                       </CardContent>

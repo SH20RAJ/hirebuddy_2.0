@@ -2,16 +2,16 @@ import { NewSidebar } from "@/components/layout/NewSidebar";
 import { EnhancedResumeBuilder } from "@/components/resume/EnhancedResumeBuilder";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from 'next/navigation';
 import { FileText, ArrowLeft } from "lucide-react";
 import MobileButton from "@/components/mobile/MobileButton";
 import { Button } from "@/components/ui/button";
 
 const ResumeBuilder = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleBack = () => {
-    navigate("/dashboard");
+    router.push("/dashboard");
   };
 
   return (

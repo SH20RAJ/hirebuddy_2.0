@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink } from 'react-router-dom';
+import { usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -111,12 +113,11 @@ interface SidebarLinkProps {
 }
 
 const SidebarLink: React.FC<SidebarLinkProps> = ({ item, isCollapsed }) => {
-  const location = useLocation();
-  const isActive = location.pathname === item.url;
+  const pathname = usePathname();
+  const isActive = pathname === item.url;
 
   return (
-    <NavLink
-      to={item.url}
+    <Link href={item.url}
       className={cn(
         "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative",
         isActive
@@ -154,7 +155,7 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({ item, isCollapsed }) => {
           {item.badge}
         </div>
       )}
-    </NavLink>
+    </Link>
   );
 };
 
@@ -193,7 +194,7 @@ const DesktopSidebar: React.FC = () => {
   const { isCollapsed, setIsCollapsed, isHovered, setIsHovered } = useSidebar();
   const { user, signOut } = useAuth();
   const { isPremium } = usePremiumUser();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "User";
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -213,9 +214,9 @@ const DesktopSidebar: React.FC = () => {
       <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between">
           {/* Always show logo, but expand with text when not collapsed */}
-          <div 
+          <div
             className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity duration-200"
-            onClick={() => navigate('/')}
+            onClick={() => router.push('/')}
           >
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">
               H
@@ -235,7 +236,7 @@ const DesktopSidebar: React.FC = () => {
               )}
             </AnimatePresence>
           </div>
-          
+
           {/* Only show toggle button when expanded */}
           <AnimatePresence>
             {isExpanded && (
@@ -358,9 +359,9 @@ export const NewSidebar: React.FC = () => {
     <SidebarProvider>
       <DesktopSidebar />
       <MobileHeader onMenuClick={() => setIsMobileSidebarOpen(true)} />
-      <MobileSidebar 
-        isOpen={isMobileSidebarOpen} 
-        onClose={() => setIsMobileSidebarOpen(false)} 
+      <MobileSidebar
+        isOpen={isMobileSidebarOpen}
+        onClose={() => setIsMobileSidebarOpen(false)}
       />
     </SidebarProvider>
   );

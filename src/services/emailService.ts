@@ -103,7 +103,7 @@ class EmailService {
   constructor() {
     // Use secure environment variable access
     try {
-      this.apiBaseUrl = EnvironmentValidator.getSecureEnvVar('VITE_AWS_API_BASE_URL');
+      this.apiBaseUrl = EnvironmentValidator.getSecureEnvVar('NEXT_PUBLIC_AWS_API_BASE_URL');
       this.openaiProxyUrl = `${getConfig().supabase.url}/functions/v1/openai-proxy`;
     } catch (error) {
       throw SecureErrorHandler.createSafeError(

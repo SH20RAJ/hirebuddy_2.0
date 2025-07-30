@@ -10,11 +10,11 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { getConfig } from '@/config/environment';
 import emailService, { EmailSendRequest, FollowUpRequest } from '@/services/emailService';
-import { 
-  CheckCircle, 
-  AlertCircle, 
-  Loader2, 
-  Send, 
+import {
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+  Send,
   RefreshCw,
   Zap,
   MessageSquare,
@@ -62,7 +62,7 @@ const EmailAPITest = () => {
         connected: result.success,
         message: result.message
       });
-      
+
       if (result.success) {
         toast({
           title: "API Connected",
@@ -120,7 +120,7 @@ const EmailAPITest = () => {
       };
 
       const result = await emailService.sendEmail(request);
-      
+
       toast({
         title: "Email Sent Successfully",
         description: `Message ID: ${result.messageId}`,
@@ -159,7 +159,7 @@ const EmailAPITest = () => {
       };
 
       const result = await emailService.sendFollowUp(request);
-      
+
       toast({
         title: "Follow-up Sent",
         description: result.message,
@@ -183,14 +183,14 @@ const EmailAPITest = () => {
     <div className="min-h-screen bg-[#fff7f8]">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(236,72,153,0.08)_1px,transparent_0)] bg-[length:32px_32px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
-      
+
       {/* Header */}
       <header className="bg-white border-b border-pink-100 shadow-sm relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <Link 
-                to="/email-outreach" 
+              <Link
+                href="/email-outreach"
                 className="flex items-center text-gray-600 hover:text-gray-900"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -199,8 +199,8 @@ const EmailAPITest = () => {
               <h1 className="text-2xl font-mabry font-semibold text-[#403334]">AWS Email API Test</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <Link 
-                to="/email-conversation-test" 
+              <Link
+                href="/email-conversation-test"
                 className="flex items-center text-blue-600 hover:text-blue-800 font-medium"
               >
                 <MessageSquare className="h-4 w-4 mr-2" />
@@ -251,7 +251,7 @@ const EmailAPITest = () => {
                   Test Connection
                 </Button>
               </div>
-              
+
               <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                 <h4 className="font-medium mb-2">API Endpoint Information</h4>
                 <div className="space-y-1 text-sm">
@@ -326,7 +326,7 @@ const EmailAPITest = () => {
                 />
               </div>
 
-              <Button 
+              <Button
                 className="w-full"
                 onClick={handleSendTestEmail}
                 disabled={isSending || !apiStatus?.connected}
@@ -388,7 +388,7 @@ const EmailAPITest = () => {
                 />
               </div>
 
-              <Button 
+              <Button
                 className="w-full"
                 onClick={handleSendFollowUp}
                 disabled={isSending || !apiStatus?.connected}

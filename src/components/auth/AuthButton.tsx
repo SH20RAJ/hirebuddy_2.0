@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import Link from 'next/link';
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,7 +42,7 @@ export const AuthButton = ({ openSignIn }: AuthButtonProps = {}) => {
           >
             Sign In
           </Button>
-          <Link to="/signup">
+          <Link href="/signup">
             <Button>Join Now</Button>
           </Link>
         </div>
@@ -83,7 +83,7 @@ export const AuthButton = ({ openSignIn }: AuthButtonProps = {}) => {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link to="/dashboard" className="cursor-pointer">
+          <Link href="/dashboard" className="cursor-pointer">
             <User className="mr-2 h-4 w-4" />
             <span>Dashboard</span>
           </Link>

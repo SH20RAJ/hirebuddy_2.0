@@ -9,7 +9,7 @@ export class OpenAIResumeParser {
 
   constructor() {
     // Get OpenAI API key from environment variable (without VITE prefix)
-    this.openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY || '';
+    this.openaiApiKey = process.env.OPENAI_API_KEY || '';
     
     if (!this.openaiApiKey) {
       console.warn('OpenAI API key not found. Resume parsing may not work.');

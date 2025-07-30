@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertTriangle, User, ArrowRight, CheckCircle, Target, FileText, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 interface ProfileCompletionWarningProps {
   completionPercentage: number;
@@ -30,21 +30,21 @@ export const ProfileCompletionWarning: React.FC<ProfileCompletionWarningProps> =
       <AlertDescription className="space-y-3">
         <div className="text-orange-700">
           <p className="mb-2">
-            To send emails and auto-apply to jobs, your profile must be at least {requiredPercentage}% complete. 
+            To send emails and auto-apply to jobs, your profile must be at least {requiredPercentage}% complete.
             This helps ensure professional communication and better response rates.
           </p>
-          
+
           <div className="mb-3">
             <div className="flex items-center justify-between text-sm mb-1">
               <span>Profile Completion</span>
               <span className="font-medium">{completionPercentage}%</span>
             </div>
-            <Progress 
-              value={completionPercentage} 
+            <Progress
+              value={completionPercentage}
               className="h-2"
             />
           </div>
-          
+
           {missingFields.length > 0 && (
             <div>
               <p className="font-medium mb-2">Missing information:</p>
@@ -56,10 +56,10 @@ export const ProfileCompletionWarning: React.FC<ProfileCompletionWarningProps> =
             </div>
           )}
         </div>
-        
+
         <div className="flex items-center gap-2 pt-2">
           <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shadow-md">
-            <Link to="/profile">
+            <Link href="/profile">
               <User className="h-4 w-4 mr-2" />
               Complete Profile
               <ArrowRight className="h-4 w-4 ml-2" />
@@ -115,7 +115,7 @@ export const ProfileCompletionPopup: React.FC<ProfileCompletionPopupProps> = ({
         <div className="space-y-4">
           <div className="text-center">
             <p className="text-gray-600 text-sm">
-              {isNewUser 
+              {isNewUser
                 ? 'Complete your profile to unlock premium features and start applying to jobs!'
                 : 'Your profile needs to be at least 85% complete to access premium features.'
               }
@@ -130,7 +130,7 @@ export const ProfileCompletionPopup: React.FC<ProfileCompletionPopupProps> = ({
             </div>
             <Progress value={completionPercentage} className="h-2 mb-2" />
             <p className="text-xs text-gray-500">
-              {completionPercentage < 85 
+              {completionPercentage < 85
                 ? `${85 - completionPercentage}% more needed to unlock all features`
                 : 'All features unlocked!'
               }
@@ -140,7 +140,7 @@ export const ProfileCompletionPopup: React.FC<ProfileCompletionPopupProps> = ({
           {/* Action Buttons */}
           <div className="flex gap-3">
             <Button asChild className="flex-1">
-              <Link to="/profile" className="flex items-center justify-center gap-2">
+              <Link href="/profile" className="flex items-center justify-center gap-2">
                 <User className="h-4 w-4" />
                 Complete Profile
               </Link>

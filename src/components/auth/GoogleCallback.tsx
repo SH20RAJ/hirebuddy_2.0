@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { googleAuthService } from '@/services/googleAuthService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 
 const GoogleCallback = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Authenticating with Google...');
 
@@ -38,7 +39,7 @@ const GoogleCallback = () => {
           
           // Redirect to email outreach after a short delay with authentication flag
           setTimeout(() => {
-            navigate('/email-outreach?authenticated=true');
+            router.push('/email-outreach?authenticated=true');
           }, 2000);
         } else {
           setStatus('error');
@@ -55,7 +56,7 @@ const GoogleCallback = () => {
   }, [searchParams, navigate]);
 
   const handleRetry = () => {
-    navigate('/email-outreach');
+    router.push('/email-outreach');
   };
 
   return (

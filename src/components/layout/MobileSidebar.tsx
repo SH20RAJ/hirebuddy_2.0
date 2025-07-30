@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink } from 'react-router-dom';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from "framer-motion";
 import { useSwipeable } from "react-swipeable";
 import { cn } from "@/lib/utils";
@@ -33,33 +34,33 @@ interface NavItem {
 }
 
 const mobileNavItems: NavItem[] = [
-  { 
-    title: "Dashboard", 
-    url: "/dashboard", 
+  {
+    title: "Dashboard",
+    url: "/dashboard",
     icon: LayoutDashboard,
     description: "Overview & stats"
   },
-  { 
-    title: "Find Jobs", 
-    url: "/jobs", 
+  {
+    title: "Find Jobs",
+    url: "/jobs",
     icon: Search,
     description: "Search opportunities"
   },
-  { 
-    title: "Resume Builder", 
-    url: "/resume-builder", 
+  {
+    title: "Resume Builder",
+    url: "/resume-builder",
     icon: FileText,
     description: "Create & edit resume"
   },
-  { 
-    title: "Email Outreach", 
-    url: "/email-outreach", 
+  {
+    title: "Email Outreach",
+    url: "/email-outreach",
     icon: Mail,
     description: "Connect with recruiters"
   },
-  { 
-    title: "Profile", 
-    url: "/profile", 
+  {
+    title: "Profile",
+    url: "/profile",
     icon: User,
     description: "Manage your profile"
   },
@@ -76,12 +77,11 @@ interface MobileNavLinkProps {
 }
 
 const MobileNavLink: React.FC<MobileNavLinkProps> = ({ item, onClick }) => {
-  const location = useLocation();
-  const isActive = location.pathname === item.url;
+  const pathname = usePathname();
+  const isActive = pathname === item.url;
 
   return (
-    <NavLink
-      to={item.url}
+    <Link href={item.url}
       onClick={onClick}
       className={cn(
         "mobile-nav-item flex items-center gap-3 p-3 rounded-lg transition-all duration-200 relative group mobile-touch-target",
@@ -93,8 +93,8 @@ const MobileNavLink: React.FC<MobileNavLinkProps> = ({ item, onClick }) => {
     >
       <div className={cn(
         "flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200",
-        isActive 
-          ? "bg-white/20" 
+        isActive
+          ? "bg-white/20"
           : "bg-accent/50 group-hover:bg-accent/70"
       )}>
         <item.icon className={cn(
@@ -127,7 +127,7 @@ const MobileNavLink: React.FC<MobileNavLinkProps> = ({ item, onClick }) => {
           {item.badge}
         </div>
       )}
-    </NavLink>
+    </Link>
   );
 };
 
@@ -218,9 +218,9 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose }) => {
             initial={{ x: "-100%" }}
             animate={{ x: isClosing ? "-100%" : 0 }}
             exit={{ x: "-100%" }}
-            transition={{ 
-              type: "spring", 
-              damping: 25, 
+            transition={{
+              type: "spring",
+              damping: 25,
               stiffness: 200,
               duration: 0.3
             }}
@@ -268,9 +268,9 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose }) => {
             <div className="flex-1 overflow-y-auto py-4 mobile-scroll-container">
               <nav className="px-4 space-y-2">
                 {mobileNavItems.map((item) => (
-                  <MobileNavLink 
-                    key={item.url} 
-                    item={item} 
+                  <MobileNavLink
+                    key={item.url}
+                    item={item}
                     onClick={handleNavClick}
                   />
                 ))}
@@ -283,7 +283,7 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose }) => {
               {!isPremium && (
                 <CashfreePaymentButton className="w-full" variant="sidebar" />
               )}
-              
+
               <Button
                 variant="outline"
                 onClick={handleSignOut}

@@ -63,7 +63,7 @@ export const MainDashboard = () => {
                     {isPremium ? 'Exclusive jobs curated for premium members' : 'Recommended based on your profile'}
                   </CardDescription>
                 </div>
-                <Link to="/jobs" className={`text-sm flex items-center gap-1 hover:underline ${isPremium ? 'text-yellow-800' : 'text-blue-600'} flex-shrink-0 ml-2`}>
+                <Link href="/jobs" className={`text-sm flex items-center gap-1 hover:underline ${isPremium ? 'text-yellow-800' : 'text-blue-600'} flex-shrink-0 ml-2`}>
                   <span className="hidden sm:inline">View all</span>
                   <ArrowUpRight className="h-3 w-3" />
                 </Link>
@@ -99,7 +99,7 @@ export const MainDashboard = () => {
                   logo="G"
                   logoColor="bg-green-100 text-green-600"
                   location="Austin, TX"
-                  salary="$90K - $120K" 
+                  salary="$90K - $120K"
                   postedTime="1 day ago"
                   matchScore={88}
                   skills={["JavaScript", "React", "CSS"]}
@@ -107,7 +107,7 @@ export const MainDashboard = () => {
               </div>
               <div className="p-3 md:p-4 bg-gray-50 flex justify-center">
                 <RainbowButton asChild>
-                  <Link to="/jobs" className="flex items-center gap-1.5 text-sm">
+                  <Link href="/jobs" className="flex items-center gap-1.5 text-sm">
                     <Search className="h-4 w-4" />
                     <span className="hidden sm:inline">Find More Jobs</span>
                     <span className="sm:hidden">More Jobs</span>
@@ -129,7 +129,7 @@ export const MainDashboard = () => {
                   {isPremium ? 'Advanced networking tools for premium members' : 'Connect with professionals'}
                 </CardDescription>
               </div>
-              <Link to="/email-outreach" className={`text-sm flex items-center gap-1 hover:underline ${isPremium ? 'text-yellow-800' : 'text-blue-600'}`}>
+              <Link href="/email-outreach" className={`text-sm flex items-center gap-1 hover:underline ${isPremium ? 'text-yellow-800' : 'text-blue-600'}`}>
                 <span>View all</span>
                 <ArrowUpRight className="h-3 w-3" />
               </Link>
@@ -142,7 +142,7 @@ export const MainDashboard = () => {
                     <span className="font-medium">12/15</span>
                   </div>
                   <div className="h-3 rounded-full bg-gray-100 overflow-hidden">
-                    <div 
+                    <div
                       className={`h-full rounded-full ${isPremium ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' : 'bg-gradient-to-r from-green-500 to-emerald-600'}`}
                       style={{ width: '80%' }}
                     ></div>
@@ -154,7 +154,7 @@ export const MainDashboard = () => {
                 </div>
                 <div className="hidden md:block">
                   <Button variant="outline" size="sm" asChild>
-                    <Link to="/email-outreach">
+                    <Link href="/email-outreach">
                       Send Email
                     </Link>
                   </Button>
@@ -203,18 +203,18 @@ export const MainDashboard = () => {
                 <div className="flex-1 ml-4">
                   <h4 className="font-medium text-sm">Resume Score</h4>
                   <p className="text-xs text-gray-500 mt-1">
-                    {isPremium 
-                      ? 'Your premium-optimized resume outperforms 95% of applicants' 
+                    {isPremium
+                      ? 'Your premium-optimized resume outperforms 95% of applicants'
                       : 'Your resume outperforms 75% of applicants in your field'
                     }
                   </p>
                 </div>
               </div>
-            
+
               <div className="space-y-3 mb-4">
                 <div className="flex items-start gap-2">
                   <CircleCheck className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                   <div>
+                  <div>
                     <div className="text-sm font-medium">Strong work experience</div>
                     <div className="text-xs text-gray-500">Clear project descriptions with metrics</div>
                   </div>
@@ -231,15 +231,15 @@ export const MainDashboard = () => {
                   </div>
                 </div>
               </div>
-            
+
               <Button className={`w-full ${isPremium ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700' : 'bg-indigo-600 hover:bg-indigo-700'}`} asChild>
-                <Link to="/resume-builder">
+                <Link href="/resume-builder">
                   {isPremium ? 'AI Optimize Resume' : 'Optimize Resume'}
                 </Link>
               </Button>
             </CardContent>
           </Card>
-        
+
           {/* Task Widget - Upcoming Schedule */}
           <TaskWidget
             tasks={[
@@ -279,7 +279,7 @@ export const MainDashboard = () => {
             title="Upcoming Schedule"
             description="Your calendar for the week"
           />
-        
+
           {/* Skills Progress */}
           <Card className={`overflow-hidden border-0 shadow-sm ${isPremium ? 'bg-white border-2 border-gray-200' : ''}`}>
             <CardHeader className={`border-b pb-3 ${isPremium ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-yellow-900' : 'bg-gradient-to-r from-green-50 to-emerald-50'}`}>
@@ -317,7 +317,7 @@ export const MainDashboard = () => {
                 </div>
               </div>
               <Button variant="outline" size="sm" className="w-full" asChild>
-                <Link to="/skills">
+                <Link href="/skills">
                   View All Skills
                 </Link>
               </Button>
@@ -350,7 +350,7 @@ export const MainDashboard = () => {
             description="Tasks to complete this week"
             maxItems={2}
           />
-          
+
           <Card className={`overflow-hidden border-0 shadow-sm ${isPremium ? 'bg-white border-2 border-gray-200' : ''}`}>
             <CardHeader className={`pb-2 ${isPremium ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-yellow-900' : ''}`}>
               <CardTitle className={isPremium ? 'flex items-center gap-2' : ''}>
@@ -380,7 +380,7 @@ export const MainDashboard = () => {
                   <div className="text-xs text-gray-600">Completion</div>
                 </div>
               </div>
-              <Link to="/profile">
+              <Link href="/profile">
                 <InteractiveHoverButton className="w-full">
                   View Profile Details
                 </InteractiveHoverButton>

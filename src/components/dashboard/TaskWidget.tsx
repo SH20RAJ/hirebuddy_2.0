@@ -34,7 +34,7 @@ export const TaskWidget: React.FC<TaskWidgetProps> = ({
   maxItems = 3
 }) => {
   const displayTasks = tasks.slice(0, maxItems);
-  
+
   const getStatusStyles = (status: TaskStatus) => {
     switch (status) {
       case 'upcoming':
@@ -47,7 +47,7 @@ export const TaskWidget: React.FC<TaskWidgetProps> = ({
         return 'bg-gray-50 text-gray-700 border-gray-100';
     }
   };
-  
+
   const getTypeStyles = (type: string) => {
     switch (type) {
       case 'interview':
@@ -60,7 +60,7 @@ export const TaskWidget: React.FC<TaskWidgetProps> = ({
         return 'bg-gray-100 border-gray-200';
     }
   };
-  
+
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'interview':
@@ -73,7 +73,7 @@ export const TaskWidget: React.FC<TaskWidgetProps> = ({
         return 'Task';
     }
   };
-  
+
   return (
     <Card className="overflow-hidden border-0 shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -83,7 +83,7 @@ export const TaskWidget: React.FC<TaskWidgetProps> = ({
         </div>
         {showAddButton && (
           <Button size="sm" variant="outline" className="h-8 gap-1" asChild>
-            <Link to="/dashboard">
+            <Link href="/dashboard">
               <Plus className="h-3.5 w-3.5" />
               <span>Add</span>
             </Link>
@@ -134,15 +134,15 @@ export const TaskWidget: React.FC<TaskWidgetProps> = ({
             <Calendar className="h-10 w-10 mx-auto mb-2 text-gray-300" />
             <p>No upcoming tasks</p>
             <Button variant="link" size="sm" asChild>
-              <Link to="/dashboard">Add a task</Link>
+              <Link href="/dashboard">Add a task</Link>
             </Button>
           </div>
         )}
-        
+
         {tasks.length > maxItems && (
           <div className="p-3 bg-gray-50 border-t text-center">
             <Button variant="link" size="sm" asChild>
-              <Link to="/calendar">
+              <Link href="/calendar">
                 View all {tasks.length} tasks
               </Link>
             </Button>

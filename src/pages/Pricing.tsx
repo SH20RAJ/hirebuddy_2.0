@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from 'next/navigation';
 import { useAuth } from "@/contexts/AuthContext";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/landing/Footer";
@@ -80,7 +80,7 @@ const benefits = [
 const Pricing = () => {
   const [isSignInPopupOpen, setIsSignInPopupOpen] = useState(false);
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   const ref = useRef(null);
   const statsRef = useRef(null);
   const isInView = useInView(ref, { once: true });
@@ -88,7 +88,7 @@ const Pricing = () => {
 
   const handleFreeButtonClick = () => {
     if (user) {
-      navigate('/dashboard');
+      router.push('/dashboard');
     } else {
       setIsSignInPopupOpen(true);
     }

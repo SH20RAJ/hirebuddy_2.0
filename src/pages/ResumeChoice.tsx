@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useRouter } from 'next/navigation';
 import { NewSidebar } from "@/components/layout/NewSidebar";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
@@ -20,19 +20,19 @@ import {
 import { motion } from "framer-motion";
 
 const ResumeChoice = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleImportResume = () => {
-    navigate('/resume-import');
+    router.push('/resume-import');
   };
 
   const handleBuildFromScratch = () => {
     localStorage.removeItem('parsedResumeData');
-    navigate('/resume-builder-form');
+    router.push('/resume-builder-form');
   };
 
   const handleBack = () => {
-    navigate('/dashboard');
+    router.push('/dashboard');
   };
 
   return (

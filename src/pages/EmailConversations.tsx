@@ -5,7 +5,7 @@ import WhatsAppLikeConversation from '@/components/email/WhatsAppLikeConversatio
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, MessageSquare, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 
 interface Contact {
   id: string;
@@ -20,7 +20,7 @@ const EmailConversations: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   useEffect(() => {
     loadContacts();
@@ -74,7 +74,7 @@ const EmailConversations: React.FC = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate('/email-outreach')}
+                onClick={() => router.push('/email-outreach')}
                 className="flex items-center space-x-2"
               >
                 <ArrowLeft className="h-4 w-4" />

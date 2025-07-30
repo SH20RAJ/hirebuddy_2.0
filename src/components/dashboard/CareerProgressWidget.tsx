@@ -6,11 +6,11 @@ import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
 import { ProfileService } from "@/services/profileService";
 import { DashboardService } from "@/services/dashboardService";
-import { 
-  TrendingUp, 
-  Calendar, 
-  Award, 
-  Target, 
+import {
+  TrendingUp,
+  Calendar,
+  Award,
+  Target,
   ArrowRight,
   Briefcase,
   Users,
@@ -69,11 +69,11 @@ export const CareerProgressWidget: React.FC = () => {
           ProfileService.getUserExperiences(user.id),
           DashboardService.getDashboardStats()
         ]);
-        
+
         setProfile(profileData);
         setExperiences(experienceData || []);
         setDashboardStats(statsData);
-        
+
         // Calculate milestones
         const calculatedMilestones = calculateMilestones(profileData, experienceData || [], statsData);
         setMilestones(calculatedMilestones);
@@ -116,7 +116,7 @@ export const CareerProgressWidget: React.FC = () => {
         priority: 'Medium',
         progress: Math.min(((stats?.totalApplications || 0) / 10) * 100, 100)
       },
-      
+
       {
         id: 'skill_master',
         title: 'Skill Master',
@@ -181,7 +181,7 @@ export const CareerProgressWidget: React.FC = () => {
       currentLevel: getCareerLevel(experienceYears),
       experienceYears: Math.round(experienceYears * 10) / 10,
       totalApplications: dashboardStats?.totalApplications || 0,
-      interviewRate: dashboardStats?.totalApplications > 0 
+      interviewRate: dashboardStats?.totalApplications > 0
         ? Math.round(((dashboardStats?.interviewInvites || 0) / dashboardStats.totalApplications) * 100)
         : 0,
       avgResponseTime: 3, // Mock data
@@ -259,7 +259,7 @@ export const CareerProgressWidget: React.FC = () => {
             <TrendingUp className="h-12 w-12 mx-auto mb-4 text-gray-400" />
             <p className="text-gray-600 mb-4">Sign in to track your career progress</p>
             <Button asChild>
-              <Link to="/signin">Sign In</Link>
+              <Link href="/signin">Sign In</Link>
             </Button>
           </div>
         </CardContent>
@@ -290,7 +290,7 @@ export const CareerProgressWidget: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         {/* Career Stats */}
         <div className="grid grid-cols-3 gap-3 mt-4">
           <div className="text-center">
@@ -307,7 +307,7 @@ export const CareerProgressWidget: React.FC = () => {
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {/* Overall Progress */}
         <div>
@@ -392,7 +392,7 @@ export const CareerProgressWidget: React.FC = () => {
               Complete your profile and start applying to jobs to track your career progress.
             </p>
             <Button asChild>
-              <Link to="/profile" className="flex items-center gap-2">
+              <Link href="/profile" className="flex items-center gap-2">
                 <Target className="h-4 w-4" />
                 Complete Profile
               </Link>

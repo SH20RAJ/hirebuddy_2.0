@@ -8,11 +8,11 @@ import { useProgressiveLogos } from "@/hooks/useProgressiveLogos";
 import { JobRecommendationService, JobRecommendation } from "@/services/jobRecommendationService";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
-import { 
-  MapPin, 
-  Building, 
-  ArrowUpRight, 
-  Clock, 
+import {
+  MapPin,
+  Building,
+  ArrowUpRight,
+  Clock,
   Target,
   ExternalLink,
   RefreshCw,
@@ -35,7 +35,7 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
   const { user } = useAuth();
   const [recommendations, setRecommendations] = useState<JobRecommendation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Use progressive logo loading
   const { getJobLogo, isLogoLoading } = useProgressiveLogos(recommendations);
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +82,7 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
       const date = new Date(dateString);
       const now = new Date();
       const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-      
+
       if (diffInHours < 24) {
         return `${diffInHours}h ago`;
       } else {
@@ -111,8 +111,8 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
                   {job.matchScore}%
                 </span>
                 <div className="w-8 h-1.5 bg-gray-100 rounded-full">
-                  <div 
-                    className="h-1.5 bg-primary rounded-full" 
+                  <div
+                    className="h-1.5 bg-primary rounded-full"
                     style={{ width: `${job.matchScore}%` }}
                   ></div>
                 </div>
@@ -186,7 +186,7 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
             >
               Apply Now
             </MobileButton>
-            <Link to={`/jobs?search=${encodeURIComponent(job.title)}`} className="flex-1">
+            <Link href={`/jobs?search=${encodeURIComponent(job.title)}`} className="flex-1">
               <MobileButton size="sm" variant="primary" className="w-full">
                 Details
               </MobileButton>
@@ -280,7 +280,7 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
             <Briefcase className="h-8 w-8 text-gray-400 mx-auto mb-3" />
             <p className="text-gray-600 mb-4">Sign in to get personalized job recommendations</p>
             <Button variant="outline" asChild>
-              <Link to="/signin" className="text-gray-700">Sign In</Link>
+              <Link href="/signin" className="text-gray-700">Sign In</Link>
             </Button>
           </div>
         </CardContent>
@@ -316,7 +316,7 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
               Complete your profile to get personalized job recommendations
             </p>
             <Button variant="outline" asChild>
-              <Link to="/profile" className="text-gray-700">
+              <Link href="/profile" className="text-gray-700">
                 Complete Profile
               </Link>
             </Button>
@@ -351,26 +351,26 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
           </div>
           <p className="text-sm text-gray-600">Personalized matches based on your profile</p>
         </div>
-        
+
         <div className="space-y-2">
           {recommendations.map((job) => (
             <MobileJobRecommendationCard key={job.id} job={job} />
           ))}
         </div>
-        
+
         <div className="mt-4 space-y-2">
           <div className="text-center">
             <p className="text-sm text-gray-600 mb-3">
               Want more personalized recommendations?
             </p>
             <div className="flex gap-2 justify-center">
-              <Link to="/profile">
+              <Link href="/profile">
                 <MobileButton variant="primary" size="sm">
                   <Target className="h-3 w-3 mr-1" />
                   Update Profile
                 </MobileButton>
               </Link>
-              <Link to="/jobs">
+              <Link href="/jobs">
                 <MobileButton variant="primary" size="sm">
                   Browse all jobs
                   <ArrowRight className="h-3 w-3 ml-1" />
@@ -403,7 +403,7 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
                   <RefreshCw className="h-4 w-4" />
                 )}
               </Button>
-              <Link to="/jobs" className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1">
+              <Link href="/jobs" className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1">
                 <span>View all</span>
                 <ArrowUpRight className="h-3 w-3" />
               </Link>
@@ -415,14 +415,14 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
             {recommendations.map((job) => (
               <div key={job.id} className="p-4 hover:bg-gray-50 transition-colors">
                 <div className="flex items-start gap-3">
-                  <CompanyLogo 
+                  <CompanyLogo
                     companyName={job.company}
                     logoUrl={getJobLogo(job)}
                     isLoading={isLogoLoading(job.id)}
                     size="md"
                     className="border border-gray-200"
                   />
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex-1">
@@ -443,7 +443,7 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="text-right">
                         <div className="text-sm font-medium text-gray-700">
                           {job.matchScore}% match
@@ -483,8 +483,8 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
 
                     {/* Action Buttons */}
                     <div className="flex gap-2 mt-4">
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         className="flex-1"
                         onClick={() => {
                           if (job.applyLink) {
@@ -494,12 +494,12 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
                       >
                         Apply Now
                       </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
+                      <Button
+                        size="sm"
+                        variant="outline"
                         asChild
                       >
-                        <Link to={`/jobs?search=${encodeURIComponent(job.title)}`}>
+                        <Link href={`/jobs?search=${encodeURIComponent(job.title)}`}>
                           <ExternalLink className="h-3 w-3 mr-1" />
                           Details
                         </Link>
@@ -517,7 +517,7 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
               </div>
             ))}
           </div>
-          
+
           <div className="p-4 border-t border-gray-100 bg-gray-50">
             <div className="text-center">
               <p className="text-sm text-gray-600 mb-3">
@@ -525,13 +525,13 @@ export const AIJobRecommendations: React.FC<AIJobRecommendationsProps> = ({ limi
               </p>
               <div className="flex gap-2 justify-center">
                 <Button variant="ghost" size="sm" asChild>
-                  <Link to="/profile" className="text-gray-700">
+                  <Link href="/profile" className="text-gray-700">
                     <Target className="h-3 w-3 mr-1" />
                     Update Profile
                   </Link>
                 </Button>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link to="/jobs" className="text-gray-700">
+                  <Link href="/jobs" className="text-gray-700">
                     <span>Browse all jobs</span>
                     <ArrowRight className="h-3 w-3 ml-1" />
                   </Link>

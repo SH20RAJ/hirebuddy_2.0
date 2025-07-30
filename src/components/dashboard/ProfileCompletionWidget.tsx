@@ -5,12 +5,12 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { ProfileService } from "@/services/profileService";
-import { 
-  User, 
-  CheckCircle, 
-  AlertCircle, 
-  FileText, 
-  Briefcase, 
+import {
+  User,
+  CheckCircle,
+  AlertCircle,
+  FileText,
+  Briefcase,
   GraduationCap,
   MapPin,
   Link as LinkIcon,
@@ -54,10 +54,10 @@ export const ProfileCompletionWidget: React.FC = () => {
           ProfileService.getProfile(user.id),
           ProfileService.getUserExperiences(user.id)
         ]);
-        
+
         setProfile(profileData);
         setExperiences(experienceData || []);
-        
+
         // Calculate completion items
         const items = calculateCompletionItems(profileData, experienceData || []);
         setCompletionItems(items);
@@ -212,7 +212,7 @@ export const ProfileCompletionWidget: React.FC = () => {
             <User className="h-12 w-12 mx-auto mb-4 text-gray-400" />
             <p className="text-gray-600 mb-4">Sign in to track your profile completion</p>
             <Button asChild>
-              <Link to="/signin">Sign In</Link>
+              <Link href="/signin">Sign In</Link>
             </Button>
           </div>
         </CardContent>
@@ -240,17 +240,17 @@ export const ProfileCompletionWidget: React.FC = () => {
           <div className="text-right">
             <div className={cn(
               "text-2xl font-bold",
-              completionPercentage >= 80 ? "text-green-600" : 
-              completionPercentage >= 60 ? "text-yellow-600" : "text-red-600"
+              completionPercentage >= 80 ? "text-green-600" :
+                completionPercentage >= 60 ? "text-yellow-600" : "text-red-600"
             )}>
               {completionPercentage}%
             </div>
           </div>
         </div>
-        
+
         <div className="mt-4">
-          <Progress 
-            value={completionPercentage} 
+          <Progress
+            value={completionPercentage}
             className="h-2"
           />
           <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -259,7 +259,7 @@ export const ProfileCompletionWidget: React.FC = () => {
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-3">
         {isComplete ? (
           <div className="text-center py-6">
@@ -271,7 +271,7 @@ export const ProfileCompletionWidget: React.FC = () => {
               Your profile is fully optimized for job matching.
             </p>
             <Button asChild>
-              <Link to="/jobs" className="flex items-center gap-2">
+              <Link href="/jobs" className="flex items-center gap-2">
                 <Briefcase className="h-4 w-4" />
                 Find Jobs
               </Link>
@@ -301,7 +301,7 @@ export const ProfileCompletionWidget: React.FC = () => {
                     </div>
                   </div>
                   <Button variant="outline" size="sm" asChild>
-                    <Link to={item.actionLink} className="flex items-center gap-1">
+                    <Link href={item.actionLink} className="flex items-center gap-1">
                       <Plus className="h-3 w-3" />
                       {item.action}
                     </Link>
@@ -309,11 +309,11 @@ export const ProfileCompletionWidget: React.FC = () => {
                 </div>
               );
             })}
-            
+
             {incompleteItems.length > 3 && (
               <div className="pt-2 border-t border-gray-100">
                 <Button variant="ghost" size="sm" asChild className="w-full">
-                  <Link to="/profile" className="flex items-center gap-1">
+                  <Link href="/profile" className="flex items-center gap-1">
                     <span>View All ({incompleteItems.length - 3} more)</span>
                     <ArrowRight className="h-3 w-3" />
                   </Link>

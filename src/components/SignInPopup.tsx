@@ -1,5 +1,7 @@
+'use client'
+
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useRouter } from 'next/navigation';
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -15,7 +17,7 @@ const SignInPopup = ({ isOpen, onClose }: SignInPopupProps) => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { signInWithGoogle, signInWithGithub } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -47,7 +49,7 @@ const SignInPopup = ({ isOpen, onClose }: SignInPopupProps) => {
 
   const handleSignUpClick = () => {
     onClose();
-    navigate("/signup");
+    router.push("/signup");
   };
 
   return (

@@ -6,12 +6,12 @@ import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
 import { ProfileService } from "@/services/profileService";
 import { openaiService } from "@/services/openaiService";
-import { 
-  Star, 
-  TrendingUp, 
-  TrendingDown, 
-  Target, 
-  Plus, 
+import {
+  Star,
+  TrendingUp,
+  TrendingDown,
+  Target,
+  Plus,
   ArrowRight,
   Brain,
   Code,
@@ -79,13 +79,13 @@ export const SkillsAnalyticsWidget: React.FC = () => {
         setError(null);
         const profileData = await ProfileService.getProfile(user.id);
         setProfile(profileData);
-        
+
         // Load removed skills from localStorage
         const savedRemovedSkills = localStorage.getItem(`removedSkills_${user.id}`);
         if (savedRemovedSkills) {
           setRemovedSkills(new Set(JSON.parse(savedRemovedSkills)));
         }
-        
+
         // Use AI analysis if available, otherwise fallback to basic analysis
         await performAIAnalysis(profileData);
       } catch (error) {
@@ -138,7 +138,7 @@ export const SkillsAnalyticsWidget: React.FC = () => {
 
     try {
       setIsLoadingMoreSkills(true);
-      
+
       const userSkills = profile?.skills || [];
       const jobTitle = profile?.job_title || profile?.desired_job_title;
       const industry = profile?.industry;
@@ -161,8 +161,8 @@ export const SkillsAnalyticsWidget: React.FC = () => {
 
       if (additionalSkills.length > 0) {
         // Add new skills to the analysis, avoiding duplicates
-        const uniqueNewSkills = additionalSkills.filter(newSkill => 
-          !existingSkillNames.some(existing => 
+        const uniqueNewSkills = additionalSkills.filter(newSkill =>
+          !existingSkillNames.some(existing =>
             existing.toLowerCase() === newSkill.skill.toLowerCase()
           )
         );
@@ -181,8 +181,8 @@ export const SkillsAnalyticsWidget: React.FC = () => {
       console.error('Error loading more skills:', error);
       // Add backup skills as fallback
       const backupSkills = getBackupSkillRecommendations(
-        profile?.skills || [], 
-        skillsAnalysis.map(s => s.skill), 
+        profile?.skills || [],
+        skillsAnalysis.map(s => s.skill),
         Array.from(removedSkills)
       );
       if (backupSkills.length > 0) {
@@ -197,8 +197,8 @@ export const SkillsAnalyticsWidget: React.FC = () => {
   };
 
   const getBackupSkillRecommendations = (
-    userSkills: string[], 
-    existingSkills: string[], 
+    userSkills: string[],
+    existingSkills: string[],
     excludedSkills: string[]
   ): EnhancedSkillAnalysis[] => {
     // Extended backup skill pool with more diverse options
@@ -210,7 +210,7 @@ export const SkillsAnalyticsWidget: React.FC = () => {
       { skill: 'Scikit-learn', userHas: false, demandLevel: 'medium', marketTrend: 'stable', jobMatches: 650, category: 'technical', priority: 82, salaryImpact: '+12% average', description: 'Machine learning library for Python' },
       { skill: 'OpenAI API', userHas: false, demandLevel: 'high', marketTrend: 'rising', jobMatches: 560, category: 'technical', priority: 89, salaryImpact: '+22% average', description: 'Integration with AI models' },
       { skill: 'LangChain', userHas: false, demandLevel: 'high', marketTrend: 'rising', jobMatches: 480, category: 'technical', priority: 86, salaryImpact: '+25% average', description: 'Framework for building AI applications' },
-      
+
       // Cloud & DevOps
       { skill: 'Google Cloud Platform', userHas: false, demandLevel: 'high', marketTrend: 'rising', jobMatches: 890, category: 'tool', priority: 87, salaryImpact: '+18% average', description: 'Google cloud services platform' },
       { skill: 'Azure', userHas: false, demandLevel: 'high', marketTrend: 'rising', jobMatches: 850, category: 'tool', priority: 86, salaryImpact: '+17% average', description: 'Microsoft cloud platform' },
@@ -218,7 +218,7 @@ export const SkillsAnalyticsWidget: React.FC = () => {
       { skill: 'CI/CD', userHas: false, demandLevel: 'high', marketTrend: 'stable', jobMatches: 980, category: 'technical', priority: 88, salaryImpact: '+14% average', description: 'Continuous integration and deployment' },
       { skill: 'GitHub Actions', userHas: false, demandLevel: 'medium', marketTrend: 'rising', jobMatches: 620, category: 'tool', priority: 78, salaryImpact: '+8% average', description: 'Automation and CI/CD platform' },
       { skill: 'Pulumi', userHas: false, demandLevel: 'medium', marketTrend: 'rising', jobMatches: 340, category: 'tool', priority: 72, salaryImpact: '+15% average', description: 'Infrastructure as code platform' },
-      
+
       // Modern Development
       { skill: 'Deno', userHas: false, demandLevel: 'medium', marketTrend: 'rising', jobMatches: 280, category: 'technical', priority: 70, salaryImpact: '+10% average', description: 'Modern JavaScript/TypeScript runtime' },
       { skill: 'Bun', userHas: false, demandLevel: 'medium', marketTrend: 'rising', jobMatches: 250, category: 'technical', priority: 68, salaryImpact: '+8% average', description: 'Fast JavaScript runtime and bundler' },
@@ -226,21 +226,21 @@ export const SkillsAnalyticsWidget: React.FC = () => {
       { skill: 'Turborepo', userHas: false, demandLevel: 'medium', marketTrend: 'rising', jobMatches: 320, category: 'tool', priority: 73, salaryImpact: '+12% average', description: 'High-performance monorepo tool' },
       { skill: 'SvelteKit', userHas: false, demandLevel: 'medium', marketTrend: 'rising', jobMatches: 380, category: 'technical', priority: 74, salaryImpact: '+8% average', description: 'Full-stack Svelte framework' },
       { skill: 'Astro', userHas: false, demandLevel: 'medium', marketTrend: 'rising', jobMatches: 290, category: 'technical', priority: 71, salaryImpact: '+7% average', description: 'Static site generator for modern web' },
-      
+
       // Databases & Backend
       { skill: 'PostgreSQL', userHas: false, demandLevel: 'high', marketTrend: 'stable', jobMatches: 1100, category: 'tool', priority: 85, salaryImpact: '+12% average', description: 'Advanced open-source relational database' },
       { skill: 'Prisma', userHas: false, demandLevel: 'medium', marketTrend: 'rising', jobMatches: 480, category: 'tool', priority: 76, salaryImpact: '+10% average', description: 'Modern database toolkit' },
       { skill: 'Supabase', userHas: false, demandLevel: 'medium', marketTrend: 'rising', jobMatches: 420, category: 'tool', priority: 74, salaryImpact: '+8% average', description: 'Open-source Firebase alternative' },
       { skill: 'PlanetScale', userHas: false, demandLevel: 'medium', marketTrend: 'rising', jobMatches: 280, category: 'tool', priority: 69, salaryImpact: '+12% average', description: 'Serverless MySQL database platform' },
       { skill: 'Elasticsearch', userHas: false, demandLevel: 'medium', marketTrend: 'stable', jobMatches: 620, category: 'tool', priority: 77, salaryImpact: '+14% average', description: 'Search and analytics engine' },
-      
+
       // Security & Testing
       { skill: 'Cybersecurity', userHas: false, demandLevel: 'high', marketTrend: 'rising', jobMatches: 950, category: 'technical', priority: 91, salaryImpact: '+25% average', description: 'Information security practices' },
       { skill: 'Penetration Testing', userHas: false, demandLevel: 'high', marketTrend: 'rising', jobMatches: 520, category: 'technical', priority: 85, salaryImpact: '+30% average', description: 'Security testing methodology' },
       { skill: 'Jest', userHas: false, demandLevel: 'medium', marketTrend: 'stable', jobMatches: 720, category: 'tool', priority: 78, salaryImpact: '+5% average', description: 'JavaScript testing framework' },
       { skill: 'Cypress', userHas: false, demandLevel: 'medium', marketTrend: 'rising', jobMatches: 480, category: 'tool', priority: 76, salaryImpact: '+8% average', description: 'End-to-end testing framework' },
       { skill: 'Playwright', userHas: false, demandLevel: 'medium', marketTrend: 'rising', jobMatches: 380, category: 'tool', priority: 74, salaryImpact: '+10% average', description: 'Cross-browser automation library' },
-      
+
       // Soft Skills & Leadership
       { skill: 'Agile Methodology', userHas: false, demandLevel: 'high', marketTrend: 'stable', jobMatches: 1200, category: 'soft', priority: 86, salaryImpact: '+8% average', description: 'Iterative project management approach' },
       { skill: 'Scrum Master', userHas: false, demandLevel: 'high', marketTrend: 'stable', jobMatches: 780, category: 'certification', priority: 84, salaryImpact: '+15% average', description: 'Agile framework facilitation role' },
@@ -248,13 +248,13 @@ export const SkillsAnalyticsWidget: React.FC = () => {
       { skill: 'Design Thinking', userHas: false, demandLevel: 'medium', marketTrend: 'stable', jobMatches: 650, category: 'soft', priority: 75, salaryImpact: '+10% average', description: 'Human-centered problem solving' },
       { skill: 'Cross-functional Collaboration', userHas: false, demandLevel: 'high', marketTrend: 'stable', jobMatches: 1100, category: 'soft', priority: 82, salaryImpact: '+8% average', description: 'Working across different teams' },
       { skill: 'Mentoring', userHas: false, demandLevel: 'medium', marketTrend: 'stable', jobMatches: 580, category: 'soft', priority: 76, salaryImpact: '+12% average', description: 'Guiding and developing others' },
-      
+
       // Analytics & Business Intelligence
       { skill: 'Tableau', userHas: false, demandLevel: 'medium', marketTrend: 'stable', jobMatches: 620, category: 'tool', priority: 77, salaryImpact: '+12% average', description: 'Data visualization platform' },
       { skill: 'Power BI', userHas: false, demandLevel: 'medium', marketTrend: 'rising', jobMatches: 580, category: 'tool', priority: 75, salaryImpact: '+10% average', description: 'Business analytics tool' },
       { skill: 'Google Analytics', userHas: false, demandLevel: 'medium', marketTrend: 'stable', jobMatches: 750, category: 'tool', priority: 72, salaryImpact: '+6% average', description: 'Web analytics service' },
       { skill: 'Mixpanel', userHas: false, demandLevel: 'medium', marketTrend: 'stable', jobMatches: 320, category: 'tool', priority: 68, salaryImpact: '+8% average', description: 'Product analytics platform' },
-      
+
       // Emerging Technologies
       { skill: 'Web3', userHas: false, demandLevel: 'medium', marketTrend: 'rising', jobMatches: 450, category: 'technical', priority: 79, salaryImpact: '+25% average', description: 'Decentralized web technologies' },
       { skill: 'Blockchain', userHas: false, demandLevel: 'medium', marketTrend: 'stable', jobMatches: 520, category: 'technical', priority: 80, salaryImpact: '+22% average', description: 'Distributed ledger technology' },
@@ -271,11 +271,11 @@ export const SkillsAnalyticsWidget: React.FC = () => {
     return backupSkillPool
       .filter(skill => {
         const skillLower = skill.skill.toLowerCase();
-        return !normalizedUserSkills.some(userSkill => 
+        return !normalizedUserSkills.some(userSkill =>
           userSkill.includes(skillLower) || skillLower.includes(userSkill)
-        ) && 
-        !normalizedExistingSkills.includes(skillLower) &&
-        !normalizedExcludedSkills.includes(skillLower);
+        ) &&
+          !normalizedExistingSkills.includes(skillLower) &&
+          !normalizedExcludedSkills.includes(skillLower);
       })
       .sort((a, b) => b.priority - a.priority)
       .slice(0, 10); // Return top 10 unique skills
@@ -297,11 +297,11 @@ export const SkillsAnalyticsWidget: React.FC = () => {
     ];
 
     const normalizedUserSkills = userSkills.map(skill => skill.toLowerCase().trim());
-    
+
     return coreSkills.map(skill => ({
       ...skill,
-      userHas: normalizedUserSkills.some(userSkill => 
-        userSkill.includes(skill.skill.toLowerCase()) || 
+      userHas: normalizedUserSkills.some(userSkill =>
+        userSkill.includes(skill.skill.toLowerCase()) ||
         skill.skill.toLowerCase().includes(userSkill)
       )
     })).sort((a, b) => b.priority - a.priority);
@@ -329,7 +329,7 @@ export const SkillsAnalyticsWidget: React.FC = () => {
       }
 
       const updatedSkills = [...currentSkills, skillName];
-      
+
       // Update profile in database
       const updatedProfile = await ProfileService.updateProfile(user.id, {
         skills: updatedSkills
@@ -337,9 +337,9 @@ export const SkillsAnalyticsWidget: React.FC = () => {
 
       // Update local state
       setProfile(updatedProfile);
-      
+
       // Update skills analysis to reflect the new skill
-      setSkillsAnalysis(prev => prev.map(skill => 
+      setSkillsAnalysis(prev => prev.map(skill =>
         skill.skill === skillName ? { ...skill, userHas: true } : skill
       ));
 
@@ -361,10 +361,10 @@ export const SkillsAnalyticsWidget: React.FC = () => {
 
     const newRemovedSkills = new Set([...removedSkills, skillName]);
     setRemovedSkills(newRemovedSkills);
-    
+
     // Save to localStorage
     localStorage.setItem(`removedSkills_${user.id}`, JSON.stringify([...newRemovedSkills]));
-    
+
     toast.success(`"${skillName}" removed from recommendations`);
 
     // Automatically load more skills when one is removed to ensure we always have recommendations
@@ -382,7 +382,7 @@ export const SkillsAnalyticsWidget: React.FC = () => {
     const highDemandSkills = userSkills.filter(s => s.demandLevel === 'high');
     const risingSkills = userSkills.filter(s => s.marketTrend === 'rising');
     const technicalSkills = userSkills.filter(s => s.category === 'technical');
-    
+
     return {
       total: userSkills.length,
       highDemand: highDemandSkills.length,
@@ -467,7 +467,7 @@ export const SkillsAnalyticsWidget: React.FC = () => {
             <Brain className="h-12 w-12 mx-auto mb-4 text-gray-400" />
             <p className="text-gray-600 mb-4">Sign in to get AI-powered skills analysis</p>
             <Button asChild>
-              <Link to="/signin">Sign In</Link>
+              <Link href="/signin">Sign In</Link>
             </Button>
           </div>
         </CardContent>
@@ -503,7 +503,7 @@ export const SkillsAnalyticsWidget: React.FC = () => {
               <RefreshCw className={cn("h-4 w-4", isAnalyzing && "animate-spin")} />
             </Button>
             <Button variant="outline" size="sm" asChild>
-              <Link to="/profile" className="flex items-center gap-1">
+              <Link href="/profile" className="flex items-center gap-1">
                 <Plus className="h-4 w-4" />
                 Add
               </Link>
@@ -511,7 +511,7 @@ export const SkillsAnalyticsWidget: React.FC = () => {
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {error && (
           <div className="flex items-center gap-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -573,9 +573,9 @@ export const SkillsAnalyticsWidget: React.FC = () => {
                 <span className="truncate">Top Skill Recommendations</span>
               </h4>
               {skillsAnalysis.length > 15 && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={loadMoreSkillRecommendations}
                   disabled={isLoadingMoreSkills}
                   className="text-xs h-6 px-2 ml-2 flex-shrink-0"
@@ -611,7 +611,7 @@ export const SkillsAnalyticsWidget: React.FC = () => {
                         )}
                       </div>
                       <div className="text-xs text-gray-600 truncate">
-                        {skill.description} • {skill.jobMatches > 1000 ? `${Math.round(skill.jobMatches/1000)}k` : skill.jobMatches} jobs
+                        {skill.description} • {skill.jobMatches > 1000 ? `${Math.round(skill.jobMatches / 1000)}k` : skill.jobMatches} jobs
                       </div>
                       {skill.salaryImpact && (
                         <div className="text-xs text-green-600 font-medium">
@@ -621,9 +621,9 @@ export const SkillsAnalyticsWidget: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="h-7 px-2 hover:bg-green-50 hover:border-green-300"
                       onClick={() => handleAddSkill(skill.skill)}
                       disabled={addingSkills.has(skill.skill)}
@@ -637,9 +637,9 @@ export const SkillsAnalyticsWidget: React.FC = () => {
                         </>
                       )}
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="h-7 px-2 hover:bg-red-50 hover:text-red-600"
                       onClick={() => handleRemoveSkillRecommendation(skill.skill)}
                     >
@@ -650,20 +650,20 @@ export const SkillsAnalyticsWidget: React.FC = () => {
                 </div>
               ))}
             </div>
-            
+
             {/* Load More Skills Button */}
             <div className="mt-3 space-y-2">
               {recommendedSkills.length > 6 && (
                 <Button variant="ghost" size="sm" asChild className="w-full">
-                  <Link to="/profile" className="flex items-center justify-center gap-1 text-xs">
+                  <Link href="/profile" className="flex items-center justify-center gap-1 text-xs">
                     <span>View all {recommendedSkills.length} recommendations</span>
                     <ArrowRight className="h-3 w-3" />
                   </Link>
                 </Button>
               )}
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={loadMoreSkillRecommendations}
                 disabled={isLoadingMoreSkills}
                 className="w-full flex items-center justify-center gap-1 text-xs"
@@ -694,8 +694,8 @@ export const SkillsAnalyticsWidget: React.FC = () => {
             <p className="text-gray-600 mb-3 text-sm">
               You have excellent market-aligned skills. Want to explore more?
             </p>
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               onClick={loadMoreSkillRecommendations}
               disabled={isLoadingMoreSkills}
               className="flex items-center gap-2"
@@ -743,7 +743,7 @@ export const SkillsAnalyticsWidget: React.FC = () => {
               Get AI-powered job recommendations and market insights
             </p>
             <Button size="sm" asChild>
-              <Link to="/profile" className="flex items-center gap-2">
+              <Link href="/profile" className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
                 Add Skills
               </Link>

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import Link from 'next/link';
 
 export const Footer = () => {
   return (
@@ -9,13 +9,13 @@ export const Footer = () => {
           {/* Left Links */}
           <div className="space-y-4">
             <Link
-              to="/community"
+              href="/community"
               className="block text-white hover:text-white/90 transition-colors"
             >
               Community
             </Link>
             <Link
-              to="/blogs"
+              href="/blogs"
               className="block text-white hover:text-white/90 transition-colors"
             >
               Blogs
@@ -25,19 +25,19 @@ export const Footer = () => {
           {/* Middle Links - Legal & Compliance */}
           <div className="space-y-4">
             <Link
-              to="/privacy"
+              href="/privacy"
               className="block text-white hover:text-white/90 transition-colors"
             >
               Privacy Policy
             </Link>
             <Link
-              to="/terms"
+              href="/terms"
               className="block text-white hover:text-white/90 transition-colors"
             >
               Terms and Conditions
             </Link>
             <Link
-              to="/cancellation-refund"
+              href="/cancellation-refund"
               className="block text-white hover:text-white/90 transition-colors"
             >
               Cancellation and Refund
@@ -47,13 +47,13 @@ export const Footer = () => {
           {/* Right Links - More Policies */}
           <div className="space-y-4">
             <Link
-              to="/shipping-delivery"
+              href="/shipping-delivery"
               className="block text-white hover:text-white/90 transition-colors"
             >
               Shipping and Delivery
             </Link>
             <Link
-              to="/contact"
+              href="/contact"
               className="block text-white hover:text-white/90 transition-colors"
             >
               Contact Us
@@ -106,7 +106,7 @@ export const Footer = () => {
         {/* Bottom Section */}
         <div className="mt-16 flex flex-col lg:flex-row justify-between items-center">
           <Link
-            to="/"
+            href="/"
             className="text-white text-2xl font-semibold mb-4 lg:mb-0"
           >
             Hirebuddy
